@@ -20,22 +20,23 @@ Roteirista: IA Magalu -- Data: [DATA-ATUAL]
 Produto: [Nome do Produto]
 ______________________________________________________________________
 
-- **[Locução em Tahoma 12 bold]**
-Imagem: [Descrição em Tahoma 12 normal]
+- [Locução]
+Imagem: [Descrição]
 
-- **[Locução em Tahoma 12 bold]**
-Imagem: [Descrição em Tahoma 12 normal]
+- [Locução]
+Imagem: [Descrição]
 
 ... [4 a 6 cenas no total] ...
 
-- **[Locução de Fechamento em Tahoma 12 bold]**
+- [Locução de Fechamento]
 Lettering: #TemNoMagalu
 
 **Observações de Formatação:**
-- Locução sempre em negrito (**Texto**).
-- Descrição da imagem em texto normal abaixo da locução, iniciando com "Imagem:".
+- A locução deve começar sempre com um traço simples seguido de espaço ("- "). NÃO use negrito (**) na locução.
+- Descrição da imagem em texto normal abaixo da locução, iniciando com "Imagem: ".
 - "Imagem: [A] e/ou [B]" apenas quando há opções de enquadramento.
 - A ÚLTIMA CENA não tem "Imagem:", tem APENAS "Lettering: #TemNoMagalu".
+- SEMPRE pule uma linha em branco entre uma cena e outra.
 
 **REGRAS DE ABERTURA:**
 - Estrutura OBRIGATÓRIA (Padrão Breno): "Este/A [Produto], da [Marca], tem [features principais]."
