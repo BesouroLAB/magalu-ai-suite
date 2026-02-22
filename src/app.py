@@ -136,7 +136,7 @@ with st.sidebar:
     st.divider()
     st.markdown("### 📋 Como Usar:")
     st.caption("1. Cole as fichas técnicas no painel esquerdo.")
-    st.caption("2. Para gerar vários produtos, separe-os com `---`")
+    st.caption("2. Para gerar vários produtos, clique em '➕ Adicionar Produto'.")
     st.caption("3. Na mesa de trabalho à direita, edite, copie ou aprove os textos gerados.")
 
 st.title("Gerador de Roteiros da Lu")
@@ -147,23 +147,41 @@ col_left, col_right = st.columns([1.2, 2.5], gap="medium")
 
 with col_left:
     st.subheader("Novo Roteiro")
-    st.markdown("<p style='font-size: 14px; color: #8b92a5'>Cole a Ficha Técnica abaixo (divida com `---` para batch):</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 14px; color: #8b92a5'>Adicione os produtos que deseja gerar:</p>", unsafe_allow_html=True)
     
-    SEPARADOR = "---"
+    if 'num_fichas' not in st.session_state:
+        st.session_state['num_fichas'] = 1
+        
+    fichas_informadas = []
     
-    fichas_input = st.text_area(
-        "",
-        height=450,
-        placeholder="TÍTULO: Smart TV 55 LG\nDESCRIÇÃO: Assistir TV nunca foi tão incrível...\nFICHA TÉCNICA:\n- OLED\n- 4K\n\n---\n\nTÍTULO: Geladeira Brastemp 400L\n..."
-    )
+    for i in range(st.session_state['num_fichas']):
+        val = st.text_area(
+            f"Ficha Técnica do Produto {i+1}",
+            height=200,
+            key=f"ficha_input_{i}",
+            placeholder="TÍTULO: Smart TV 55 LG\nDESCRIÇÃO: Assistir TV nunca foi tão incrível...\nFICHA TÉCNICA:\n- OLED\n- 4K"
+        )
+        fichas_informadas.append(val)
+        
+    col_add, col_rem = st.columns(2)
+    with col_add:
+        if st.button("➕ Adicionar Produto", use_container_width=True):
+            st.session_state['num_fichas'] += 1
+            st.rerun()
+    with col_rem:
+        if st.session_state['num_fichas'] > 1:
+            if st.button("➖ Remover Último", use_container_width=True):
+                st.session_state['num_fichas'] -= 1
+                st.rerun()
+
+    st.markdown("<br>", unsafe_allow_html=True)
     
     if st.button("🚀 Gerar Roteiros Mágicos", use_container_width=True):
-        if not fichas_input.strip():
+        fichas = [f.strip() for f in fichas_informadas if f.strip()]
+        
+        if not fichas:
             st.warning("⚠️ Cole pelo menos uma ficha técnica antes de gerar.")
         else:
-            fichas_raw = fichas_input.split(SEPARADOR)
-            fichas = [f.strip() for f in fichas_raw if f.strip()]
-            
             with st.spinner(f"Processando {len(fichas)} roteiro(s)..."):
                 try:
                     agent = RoteiristaAgent()
