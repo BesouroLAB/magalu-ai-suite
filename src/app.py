@@ -1,11 +1,18 @@
 import streamlit as st
 import os
+import sys
 import csv
 import pandas as pd
 from datetime import datetime
-from dotenv import set_key
+from dotenv import load_dotenv
+
+# Garante que a raiz do projeto esteja no path (necessário para Streamlit Cloud)
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
 from src.scraper import scrape_magalu_product
 from src.agent import RoteiristaAgent
+
+load_dotenv() # Garante que as variáveis do .env fiquem disponíveis
 
 # Configuração da página
 st.set_page_config(page_title="Roteirista Magalu AI", page_icon="🤖", layout="wide")
@@ -14,12 +21,12 @@ st.title("🎬 Roteirista Magalu AI (MVP)")
 st.markdown("Crie roteiros de vídeos de produtos aprovados pelo Breno em segundos.")
 
 # --- Configuração da API Key via UI ---
-if "GEMINI_API_KEY" not in os.environ and not st.secrets.get("GEMINI_API_KEY"):
+if "GEMINI_API_KEY" not in os.environ:
     st.warning("⚠️ API Key do Gemini não encontrada.")
     api_key_input = st.text_input("Cole sua GEMINI_API_KEY aqui:", type="password")
     if st.button("Salvar API Key localmente"):
         # Salva no .env para reuso futuro local
-        with open('.env', 'a') as f:
+        with open('.env', 'a', encoding='utf-8') as f:
              f.write(f"\nGEMINI_API_KEY={api_key_input}\n")
         # Força o load para a sessão atual
         os.environ["GEMINI_API_KEY"] = api_key_input

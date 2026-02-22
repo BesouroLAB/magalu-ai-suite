@@ -14,9 +14,8 @@ class RoteiristaAgent:
             raise ValueError("GEMINI_API_KEY não encontrada no arquivo .env")
         genai.configure(api_key=api_key)
         
-        # Usamos o modelo 1.5 Pro (recomendado para RAG complexo e seguir instruções estritas)
-        # Pode substituir por 'gemini-1.5-flash' se velocidade e custo forem primordiais no MVP.
-        self.model = genai.GenerativeModel('gemini-1.5-pro')
+        # Usamos o Gemini 2.5 Flash (rápido, gratuito e excelente para seguir instruções)
+        self.model = genai.GenerativeModel('gemini-2.5-flash')
         
         # Carrega a base de conhecimento (Prompt, Fonética e Few-Shot)
         self.system_prompt = self._load_file(".agents/system_prompt.txt", "Prompt do Sistema Padrão")
