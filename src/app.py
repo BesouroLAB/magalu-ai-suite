@@ -217,50 +217,58 @@ def salvar_estrutura(sp_client, tipo, texto):
 
 
 with st.sidebar:
+    # --- LOGO & BRANDING ---
     st.markdown("""
-    <div style="display: flex; flex-direction: column; width: 120px; line-height: 1;">
-        <span style="color: #0086ff; font-weight: 800; font-size: 14px; letter-spacing: 2px;">MAGALU</span>
-        <span style="color: white; font-weight: 400; font-size: 24px; letter-spacing: 0.5px;">AI Suite</span>
+    <div style="display: flex; flex-direction: column; width: 220px; line-height: 1.1; margin-bottom: 5px;">
+        <span style="color: #0086ff; font-weight: 800; font-size: 18px; letter-spacing: 3px;">MAGALU</span>
+        <span style="color: white; font-weight: 300; font-size: 36px; letter-spacing: 1px;">AI Suite</span>
     </div>
+    <span style='color: #4b5563; font-weight: bold; font-size: 11px; letter-spacing: 1px;'>V1.5 PREMIUM SERIES</span>
+    <br><br>
     """, unsafe_allow_html=True)
-    st.markdown("<span style='color: #0086ff; font-weight: bold; font-size: 12px;'>V1.0 SÉRIE 1</span>", unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("""<img src="https://logodownload.org/wp-content/uploads/2014/10/magalu-logo-1.png" width="120" style="margin-bottom: 20px;" />""", unsafe_allow_html=True)
     
-    st.markdown("### 🧭 Navegação")
-    page = st.radio("Selecione o Módulo", ["Criar Roteiros", "Treinar IA", "Dashboard"])
+    # --- MENU DE NAVEGAÇÃO ---
+    page = st.radio(
+        "Módulo do Sistema:", 
+        ["Criar Roteiros", "Treinar IA", "Dashboard"],
+        label_visibility="collapsed"
+    )
     
+    st.markdown("<br><br><br>", unsafe_allow_html=True)
     st.divider()
     
-    st.markdown("### ⚙️ Configurações API")
-    api_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
-    supabase_client = init_supabase()
-    
-    if not api_key:
-        api_key_input = st.text_input("🔑 Cole sua chave Gemini:", type="password")
-        if st.button("Salvar Chave Gemini"):
-            with open('.env', 'a', encoding='utf-8') as f:
-                f.write(f"\nGEMINI_API_KEY={api_key_input}")
-            os.environ["GEMINI_API_KEY"] = api_key_input
-            st.success("Salva! Pressione F5.")
-            st.stop()
-    else:
-        st.success("🟢 API Gemini Conectada")
+    # --- CONFIGURAÇÕES API (MINIMALISTA) ---
+    with st.expander("⚙️ Configurações", expanded=False):
+        st.caption("Ajustes de Chaves e Conexão")
+        api_key_env = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
+        supabase_client = init_supabase()
+        
+        # Gestão Gemini
+        if not api_key_env:
+            api_key_input = st.text_input("🔑 Chave Gemini:", type="password")
+            if st.button("Salvar Chave", key="save_gemini"):
+                with open('.env', 'a', encoding='utf-8') as f:
+                    f.write(f"\nGEMINI_API_KEY={api_key_input}")
+                os.environ["GEMINI_API_KEY"] = api_key_input
+                st.success("Salva! F5.")
+                st.stop()
+        else:
+            st.markdown("<span style='color: #10b981; font-size: 12px;'>● Gemini Ativo</span>", unsafe_allow_html=True)
 
-    if not supabase_client:
-        st.divider()
-        st.error("🔴 Supabase Não Conectado")
-        supa_url_input = st.text_input("🔗 Supabase URL:")
-        supa_key_input = st.text_input("🔑 Supabase API Key:", type="password")
-        if st.button("Conectar Nuvem"):
-            with open('.env', 'a', encoding='utf-8') as f:
-                f.write(f"\nSUPABASE_URL={supa_url_input}")
-                f.write(f"\nSUPABASE_KEY={supa_key_input}")
-            st.success("Banco salvo! Pressione F5.")
-            st.stop()
-    else:
-        st.session_state['supabase_client'] = supabase_client
-        st.success("🟢 Nuvem Conectada (Supabase)")
+        # Gestão Supabase
+        if not supabase_client:
+            st.markdown("<span style='color: #ef4444; font-size: 12px;'>● Supabase Desconectado</span>", unsafe_allow_html=True)
+            supa_url_input = st.text_input("🔗 URL Supabase:")
+            supa_key_input = st.text_input("🔑 API Key Supabase:", type="password")
+            if st.button("Conectar Banco"):
+                with open('.env', 'a', encoding='utf-8') as f:
+                    f.write(f"\nSUPABASE_URL={supa_url_input}")
+                    f.write(f"\nSUPABASE_KEY={supa_key_input}")
+                st.success("Salvo! F5.")
+                st.stop()
+        else:
+            st.session_state['supabase_client'] = supabase_client
+            st.markdown("<span style='color: #10b981; font-size: 12px;'>● Supabase Ativo</span>", unsafe_allow_html=True)
 
 
 # --- APLICAÇÃO PRINCIPAL ---
