@@ -246,19 +246,8 @@ if page == "Estúdio de Criação":
     with col_left:
         st.subheader("Novo Roteiro")
         
-        # Carregar Categorias
-        categorias_dict = {1: "Genérico"}
-        if 'supabase_client' in st.session_state:
-            try:
-                res = st.session_state['supabase_client'].table("categorias").select("*").execute()
-                if hasattr(res, 'data') and res.data:
-                    categorias_dict = {c['id']: c['nome'] for c in res.data}
-            except Exception as e:
-                pass # Fallback mantido como Genérico se falhar
-                
-        cat_nomes = list(categorias_dict.values())
-        cat_selecionada_nome = st.selectbox("Categoria do Produto", cat_nomes)
-        cat_selecionada_id = [k for k, v in categorias_dict.items() if v == cat_selecionada_nome][0]
+        # Categoria padrão (Simplificação: removida seleção manual do usuário)
+        cat_selecionada_id = 1
 
         st.markdown("<p style='font-size: 14px; color: #8b92a5'>Adicione os produtos que deseja gerar:</p>", unsafe_allow_html=True)
         
