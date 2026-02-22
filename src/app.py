@@ -110,13 +110,19 @@ if 'roteiros' in st.session_state and st.session_state['roteiros']:
         titulo_curto = linhas[0][:60] if linhas else f"Produto {idx+1}"
 
         with st.expander(f"📦 {titulo_curto}", expanded=(idx == 0)):
-            # Editor do roteiro
-            edited = st.text_area(
-                "Edite o roteiro abaixo:",
-                value=item['roteiro_original'],
-                height=350,
-                key=f"editor_{idx}"
-            )
+            # Abas: Visualizar (renderizado) vs Editar (bruto com **)
+            tab_view, tab_edit = st.tabs(["👁️ Visualizar", "✏️ Editar / Copiar"])
+
+            with tab_view:
+                st.markdown(item['roteiro_original'])
+
+            with tab_edit:
+                edited = st.text_area(
+                    "Texto bruto (com ** para negrito). Edite e copie daqui:",
+                    value=item['roteiro_original'],
+                    height=350,
+                    key=f"editor_{idx}"
+                )
 
             col1, col2, col3 = st.columns(3)
 
@@ -129,18 +135,19 @@ if 'roteiros' in st.session_state and st.session_state['roteiros']:
                         writer = csv.writer(f)
                         if not file_exists:
                             writer.writerow(["Data", "Ficha_Tecnica", "Roteiro_Gerado_IA", "Roteiro_Aprovado_Humano"])
+                        edited_val = st.session_state.get(f"editor_{idx}", item['roteiro_original'])
                         writer.writerow([
                             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                             item['ficha'],
                             item['roteiro_original'],
-                            edited
+                            edited_val
                         ])
                     st.success(f"🎉 Roteiro '{titulo_curto}' aprovado e salvo!")
 
             with col2:
-                # Botão de copiar usando st.code (permite copiar fácil)
                 if st.button("📋 Mostrar pra Copiar", key=f"copy_{idx}"):
-                    st.code(edited, language=None)
+                    edited_val = st.session_state.get(f"editor_{idx}", item['roteiro_original'])
+                    st.code(edited_val, language=None)
 
             with col3:
                 if st.button("🔄 Regenerar", key=f"regen_{idx}"):
