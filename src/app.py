@@ -196,12 +196,14 @@ def salvar_fonetica(sp_client, termo_err, termo_cor, exemplo_rot):
         return False
 
 
-# --- SIDEBAR E NAVEGAÇÃO ---
 with st.sidebar:
-    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Magalu_2019_logo.svg/500px-Magalu_2019_logo.svg.png", width=150)
+    st.markdown("<h1 style='font-size: 32px; font-weight: 800; margin-bottom: 0px; padding-bottom: 0px; line-height: 1.1;'>Magalu<br>AI Suite</h1>", unsafe_allow_html=True)
+    st.markdown("<span style='color: #0086ff; font-weight: bold; font-size: 14px;'>V1.0 SÉRIE 1</span>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("""<img src="https://logodownload.org/wp-content/uploads/2014/10/magalu-logo-1.png" width="120" style="margin-bottom: 20px;" />""", unsafe_allow_html=True)
     
     st.markdown("### 🧭 Navegação")
-    page = st.radio("Selecione o Módulo", ["Estúdio de Criação", "Dashboard de Inteligência"])
+    page = st.radio("Selecione o Módulo", ["Criar Roteiros", "Treinar IA", "Dashboard"])
     
     st.divider()
     
@@ -237,12 +239,11 @@ with st.sidebar:
 
 
 # --- APLICAÇÃO PRINCIPAL ---
-st.title("Magalu AI Suite")
-st.markdown("<span style='color: #0086ff; font-weight: bold; font-size: 14px; margin-left: 10px'>V1.0 SÉRIE 1 (Fábrica de Inteligência)</span>", unsafe_allow_html=True)
+# (O título foi movido para a sidebar conforme solicitado)
 
 
-# --- PÁGINA 1: ESTÚDIO DE CRIAÇÃO ---
-if page == "Estúdio de Criação":
+# --- PÁGINA 1: CRIAR ROTEIROS ---
+if page == "Criar Roteiros":
     
     # --- COMMAND CENTER (INPUTS) ---
     expander_input = st.expander("📝 Command Center (Entradas de Dados)", expanded=True if 'roteiros' not in st.session_state else False)
@@ -256,12 +257,12 @@ if page == "Estúdio de Criação":
 
         if not modo_entrada:
             # --- MODO CÓDIGO DE PRODUTO (PADRÃO) ---
-            st.markdown("<p style='font-size: 14px; color: #8b92a5'>Digite os códigos dos produtos Magalu (um por linha ou separados por vírgula):</p>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size: 14px; color: #8b92a5'>Digite os códigos dos produtos Magalu (um por linha ou separados por vírgula). Máximo de 15 por vez.</p>", unsafe_allow_html=True)
             
             codigos_raw = st.text_area(
                 "Códigos dos Produtos",
                 height=100,
-                placeholder="Ex:\n240304700\n240305700\n237060600",
+                placeholder="Ex:\n240304700\n240305700",
                 key="codigos_input"
             )
             
@@ -274,6 +275,8 @@ if page == "Estúdio de Criação":
                 
                 if not codigos:
                     st.warning("⚠️ Digite pelo menos um código de produto.")
+                elif len(codigos) > 15:
+                    st.warning("⚠️ Limite excedido: Por favor, insira no máximo 15 códigos por vez (Rate Limit da API).")
                 elif not api_key:
                     st.warning("⚠️ Forneça uma chave da API do Gemini no painel.")
                 else:
@@ -284,9 +287,11 @@ if page == "Estúdio de Criação":
                         progress = st.progress(0, text="Iniciando extração...")
                         
                         for i, code in enumerate(codigos):
+                            import time
+                            
                             progress.progress(
                                 (i) / len(codigos),
-                                text=f"🔍 Extraindo dados do produto {code}... ({i+1}/{len(codigos)})"
+                                text=f"🔍 [{code}] Buscando página na Magalu... ({i+1}/{len(codigos)})"
                             )
                             
                             # 1. Gemini extrai dados do produto via URL
@@ -294,7 +299,7 @@ if page == "Estúdio de Criação":
                             
                             progress.progress(
                                 (i + 0.5) / len(codigos),
-                                text=f"✍️ Gerando roteiro para {code}... ({i+1}/{len(codigos)})"
+                                text=f"✍️ [{code}] Analisando contexto e escrevendo roteiro... ({i+1}/{len(codigos)})"
                             )
                             
                             # 2. Gera o roteiro com os dados extraídos
@@ -305,8 +310,13 @@ if page == "Estúdio de Criação":
                                 "categoria_id": cat_selecionada_id,
                                 "codigo": code
                             })
+                            
+                            # Delay para evitar 429 Too Many Requests
+                            if i < len(codigos) - 1:
+                                progress.progress((i + 0.8) / len(codigos), text=f"⏳ [{code}] Cota de segurança... Aguardando 3s.")
+                                time.sleep(3)
                         
-                        progress.progress(1.0, text="✅ Concluído!")
+                        progress.progress(1.0, text="✅ Lote Concluído com Sucesso!")
                         st.session_state['roteiros'] = roteiros
                         st.rerun() # Força o rerun para fechar o expander
                         
@@ -396,86 +406,94 @@ if page == "Estúdio de Criação":
         
         st.divider()
         
-        for idx, item in enumerate(st.session_state['roteiros']):
-            linhas = item['ficha'].split('\n')
-            titulo_curto = linhas[0][:60] if linhas else f"Produto {idx+1}"
-            cat_id_roteiro = item.get("categoria_id", cat_selecionada_id)
-            codigo_produto = item.get("codigo", "")
+        st.divider()
+        
+        # Tags de Navegação (Canva Selection)
+        if 'roteiro_ativo_idx' not in st.session_state:
+            st.session_state['roteiro_ativo_idx'] = 0
+            
+        opcoes_tags = []
+        for i, item in enumerate(st.session_state['roteiros']):
+            codigo = item.get("codigo", "")
+            linhas_ficha = item['ficha'].split('\n')
+            nome_curto = linhas_ficha[0][:20] + "..." if linhas_ficha and len(linhas_ficha[0]) > 20 else (linhas_ficha[0] if linhas_ficha else f"Item {i+1}")
+            opcoes_tags.append(f"📦 {codigo} {nome_curto}")
+            
+        st.markdown("### 🗂️ Selecione o Roteiro para Edição")
+        try:
+            # st.pills está disponível no Streamlit 1.34+ (pode usar radio horizontal se falhar)
+            selecionado = st.pills("Roteiros Gerados", opcoes_tags, default=opcoes_tags[st.session_state['roteiro_ativo_idx']])
+        except AttributeError:
+            selecionado = st.radio("Roteiros Gerados", opcoes_tags, index=st.session_state['roteiro_ativo_idx'], horizontal=True)
+            
+        if selecionado:
+            idx = opcoes_tags.index(selecionado)
+            st.session_state['roteiro_ativo_idx'] = idx
+        else:
+            idx = st.session_state['roteiro_ativo_idx']
+            
+        item = st.session_state['roteiros'][idx]
+        linhas = item['ficha'].split('\n')
+        titulo_curto = linhas[0][:60] if linhas else f"Produto {idx+1}"
+        cat_id_roteiro = item.get("categoria_id", cat_selecionada_id)
+        codigo_produto = item.get("codigo", "")
 
-            with st.container():
-                st.markdown(f"### 📦 {codigo_produto} - {titulo_curto}")
+        # O Canva do Roteiro Ativo
+        with st.container(border=True):
+            st.markdown(f"#### 🖌️ Canva: {codigo_produto} - {titulo_curto}")
+            
+            # Apenas uma saída editável em tela cheia (sem redundâncias)
+            st.caption("✏️ **Editor Final do Roteiro (Markdown)** - Esta é a versão final que será salva e exportada.")
+            edited_val = st.text_area(
+                "Editor",
+                value=st.session_state.get(f"editor_{idx}", item['roteiro_original']),
+                height=450,
+                key=f"editor_{idx}",
+                label_visibility="collapsed"
+            )
+            sp_cli = st.session_state.get('supabase_client', None)
                 
-                # Apenas uma saída editável em tela cheia (sem redundâncias)
-                st.caption("✏️ **Editor Final do Roteiro (Markdown)** - O texto ajustado aqui é o que vai para o arquivo.")
-                edited_val = st.text_area(
-                    "Editor",
-                    value=st.session_state.get(f"editor_{idx}", item['roteiro_original']),
-                    height=350,
-                    key=f"editor_{idx}",
-                    label_visibility="collapsed"
+            # Barra de Controle do Roteiro Específico
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            col_act1, col_act2 = st.columns([1, 2])
+            
+            with col_act1:
+                docx_edited_bytes, docx_edited_fn = export_roteiro_docx(
+                    edited_val,
+                    code=codigo_produto,
+                    product_name=titulo_curto,
+                    selected_month=mes_selecionado
                 )
-                sp_cli = st.session_state.get('supabase_client', None)
-                    
-                # Barra de Controle do Roteiro Específico
-                st.markdown("<br>", unsafe_allow_html=True)
+                st.download_button(
+                    label="📥 Baixar DOCX Deste Roteiro",
+                    data=docx_edited_bytes,
+                    file_name=docx_edited_fn,
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    key=f"export_edit_{idx}",
+                    use_container_width=True,
+                    type="secondary"
+                )
                 
-                col_act1, col_act2 = st.columns([1, 2])
+            with col_act2:
+                # Ações Rápidas (Treinamento Pesado foi pro Hub)
+                c1, c2, c3, c4 = st.columns(4)
                 
-                with col_act1:
-                    docx_edited_bytes, docx_edited_fn = export_roteiro_docx(
-                        edited_val,
-                        code=codigo_produto,
-                        product_name=titulo_curto,
-                        selected_month=mes_selecionado
-                    )
-                    st.download_button(
-                        label="📥 Baixar DOCX deste Roteiro",
-                        data=docx_edited_bytes,
-                        file_name=docx_edited_fn,
-                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        key=f"export_edit_{idx}",
-                        use_container_width=True,
-                        type="secondary"
-                    )
-                    
-                with col_act2:
-                    # Espaçamento entre os controles
-                    c1, c2, c3, c4, c5 = st.columns(5)
-                    
-                    with c1:
-                        if st.button("📋 Copiar Texto", key=f"copy_{idx}", use_container_width=True):
-                            st.code(edited_val, language="markdown")
-                            
-                    with c2:
-                        if st.button("👍 Bom", key=f"bom_{idx}", use_container_width=True):
-                            salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, 1)
+                with c1:
+                    if st.button("📋 Copiar Texto", key=f"copy_{idx}", use_container_width=True):
+                        st.code(edited_val, language="markdown")
+                        
+                with c2:
+                    if st.button("👍 Bom", key=f"bom_{idx}", use_container_width=True):
+                        salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, 1)
 
-                    with c3:
-                        if st.button("👎 Ruim", key=f"ruim_{idx}", use_container_width=True):
-                            salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, -1)
-                    
-                    with c4:
-                        if st.button("🏆 Ouro", key=f"ouro_{idx}", use_container_width=True, type="primary"):
-                            salvar_ouro(sp_cli, cat_id_roteiro, titulo_curto, edited_val)
-                            
-                    with c5:
-                        with st.popover("🧠 Treinar IA", use_container_width=True):
-                            st.markdown("🔥 **Treinar Persona**")
-                            pilar_opc = st.selectbox("Qual pilar foi ajustado?", ["Acessível e Didática", "Empática e Conectada", "Positiva e Inspiradora", "Engajada e Consciente", "Estilo/Tom Geral"], key=f"pilar_{idx}")
-                            lex_opc = st.text_input("Gíria/Léxico sugerido:", placeholder="Ex: mara, partiu", key=f"lex_{idx}")
-                            erro_opc = st.text_input("Erro que ela cometeu:", placeholder="Ex: Excesso de formalidade", key=f"err_{idx}")
-                            if st.button("💃 Enviar Ajuste de Persona", key=f"btn_pers_{idx}", use_container_width=True, type="primary"):
-                                salvar_persona(sp_cli, pilar_opc, item['roteiro_original'], edited_val, lex_opc, erro_opc)
-                            
-                            st.divider()
-                            
-                            st.markdown("🗣️ **Treinar Fonética**")
-                            t_err = st.text_input("Como a IA escreveu:", placeholder="Ex: 5G", key=f"te_{idx}")
-                            t_cor = st.text_input("Como o Breno corrigiria:", placeholder="Ex: cinco gê", key=f"tc_{idx}")
-                            if st.button("🔊 Enviar Regra Fonética", key=f"btn_fon_{idx}", use_container_width=True, type="primary"):
-                                salvar_fonetica(sp_cli, t_err, t_cor, edited_val)
+                with c3:
+                    if st.button("👎 Ruim", key=f"ruim_{idx}", use_container_width=True):
+                        salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, -1)
                 
-                st.divider()
+                with c4:
+                    if st.button("🏆 Ouro", key=f"ouro_{idx}", use_container_width=True, type="primary"):
+                        salvar_ouro(sp_cli, cat_id_roteiro, titulo_curto, edited_val)
 
         if st.button("🗑️ Limpar Mesa de Trabalho", use_container_width=True, type="secondary"):
             del st.session_state['roteiros']
@@ -493,8 +511,67 @@ if page == "Estúdio de Criação":
 
 
 
-# --- PÁGINA 2: DASHBOARD DE INTELIGÊNCIA ---
-elif page == "Dashboard de Inteligência":
+# --- PÁGINA 2: TREINAR IA ---
+elif page == "Treinar IA":
+    st.subheader("🧠 Hub de Treinamento da IA")
+    st.markdown("Acompanhe o aprendizado da IA, calibre configurações, insira Regras Fonéticas, Aberturas e CTAs para o Agente usar nos próximos roteiros.")
+    
+    if 'supabase_client' not in st.session_state:
+        st.warning("Conecte o Supabase no painel lateral para visualizar e treinar a IA.")
+    else:
+        sp_client = st.session_state['supabase_client']
+        
+        tab_fb, tab_est, tab_fon, tab_ouro = st.tabs(["📉 Calibração (Logs & Comparação)", "💬 Estruturas (Aberturas/Fechamentos)", "🗣️ Fonética", "🏆 Roteiros Ouro"])
+        
+        with tab_fb:
+            st.markdown("### 📉 Tabela Comparativa (IA vs Breno)")
+            res_fb = sp_client.table("feedback_roteiros").select("*").execute()
+            df_fb = pd.DataFrame(res_fb.data if hasattr(res_fb, 'data') else [])
+            if not df_fb.empty:
+                st.dataframe(df_fb[['criado_em', 'avaliacao', 'roteiro_original_ia', 'roteiro_final_humano']], use_container_width=True)
+            else:
+                st.info("Nenhum feedback registrado ainda.")
+                
+        with tab_est:
+            st.markdown("### 💬 Aberturas e Fechamentos (""Hooks & CTAs"")")
+            st.caption("A tabela `treinamento_estruturas` será criada no banco para armazenar frases pré-aprovadas.")
+            # Interface simplificada que futuramente será ligada ao banco
+            t_tipo = st.selectbox("Tipo de Estrutura:", ["Abertura (Gancho)", "Fechamento (CTA)"])
+            t_texto = st.text_area("Texto Ouro:")
+            if st.button("Salvar Estrutura", type="primary"):
+                st.success(f"{t_tipo} cadastrada com sucesso! (Integração DB pendente)")
+                
+        with tab_fon:
+            st.markdown("### 🗣️ Dicionário Fonético")
+            col_fon1, col_fon2 = st.columns(2)
+            with col_fon1:
+                t_err = st.text_input("Como se escreve (ou IA erra):", placeholder="Ex: 5G")
+            with col_fon2:
+                t_cor = st.text_input("Como a Lu fala (fonética aprovada):", placeholder="Ex: cinco gê")
+            if st.button("➕ Adicionar Regra Fonética", type="primary"):
+                salvar_fonetica(sp_client, t_err, t_cor, "")
+            
+            st.divider()
+            res_fon = sp_client.table("treinamento_fonetica").select("*").execute()
+            df_fon = pd.DataFrame(res_fon.data if hasattr(res_fon, 'data') else [])
+            if not df_fon.empty:
+                st.dataframe(df_fon[['termo_errado', 'termo_corrigido', 'criado_em']], use_container_width=True)
+        
+        with tab_ouro:
+            st.markdown("### 🏆 Hall da Fama (Roteiros Ouro)")
+            t_prod = st.text_input("Produto:")
+            t_rot = st.text_area("Roteiro Finalizado:")
+            if st.button("Cadastrar Roteiro Ouro", type="primary"):
+                salvar_ouro(sp_client, 1, t_prod, t_rot)
+            
+            st.divider()
+            res_ouro = sp_client.table("roteiros_ouro").select("*").execute()
+            df_ouro = pd.DataFrame(res_ouro.data if hasattr(res_ouro, 'data') else [])
+            if not df_ouro.empty:
+                st.dataframe(df_ouro[['titulo_produto', 'roteiro_perfeito']], use_container_width=True)
+
+# --- PÁGINA 3: DASHBOARD ---
+elif page == "Dashboard":
     st.subheader("📊 Métricas de Desempenho da IA")
     
     if 'supabase_client' not in st.session_state:
