@@ -11,67 +11,111 @@ from src.agent import RoteiristaAgent
 
 load_dotenv()
 
-# --- Configuração Geral e Injeção de CSS (Design Magalu) ---
-st.set_page_config(page_title="Roteirista Magalu", page_icon="🛍️", layout="wide", initial_sidebar_state="expanded")
+import streamlit as st
+import os
+import sys
+import csv
+import pandas as pd
+from datetime import datetime
+from dotenv import load_dotenv
 
-MAGALU_CSS = """
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from src.agent import RoteiristaAgent
+
+load_dotenv()
+
+# --- Configuração Geral e Injeção de CSS (Dark Mode Design) ---
+st.set_page_config(page_title="Gerador da Lu", page_icon="🛍️", layout="wide", initial_sidebar_state="expanded")
+
+DARK_MODE_CSS = """
 <style>
-    /* Cores Magalu: Azul #0086ff, Fundo leve, Fontes limpas */
+    /* Tema Escuro estilo Dashboard Premium */
     :root {
+        --bg-main: #0B0E14;
+        --bg-card: #151A23;
         --mglu-blue: #0086ff;
-        --mglu-dark: #333333;
+        --mglu-purple: #8142FF;
+        --text-primary: #f0f0f0;
+        --text-muted: #8b92a5;
+    }
+    
+    /* Força Dark Mode global na div block-container */
+    .stApp > header {
+        background-color: transparent;
+    }
+    .stApp {
+        background-color: var(--bg-main) !important;
+        color: var(--text-primary) !important;
+    }
+
+    /* Títulos e Textos globais */
+    h1, h2, h3, p, span, div {
+        color: var(--text-primary) !important;
+        font-family: 'Inter', sans-serif;
+    }
+    
+    .stMarkdown, .stText {
+        color: var(--text-muted) !important;
+    }
+    
+    /* Inputs e textareas escuros */
+    .stTextArea > div > div > textarea, .stTextInput > div > div > input {
+        background-color: var(--bg-card) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid #2A3241 !important;
+        border-radius: 8px;
+    }
+    .stTextArea > div > div > textarea:focus, .stTextInput > div > div > input:focus {
+        border-color: var(--mglu-blue) !important;
+        box-shadow: 0 0 0 1px var(--mglu-blue) !important;
     }
     
     /* Botões Principais */
     .stButton > button {
-        background-color: var(--mglu-blue);
-        color: white;
-        border-radius: 8px;
-        border: none;
-        font-weight: 600;
-        transition: all 0.2s ease-in-out;
+        background-color: var(--mglu-purple) !important; /* Roxo do print */
+        color: white !important;
+        border-radius: 8px !important;
+        border: none !important;
+        font-weight: 600 !important;
+        transition: all 0.2s ease-in-out !important;
     }
     .stButton > button:hover {
-        background-color: #006bce;
-        transform: scale(1.02);
+        background-color: #6a35d6 !important;
+        transform: scale(1.02) !important;
     }
     
-    /* Headers e Títulos */
-    h1, h2, h3 {
-        color: var(--mglu-dark) !important;
-        font-family: 'Inter', sans-serif;
-    }
-    
-    /* Expander (Abas de cada roteiro) */
+    /* Expander e Abas / fundo dos cards */
     .streamlit-expanderHeader {
-        background-color: #f7f9fa;
+        background-color: var(--bg-card) !important;
         border-radius: 8px;
         font-weight: bold;
-        color: var(--mglu-blue);
+        color: var(--mglu-blue) !important;
+        border: 1px solid #2A3241;
+    }
+    .streamlit-expanderContent {
+        background-color: transparent !important;
+        border: 1px solid #2A3241;
+        border-top: none;
     }
     
-    /* Limpar topo */
+    /* Sidebar */
+    [data-testid="stSidebar"] {
+        background-color: var(--bg-card) !important;
+        border-right: 1px solid #2A3241;
+    }
+    
     .block-container {
         padding-top: 2rem;
     }
 </style>
 """
-st.markdown(MAGALU_CSS, unsafe_allow_html=True)
-
-# --- Gestão de Estado (Workflow) ---
-if 'step' not in st.session_state:
-    st.session_state['step'] = 'input'
-
-def reset_workflow():
-    st.session_state['step'] = 'input'
-    if 'roteiros' in st.session_state:
-        del st.session_state['roteiros']
+st.markdown(DARK_MODE_CSS, unsafe_allow_html=True)
 
 
-# --- SIDEBAR (Configuração e Sujeira fora do caminho) ---
+# --- SIDEBAR (Configuração) ---
 with st.sidebar:
     st.image("https://logopng.com.br/logos/magazine-luiza-22.png", width=150)
-    st.title("⚙️ Configurações")
+    st.markdown("### ⚙️ Configurações API")
     
     api_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
     
@@ -91,36 +135,36 @@ with st.sidebar:
 
     st.divider()
     st.markdown("### 📋 Como Usar:")
-    st.caption("1. Cole as fichas técnicas na tela principal.")
-    st.caption("2. Para colar vários produtos, separe-os pulando uma linha e digitando `---`")
-    st.caption("3. Clique em Gerar, revise e aprove!")
+    st.caption("1. Cole as fichas técnicas no painel esquerdo.")
+    st.caption("2. Para gerar vários produtos, separe-os com `---`")
+    st.caption("3. Na mesa de trabalho à direita, edite, copie ou aprove os textos gerados.")
 
-    if st.session_state['step'] == 'review':
-        st.divider()
-        st.button("🔙 Voltar para Colar Novo Produto", on_click=reset_workflow, use_container_width=True)
+st.title("Gerador de Roteiros da Lu")
+st.markdown("<span style='color: #0086ff; font-weight: bold; font-size: 14px; margin-left: 10px'>V4.0 SÉRIE 4</span>", unsafe_allow_html=True)
 
+# Layout de Dashboard (Duas Colunas)
+col_left, col_right = st.columns([1.2, 2.5], gap="medium")
 
-# --- MAIN AREA: Passo 1 (Ingestão de Fichas) ---
-if st.session_state['step'] == 'input':
-    st.title("🎬 Roteirista Magalu AI")
-    st.markdown("Transforme **fichas técnicas** em **roteiros aprovados pelo Breno** instantaneamente.")
+with col_left:
+    st.subheader("Novo Roteiro")
+    st.markdown("<p style='font-size: 14px; color: #8b92a5'>Cole a Ficha Técnica abaixo (divida com `---` para batch):</p>", unsafe_allow_html=True)
     
     SEPARADOR = "---"
     
     fichas_input = st.text_area(
-        "✍️ Cole as Fichas Técnicas aqui:",
-        height=350,
+        "",
+        height=450,
         placeholder="TÍTULO: Smart TV 55 LG\nDESCRIÇÃO: Assistir TV nunca foi tão incrível...\nFICHA TÉCNICA:\n- OLED\n- 4K\n\n---\n\nTÍTULO: Geladeira Brastemp 400L\n..."
     )
     
-    if st.button("🚀 Gerar Roteiro(s) Mágico(s)", use_container_width=True):
+    if st.button("🚀 Gerar Roteiros Mágicos", use_container_width=True):
         if not fichas_input.strip():
             st.warning("⚠️ Cole pelo menos uma ficha técnica antes de gerar.")
         else:
             fichas_raw = fichas_input.split(SEPARADOR)
             fichas = [f.strip() for f in fichas_raw if f.strip()]
             
-            with st.spinner(f"🧠 A Lu está escrevendo {len(fichas)} roteiro(s)..."):
+            with st.spinner(f"Processando {len(fichas)} roteiro(s)..."):
                 try:
                     agent = RoteiristaAgent()
                     roteiros = []
@@ -131,68 +175,72 @@ if st.session_state['step'] == 'input':
                             "roteiro_original": roteiro,
                         })
                     st.session_state['roteiros'] = roteiros
-                    st.session_state['step'] = 'review'
-                    st.rerun()
                 except Exception as e:
                     st.error(f"Erro na geração: {e}")
 
-# --- MAIN AREA: Passo 2 (Foco na Revisão) ---
-elif st.session_state['step'] == 'review':
-    st.title("📝 Revisão do Editor")
-    st.markdown("Faça os ajustes finais, aprove copie o texto bruto para o seu doc final.")
+
+with col_right:
+    st.subheader("Mesa de Trabalho")
     
-    for idx, item in enumerate(st.session_state['roteiros']):
-        linhas = item['ficha'].split('\n')
-        titulo_curto = linhas[0][:60] if linhas else f"Produto {idx+1}"
+    if 'roteiros' in st.session_state and st.session_state['roteiros']:
+        for idx, item in enumerate(st.session_state['roteiros']):
+            linhas = item['ficha'].split('\n')
+            titulo_curto = linhas[0][:60] if linhas else f"Produto {idx+1}"
 
-        with st.expander(f"📦 {titulo_curto}", expanded=True):
-            tab_view, tab_edit = st.tabs(["👁️ Visualização Renderizada", "✏️ Editor de Texto Bruto (Para Copiar)"])
+            with st.expander(f"📦 {titulo_curto}", expanded=True):
+                tab_view, tab_edit = st.tabs(["👁️ Roteiro Final (Visualização)", "✏️ Código Original (Markdown)"])
 
-            with tab_view:
-                st.markdown(item['roteiro_original'])
+                with tab_view:
+                    st.markdown(f"<div style='background-color: var(--bg-card); padding: 15px; border-radius: 8px; border: 1px solid #2A3241;'>{item['roteiro_original']}</div>", unsafe_allow_html=True)
 
-            with tab_edit:
-                edited = st.text_area(
-                    "Ajuste as vírgulas, conectivos ou tom aqui:",
-                    value=item['roteiro_original'],
-                    height=300,
-                    key=f"editor_{idx}"
-                )
-                st.info("💡 Dica: Copie o texto acima direto para o Word. Os `**` vão virar negrito automático se você usar colar sem formatação, ou em editores Markdown.")
+                with tab_edit:
+                    edited = st.text_area(
+                        "Faça ajustes finos. O Markdown (`**`) deve ser preservado para ser copiado ao Word.",
+                        value=item['roteiro_original'],
+                        height=250,
+                        key=f"editor_{idx}"
+                    )
+                    
+                    st.caption("Ações Rápidas:")
+                    col_actions_1, col_actions_2, col_actions_3 = st.columns(3)
+                    
+                    with col_actions_1:
+                        if st.button("📋 Copiar (Texto Limpo)", key=f"copy_{idx}", use_container_width=True):
+                            edited_val = st.session_state.get(f"editor_{idx}", item['roteiro_original'])
+                            st.code(edited_val, language="markdown")
+                    
+                    with col_actions_2:
+                        if st.button("✅ Enviar P/ Banco de Dados", key=f"approve_{idx}", use_container_width=True):
+                            log_file = "feedback_log.csv"
+                            file_exists = os.path.isfile(log_file)
+                            with open(log_file, mode='a', newline='', encoding='utf-8') as f:
+                                writer = csv.writer(f)
+                                if not file_exists:
+                                    writer.writerow(["Data", "Ficha_Tecnica", "Roteiro_Gerado_IA", "Roteiro_Aprovado_Humano"])
+                                edited_val = st.session_state.get(f"editor_{idx}", item['roteiro_original'])
+                                writer.writerow([
+                                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                    item['ficha'],
+                                    item['roteiro_original'],
+                                    edited_val
+                                ])
+                            st.success("✅ Treinamento injetado na Base!")
+                    
+                    with col_actions_3:
+                        if st.button("🔄 Refazer Roteiro", key=f"regen_{idx}", use_container_width=True):
+                            with st.spinner("Regerando..."):
+                                agent = RoteiristaAgent()
+                                novo = agent.gerar_roteiro(item['ficha'])
+                                st.session_state['roteiros'][idx]['roteiro_original'] = novo
+                                st.rerun()
 
-            col1, col2, col3 = st.columns([1, 1, 1])
-
-            with col1:
-                if st.button("✅ Aprovar no Bano de Dados", key=f"approve_{idx}", use_container_width=True):
-                    log_file = "feedback_log.csv"
-                    file_exists = os.path.isfile(log_file)
-                    with open(log_file, mode='a', newline='', encoding='utf-8') as f:
-                        writer = csv.writer(f)
-                        if not file_exists:
-                            writer.writerow(["Data", "Ficha_Tecnica", "Roteiro_Gerado_IA", "Roteiro_Aprovado_Humano"])
-                        edited_val = st.session_state.get(f"editor_{idx}", item['roteiro_original'])
-                        writer.writerow([
-                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            item['ficha'],
-                            item['roteiro_original'],
-                            edited_val
-                        ])
-                    st.success("🎉 Roteiro injetado no cérebro da IA para aprendizado!")
-
-            with col2:
-                if st.button("📋 Exibir Código de Cópia", key=f"copy_{idx}", use_container_width=True):
-                    edited_val = st.session_state.get(f"editor_{idx}", item['roteiro_original'])
-                    st.code(edited_val, language="markdown")
-
-            with col3:
-                if st.button("🔄 A IA Alucinou? Gerar de Novo", key=f"regen_{idx}", use_container_width=True):
-                    with st.spinner("Refazendo roteiro..."):
-                        agent = RoteiristaAgent()
-                        novo = agent.gerar_roteiro(item['ficha'])
-                        st.session_state['roteiros'][idx]['roteiro_original'] = novo
-                        st.rerun()
-
-    st.divider()
-    if st.button("✅ Terminei de Revisar! Limpar Tudo e Voltar", type="primary", use_container_width=True):
-        reset_workflow()
-        st.rerun()
+        if st.button("🗑️ Limpar Mesa de Trabalho", type="primary", use_container_width=True):
+            del st.session_state['roteiros']
+            st.rerun()
+    else:
+        st.markdown(
+            "<div style='display: flex; height: 450px; align-items: center; justify-content: center; border: 2px dashed #2A3241; border-radius: 8px; color: #8b92a5; text-align: center; padding: 20px'>"
+            "Cole a ficha técnica no painel esquerdo e clique em Gerar Roteiros Mágicos.<br><br>Os roteiros aparecerão aqui prontos para edição!"
+            "</div>", 
+            unsafe_allow_html=True
+        )
