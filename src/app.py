@@ -9,6 +9,7 @@ from supabase import create_client, Client
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from src.agent import RoteiristaAgent
 from src.scraper import scrape_with_gemini, parse_codes
+from src.exporter import export_roteiro_docx, format_for_display
 
 load_dotenv()
 
@@ -372,16 +373,32 @@ if page == "Estúdio de Criação":
                 linhas = item['ficha'].split('\n')
                 titulo_curto = linhas[0][:60] if linhas else f"Produto {idx+1}"
                 cat_id_roteiro = item.get("categoria_id", cat_selecionada_id)
+                codigo_produto = item.get("codigo", "")
 
                 with st.expander(f"📦 {titulo_curto}", expanded=True):
-                    tab_view, tab_edit = st.tabs(["👁️ Roteiro Final (Visualização)", "✏️ Código Original (Markdown)"])
+                    tab_view, tab_edit = st.tabs(["👁️ Roteiro Formatado", "✏️ Editor (Markdown)"])
 
                     with tab_view:
-                        # Impede que o Markdown converta "traço + espaço" em bullet points no Streamlit
-                        roteiro_view = item['roteiro_original'].replace('\n- ', '\n\\- ')
-                        if roteiro_view.startswith('- '):
-                            roteiro_view = '\\- ' + roteiro_view[2:]
-                        st.markdown(f"<div style='background-color: var(--bg-card); padding: 15px; border-radius: 8px; border: 1px solid #2A3241;'>{roteiro_view}</div>", unsafe_allow_html=True)
+                        # Exibe roteiro formatado: bold nas locuções, normal nas imagens
+                        formatted = format_for_display(item['roteiro_original'])
+                        st.markdown(f"<div style='background-color: var(--bg-card); padding: 20px; border-radius: 8px; border: 1px solid #2A3241; line-height: 1.8; font-family: Tahoma, sans-serif;'>{formatted}</div>", unsafe_allow_html=True)
+                        
+                        # Botão de exportar DOCX
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        docx_bytes, docx_filename = export_roteiro_docx(
+                            item['roteiro_original'],
+                            code=codigo_produto,
+                            product_name=titulo_curto
+                        )
+                        st.download_button(
+                            label="📥 Exportar .docx",
+                            data=docx_bytes,
+                            file_name=docx_filename,
+                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                            key=f"export_{idx}",
+                            use_container_width=True,
+                            type="primary"
+                        )
 
                     with tab_edit:
                         edited = st.text_area(
@@ -394,6 +411,22 @@ if page == "Estúdio de Criação":
                         edited_val = st.session_state.get(f"editor_{idx}", item['roteiro_original'])
                         sp_cli = st.session_state.get('supabase_client', None)
                         
+                        # Botão de exportar (versão editada)
+                        docx_edited_bytes, docx_edited_fn = export_roteiro_docx(
+                            edited_val,
+                            code=codigo_produto,
+                            product_name=titulo_curto
+                        )
+                        st.download_button(
+                            label="📥 Exportar Editado .docx",
+                            data=docx_edited_bytes,
+                            file_name=docx_edited_fn,
+                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                            key=f"export_edit_{idx}",
+                            use_container_width=True
+                        )
+                        
+                        st.divider()
                         st.caption("Ações Rápidas de Aprendizado:")
                         c1, c2, c3, c4, c5 = st.columns(5)
                         
@@ -414,7 +447,6 @@ if page == "Estúdio de Criação":
                                 salvar_ouro(sp_cli, cat_id_roteiro, titulo_curto, edited_val)
                                 
                         with c5:
-                            # Dropdown menu / Popover do Streamlit (Disponivel em versões novas)
                             with st.popover("🧠 Treinar", use_container_width=True):
                                 st.markdown("🔥 **Treinar Persona**")
                                 pilar_opc = st.selectbox("Qual pilar foi ajustado?", ["Acessível e Didática", "Empática e Conectada", "Positiva e Inspiradora", "Engajada e Consciente", "Estilo/Tom Geral"], key=f"pilar_{idx}")
