@@ -1,19 +1,6 @@
 import streamlit as st
 import os
 import sys
-import csv
-import pandas as pd
-from datetime import datetime
-from dotenv import load_dotenv
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from src.agent import RoteiristaAgent
-
-load_dotenv()
-
-import streamlit as st
-import os
-import sys
 import pandas as pd
 from datetime import datetime
 from dotenv import load_dotenv
@@ -24,8 +11,8 @@ from src.agent import RoteiristaAgent
 
 load_dotenv()
 
-# --- Configuração Geral e Injeção de CSS (Dark Mode Design) ---
-st.set_page_config(page_title="Gerador da Lu", page_icon="🛍️", layout="wide", initial_sidebar_state="expanded")
+# --- CONFIGURAÇÃO GERAL ---
+st.set_page_config(page_title="Magalu AI Suite", page_icon="🛍️", layout="wide", initial_sidebar_state="expanded")
 
 DARK_MODE_CSS = """
 <style>
@@ -39,27 +26,13 @@ DARK_MODE_CSS = """
         --text-muted: #8b92a5;
     }
     
-    /* Força Dark Mode global na div block-container */
-    .stApp > header {
-        background-color: transparent;
-    }
-    .stApp {
-        background-color: var(--bg-main) !important;
-        color: var(--text-primary) !important;
-    }
+    .stApp > header { background-color: transparent; }
+    .stApp { background-color: var(--bg-main) !important; color: var(--text-primary) !important; }
 
-    /* Títulos e Textos globais */
-    h1, h2, h3, p, span, div {
-        color: var(--text-primary) !important;
-        font-family: 'Inter', sans-serif;
-    }
+    h1, h2, h3, p, span, div { color: var(--text-primary) !important; font-family: 'Inter', sans-serif; }
+    .stMarkdown, .stText { color: var(--text-muted) !important; }
     
-    .stMarkdown, .stText {
-        color: var(--text-muted) !important;
-    }
-    
-    /* Inputs e textareas escuros */
-    .stTextArea > div > div > textarea, .stTextInput > div > div > input {
+    .stTextArea > div > div > textarea, .stTextInput > div > div > input, .stSelectbox > div > div > div {
         background-color: var(--bg-card) !important;
         color: var(--text-primary) !important;
         border: 1px solid #2A3241 !important;
@@ -70,21 +43,34 @@ DARK_MODE_CSS = """
         box-shadow: 0 0 0 1px var(--mglu-blue) !important;
     }
     
-    /* Botões Principais */
-    .stButton > button {
-        background-color: var(--mglu-purple) !important; /* Roxo do print */
-        color: white !important;
+    .stButton > button[data-baseweb="button"] {
         border-radius: 8px !important;
-        border: none !important;
         font-weight: 600 !important;
         transition: all 0.2s ease-in-out !important;
     }
-    .stButton > button:hover {
+    
+    /* Botões Primários */
+    button[kind="primary"] {
+        background-color: var(--mglu-purple) !important;
+        color: white !important;
+        border: none !important;
+    }
+    button[kind="primary"]:hover {
         background-color: #6a35d6 !important;
         transform: scale(1.02) !important;
     }
     
-    /* Expander e Abas / fundo dos cards */
+    /* Botões Secundários */
+    button[kind="secondary"] {
+        background-color: #2A3241 !important;
+        color: var(--text-primary) !important;
+        border: 1px solid #3d4659 !important;
+    }
+    button[kind="secondary"]:hover {
+        background-color: #3d4659 !important;
+        border-color: var(--mglu-blue) !important;
+    }
+    
     .streamlit-expanderHeader {
         background-color: var(--bg-card) !important;
         border-radius: 8px;
@@ -98,28 +84,84 @@ DARK_MODE_CSS = """
         border-top: none;
     }
     
-    /* Sidebar */
     [data-testid="stSidebar"] {
         background-color: var(--bg-card) !important;
         border-right: 1px solid #2A3241;
     }
     
-    .block-container {
-        padding-top: 2rem;
-    }
+    .block-container { padding-top: 2rem; }
 </style>
 """
 st.markdown(DARK_MODE_CSS, unsafe_allow_html=True)
 
 
-# --- SIDEBAR (Configuração) ---
+# --- FUNÇÕES SUPABASE ---
+def init_supabase():
+    url = os.environ.get("SUPABASE_URL") or st.secrets.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_KEY") or st.secrets.get("SUPABASE_KEY")
+    if url and key:
+        return create_client(url, key)
+    return None
+
+def salvar_feedback(sp_client, cat_id, ficha, roteiro_ia, roteiro_final, avaliacao):
+    if not sp_client:
+        st.error("Supabase não conectado.")
+        return False
+    try:
+        data = {
+            "categoria_id": cat_id,
+            "ficha_tecnica": ficha,
+            "roteiro_original_ia": roteiro_ia,
+            "roteiro_final_humano": roteiro_final,
+            "avaliacao": avaliacao,
+            "comentarios": ""
+        }
+        res = sp_client.table("feedback_roteiros").insert(data).execute()
+        if hasattr(res, 'data') and len(res.data) > 0:
+            msg = "✅ Salvo como Aprovado!" if avaliacao == 1 else "✅ Salvo como Reprovado!" if avaliacao == -1 else "✅ Edição Salva!"
+            st.success(msg)
+            return True
+        else:
+            st.error("⚠️ Falha ao salvar no Supabase (verifique RLS).")
+            return False
+    except Exception as e:
+        st.error(f"❌ Erro: {e}")
+        return False
+
+def salvar_ouro(sp_client, cat_id, titulo, roteiro_perfeito):
+    if not sp_client:
+        st.error("Supabase não conectado.")
+        return False
+    try:
+        data = {
+            "categoria_id": cat_id,
+            "titulo_produto": titulo,
+            "roteiro_perfeito": roteiro_perfeito
+        }
+        res = sp_client.table("roteiros_ouro").insert(data).execute()
+        if hasattr(res, 'data') and len(res.data) > 0:
+            st.success("🏆 Salvo como Roteiro Ouro (Referência Premium)!")
+            return True
+        else:
+            st.error("⚠️ Falha ao salvar no Supabase (verifique RLS).")
+            return False
+    except Exception as e:
+        st.error(f"❌ Erro: {e}")
+        return False
+
+
+# --- SIDEBAR E NAVEGAÇÃO ---
 with st.sidebar:
     st.image("https://logopng.com.br/logos/magazine-luiza-22.png", width=150)
-    st.markdown("### ⚙️ Configurações API")
     
+    st.markdown("### 🧭 Navegação")
+    page = st.radio("Selecione o Módulo", ["Estúdio de Criação", "Dashboard de Inteligência"])
+    
+    st.divider()
+    
+    st.markdown("### ⚙️ Configurações API")
     api_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
-    supabase_url = os.environ.get("SUPABASE_URL") or st.secrets.get("SUPABASE_URL")
-    supabase_key = os.environ.get("SUPABASE_KEY") or st.secrets.get("SUPABASE_KEY")
+    supabase_client = init_supabase()
     
     if not api_key:
         api_key_input = st.text_input("🔑 Cole sua chave Gemini:", type="password")
@@ -129,12 +171,10 @@ with st.sidebar:
             os.environ["GEMINI_API_KEY"] = api_key_input
             st.success("Salva! Pressione F5.")
             st.stop()
-        st.stop()
     else:
         st.success("🟢 API Gemini Conectada")
-        os.environ["GEMINI_API_KEY"] = api_key
 
-    if not supabase_url or not supabase_key:
+    if not supabase_client:
         st.divider()
         st.error("🔴 Supabase Não Conectado")
         supa_url_input = st.text_input("🔗 Supabase URL:")
@@ -146,147 +186,194 @@ with st.sidebar:
             st.success("Banco salvo! Pressione F5.")
             st.stop()
     else:
+        st.session_state['supabase_client'] = supabase_client
         st.success("🟢 Nuvem Conectada (Supabase)")
+
+
+# --- APLICAÇÃO PRINCIPAL ---
+st.title("Magalu AI Suite")
+st.markdown("<span style='color: #0086ff; font-weight: bold; font-size: 14px; margin-left: 10px'>V4.0 SÉRIE 5 (Fábrica de Inteligência)</span>", unsafe_allow_html=True)
+
+
+# --- PÁGINA 1: ESTÚDIO DE CRIAÇÃO ---
+if page == "Estúdio de Criação":
+    col_left, col_right = st.columns([1.2, 2.5], gap="medium")
+
+    with col_left:
+        st.subheader("Novo Roteiro")
         
-        # Inicia cliente Supabase se estiver conectado
-        try:
-            supabase: Client = create_client(supabase_url, supabase_key)
-            st.session_state['supabase_client'] = supabase
-        except Exception as e:
-            st.error(f"Erro ao conectar supabase: {e}")
+        # Carregar Categorias
+        categorias_dict = {1: "Genérico"}
+        if 'supabase_client' in st.session_state:
+            try:
+                res = st.session_state['supabase_client'].table("categorias").select("*").execute()
+                if hasattr(res, 'data') and res.data:
+                    categorias_dict = {c['id']: c['nome'] for c in res.data}
+            except Exception as e:
+                pass # Fallback mantido como Genérico se falhar
+                
+        cat_nomes = list(categorias_dict.values())
+        cat_selecionada_nome = st.selectbox("Categoria do Produto", cat_nomes)
+        cat_selecionada_id = [k for k, v in categorias_dict.items() if v == cat_selecionada_nome][0]
 
-    st.divider()
-    st.markdown("### 📋 Como Usar:")
-    st.caption("1. Cole as fichas técnicas no painel esquerdo.")
-    st.caption("2. Para gerar vários produtos, clique em '➕ Adicionar Produto'.")
-    st.caption("3. Na mesa de trabalho à direita, edite, copie ou aprove os textos gerados.")
-
-st.title("Gerador de Roteiros da Lu")
-st.markdown("<span style='color: #0086ff; font-weight: bold; font-size: 14px; margin-left: 10px'>V4.0 SÉRIE 4</span>", unsafe_allow_html=True)
-
-# Layout de Dashboard (Duas Colunas)
-col_left, col_right = st.columns([1.2, 2.5], gap="medium")
-
-with col_left:
-    st.subheader("Novo Roteiro")
-    st.markdown("<p style='font-size: 14px; color: #8b92a5'>Adicione os produtos que deseja gerar:</p>", unsafe_allow_html=True)
-    
-    if 'num_fichas' not in st.session_state:
-        st.session_state['num_fichas'] = 1
+        st.markdown("<p style='font-size: 14px; color: #8b92a5'>Adicione os produtos que deseja gerar:</p>", unsafe_allow_html=True)
         
-    fichas_informadas = []
-    
-    for i in range(st.session_state['num_fichas']):
-        val = st.text_area(
-            f"Ficha Técnica do Produto {i+1}",
-            height=200,
-            key=f"ficha_input_{i}",
-            placeholder="TÍTULO: Smart TV 55 LG\nDESCRIÇÃO: Assistir TV nunca foi tão incrível...\nFICHA TÉCNICA:\n- OLED\n- 4K"
-        )
-        fichas_informadas.append(val)
+        if 'num_fichas' not in st.session_state:
+            st.session_state['num_fichas'] = 1
+            
+        fichas_informadas = []
         
-    col_add, col_rem = st.columns(2)
-    with col_add:
-        if st.button("➕ Adicionar Produto", use_container_width=True):
-            st.session_state['num_fichas'] += 1
-            st.rerun()
-    with col_rem:
-        if st.session_state['num_fichas'] > 1:
-            if st.button("➖ Remover Último", use_container_width=True):
-                st.session_state['num_fichas'] -= 1
+        for i in range(st.session_state['num_fichas']):
+            val = st.text_area(
+                f"Ficha Técnica do Produto {i+1}",
+                height=150,
+                key=f"ficha_input_{i}",
+                placeholder="TÍTULO: Smart TV 55 LG\nDESCRIÇÃO: Assistir TV nunca foi tão incrível...\nFICHA TÉCNICA:\n- OLED\n- 4K"
+            )
+            fichas_informadas.append(val)
+            
+        col_add, col_rem = st.columns(2)
+        with col_add:
+            if st.button("➕ Adicionar", use_container_width=True, type="secondary"):
+                st.session_state['num_fichas'] += 1
                 st.rerun()
+        with col_rem:
+            if st.session_state['num_fichas'] > 1:
+                if st.button("➖ Remover", use_container_width=True, type="secondary"):
+                    st.session_state['num_fichas'] -= 1
+                    st.rerun()
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    if st.button("🚀 Gerar Roteiros Mágicos", use_container_width=True):
-        fichas = [f.strip() for f in fichas_informadas if f.strip()]
+        st.markdown("<br>", unsafe_allow_html=True)
         
-        if not fichas:
-            st.warning("⚠️ Cole pelo menos uma ficha técnica antes de gerar.")
-        else:
-            with st.spinner(f"Processando {len(fichas)} roteiro(s)..."):
-                try:
-                    agent = RoteiristaAgent()
-                    roteiros = []
-                    for ficha in fichas:
-                        roteiro = agent.gerar_roteiro(ficha)
-                        roteiros.append({
-                            "ficha": ficha,
-                            "roteiro_original": roteiro,
-                        })
-                    st.session_state['roteiros'] = roteiros
-                except Exception as e:
-                    st.error(f"Erro na geração: {e}")
+        if st.button("🚀 Gerar Roteiros Mágicos", use_container_width=True, type="primary"):
+            fichas = [f.strip() for f in fichas_informadas if f.strip()]
+            
+            if not fichas:
+                st.warning("⚠️ Cole pelo menos uma ficha técnica antes de gerar.")
+            elif not api_key:
+                st.warning("⚠️ Forneça uma chave da API do Gemini no painel.")
+            else:
+                with st.spinner(f"Processando {len(fichas)} roteiro(s)..."):
+                    try:
+                        agent = RoteiristaAgent()
+                        roteiros = []
+                        for ficha in fichas:
+                            roteiro = agent.gerar_roteiro(ficha)
+                            roteiros.append({
+                                "ficha": ficha,
+                                "roteiro_original": roteiro,
+                                "categoria_id": cat_selecionada_id
+                            })
+                        st.session_state['roteiros'] = roteiros
+                    except Exception as e:
+                        st.error(f"Erro na geração: {e}")
 
+    with col_right:
+        st.subheader("Mesa de Trabalho")
+        
+        if 'roteiros' in st.session_state and st.session_state['roteiros']:
+            for idx, item in enumerate(st.session_state['roteiros']):
+                linhas = item['ficha'].split('\n')
+                titulo_curto = linhas[0][:60] if linhas else f"Produto {idx+1}"
+                cat_id_roteiro = item.get("categoria_id", cat_selecionada_id)
 
-with col_right:
-    st.subheader("Mesa de Trabalho")
-    
-    if 'roteiros' in st.session_state and st.session_state['roteiros']:
-        for idx, item in enumerate(st.session_state['roteiros']):
-            linhas = item['ficha'].split('\n')
-            titulo_curto = linhas[0][:60] if linhas else f"Produto {idx+1}"
+                with st.expander(f"📦 {titulo_curto}", expanded=True):
+                    tab_view, tab_edit = st.tabs(["👁️ Roteiro Final (Visualização)", "✏️ Código Original (Markdown)"])
 
-            with st.expander(f"📦 {titulo_curto}", expanded=True):
-                tab_view, tab_edit = st.tabs(["👁️ Roteiro Final (Visualização)", "✏️ Código Original (Markdown)"])
+                    with tab_view:
+                        # Impede que o Markdown converta "traço + espaço" em bullet points no Streamlit
+                        roteiro_view = item['roteiro_original'].replace('\n- ', '\n\- ')
+                        if roteiro_view.startswith('- '):
+                            roteiro_view = '\- ' + roteiro_view[2:]
+                        st.markdown(f"<div style='background-color: var(--bg-card); padding: 15px; border-radius: 8px; border: 1px solid #2A3241;'>{roteiro_view}</div>", unsafe_allow_html=True)
 
-                with tab_view:
-                    # Impede que o Markdown converta "traço + espaço" em bullet points (círculos)
-                    roteiro_view = item['roteiro_original'].replace('\n- ', '\n\- ')
-                    if roteiro_view.startswith('- '):
-                        roteiro_view = '\- ' + roteiro_view[2:]
+                    with tab_edit:
+                        edited = st.text_area(
+                            "Ajuste fino. Preserva Markdown para cópia.",
+                            value=item['roteiro_original'],
+                            height=250,
+                            key=f"editor_{idx}"
+                        )
                         
-                    st.markdown(f"<div style='background-color: var(--bg-card); padding: 15px; border-radius: 8px; border: 1px solid #2A3241;'>{roteiro_view}</div>", unsafe_allow_html=True)
+                        edited_val = st.session_state.get(f"editor_{idx}", item['roteiro_original'])
+                        sp_cli = st.session_state.get('supabase_client', None)
+                        
+                        st.caption("Ações Rápidas de Aprendizado:")
+                        c1, c2, c3, c4 = st.columns(4)
+                        
+                        with c1:
+                            if st.button("📋 Copiar", key=f"copy_{idx}", use_container_width=True, type="secondary"):
+                                st.code(edited_val, language="markdown")
+                                
+                        with c2:
+                            if st.button("👍 Salvar Bom", key=f"bom_{idx}", use_container_width=True):
+                                salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, 1)
 
-                with tab_edit:
-                    edited = st.text_area(
-                        "Faça ajustes finos. O Markdown (`**`) deve ser preservado para ser copiado ao Word.",
-                        value=item['roteiro_original'],
-                        height=250,
-                        key=f"editor_{idx}"
-                    )
-                    
-                    st.caption("Ações Rápidas:")
-                    col_actions_1, col_actions_2, col_actions_3 = st.columns(3)
-                    
-                    with col_actions_1:
-                        if st.button("📋 Copiar (Texto Limpo)", key=f"copy_{idx}", use_container_width=True):
-                            edited_val = st.session_state.get(f"editor_{idx}", item['roteiro_original'])
-                            st.code(edited_val, language="markdown")
-                    
-                    with col_actions_2:
-                        if st.button("✅ Enviar P/ Supabase", type="primary", key=f"approve_{idx}", use_container_width=True):
-                            edited_val = st.session_state.get(f"editor_{idx}", item['roteiro_original'])
-                            if 'supabase_client' in st.session_state:
-                                sp_client = st.session_state['supabase_client']
-                                try:
-                                    # Usa UTC now (sem o import timezone, a string funciona pro supabase timestamp)
-                                    sp_client.table("roteiros_aprovados").insert({
-                                        "ficha_tecnica": item['ficha'],
-                                        "roteiro_original_ia": item['roteiro_original'],
-                                        "roteiro_editado_humano": edited_val
-                                    }).execute()
-                                    st.success("✅ Treinamento injetado na Base Nuvem!")
-                                except Exception as e:
-                                    st.error(f"❌ Erro ao enviar ao Supabase: {e}")
-                            else:
-                                st.error("Conecte o Supabase no painel lateral primeiro.")
-                    
-                    with col_actions_3:
-                        if st.button("🔄 Refazer Roteiro", key=f"regen_{idx}", use_container_width=True):
-                            with st.spinner("Regerando..."):
-                                agent = RoteiristaAgent()
-                                novo = agent.gerar_roteiro(item['ficha'])
-                                st.session_state['roteiros'][idx]['roteiro_original'] = novo
-                                st.rerun()
+                        with c3:
+                            if st.button("👎 Salvar Ruim", key=f"ruim_{idx}", use_container_width=True):
+                                salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, -1)
+                        
+                        with c4:
+                            # Botões de Ouro (Premium)
+                            if st.button("🏆 Marcar Ouro", key=f"ouro_{idx}", use_container_width=True, type="primary"):
+                                salvar_ouro(sp_cli, cat_id_roteiro, titulo_curto, edited_val)
 
-        if st.button("🗑️ Limpar Mesa de Trabalho", use_container_width=True):
+        if st.button("🗑️ Limpar Mesa de Trabalho", use_container_width=True, type="secondary"):
             del st.session_state['roteiros']
             st.rerun()
     else:
         st.markdown(
             "<div style='display: flex; height: 450px; align-items: center; justify-content: center; border: 2px dashed #2A3241; border-radius: 8px; color: #8b92a5; text-align: center; padding: 20px'>"
-            "Cole a ficha técnica no painel esquerdo e clique em Gerar Roteiros Mágicos.<br><br>Os roteiros aparecerão aqui prontos para edição!"
+            "Cole a ficha técnica no painel esquerdo e clique em Gerar.<br><br>Os roteiros aparecerão aqui prontos para calibração, treino da IA ou envio para Ouro!"
             "</div>", 
             unsafe_allow_html=True
         )
+
+
+# --- PÁGINA 2: DASHBOARD DE INTELIGÊNCIA ---
+elif page == "Dashboard de Inteligência":
+    st.subheader("📊 Métricas de Desempenho da IA")
+    
+    if 'supabase_client' not in st.session_state:
+        st.warning("Conecte o Supabase no painel lateral para visualizar os dados.")
+    else:
+        sp_client = st.session_state['supabase_client']
+        
+        # Carrega dados do banco
+        try:
+            res_fb = sp_client.table("feedback_roteiros").select("*").execute()
+            res_ouro = sp_client.table("roteiros_ouro").select("*").execute()
+            
+            fb_data = res_fb.data if hasattr(res_fb, 'data') else []
+            ouro_data = res_ouro.data if hasattr(res_ouro, 'data') else []
+            
+            df_fb = pd.DataFrame(fb_data)
+            df_ouro = pd.DataFrame(ouro_data)
+            
+            total_avaliados = len(df_fb)
+            positivos = len(df_fb[df_fb['avaliacao'] == 1]) if not df_fb.empty and 'avaliacao' in df_fb.columns else 0
+            negativos = len(df_fb[df_fb['avaliacao'] == -1]) if not df_fb.empty and 'avaliacao' in df_fb.columns else 0
+            total_ouro = len(df_ouro)
+            
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Roteiros Avaliados (Logs)", total_avaliados)
+            col2.metric("👍 Avaliações Positivas", positivos)
+            col3.metric("👎 Avaliações Negativas", negativos)
+            col4.metric("🏆 Roteiros Ouro (Few-Shot)", total_ouro)
+            
+            st.divider()
+            
+            st.markdown("### 📝 Últimos Roteiros Ouro (Base de Referência Premium)")
+            if not df_ouro.empty:
+                st.dataframe(df_ouro[['criado_em', 'categoria_id', 'titulo_produto', 'roteiro_perfeito']].sort_values(by='criado_em', ascending=False), use_container_width=True)
+            else:
+                st.info("Nenhum Roteiro Ouro cadastrado ainda.")
+                
+            st.markdown("### 📉 Feedbacks Recentes (Gaps para Correção Diária)")
+            if not df_fb.empty:
+                st.dataframe(df_fb[['criado_em', 'avaliacao', 'categoria_id', 'ficha_tecnica', 'roteiro_original_ia', 'roteiro_final_humano']].sort_values(by='criado_em', ascending=False), use_container_width=True)
+            else:
+                st.info("Nenhum feedback/avaliação registrado.")
+                
+        except Exception as e:
+            st.error(f"Erro ao carregar os dados do dashboard: {e}")
