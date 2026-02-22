@@ -405,31 +405,16 @@ if page == "Estúdio de Criação":
             with st.container():
                 st.markdown(f"### 📦 {codigo_produto} - {titulo_curto}")
                 
-                # Layout Lado a Lado para edição visual
-                col_edit, col_view = st.columns(2, gap="large")
-
-                with col_edit:
-                    st.caption("✏️ **Mesa de Edição (Markdown)**")
-                    edited_val = st.text_area(
-                        "Ajuste fino (O texto renderizado ao lado atualiza no próximo clique ou alteração).",
-                        value=st.session_state.get(f"editor_{idx}", item['roteiro_original']),
-                        height=400,
-                        key=f"editor_{idx}",
-                        label_visibility="collapsed"
-                    )
-                    sp_cli = st.session_state.get('supabase_client', None)
-
-                with col_view:
-                    st.caption("👁️ **Visualização Final / Leitor**")
-                    # Exibe roteiro formatado instantaneamente (lendo do texto editado)
-                    formatted = format_for_display(edited_val)
-                    st.markdown(f"""
-                    <div style='background-color: var(--bg-card); padding: 20px; border-radius: 8px; 
-                    border: 1px solid #2A3241; line-height: 1.8; font-family: Tahoma, sans-serif; 
-                    height: 400px; overflow-y: auto;'>
-                    {formatted}
-                    </div>
-                    """, unsafe_allow_html=True)
+                # Apenas uma saída editável em tela cheia (sem redundâncias)
+                st.caption("✏️ **Editor Final do Roteiro (Markdown)** - O texto ajustado aqui é o que vai para o arquivo.")
+                edited_val = st.text_area(
+                    "Editor",
+                    value=st.session_state.get(f"editor_{idx}", item['roteiro_original']),
+                    height=350,
+                    key=f"editor_{idx}",
+                    label_visibility="collapsed"
+                )
+                sp_cli = st.session_state.get('supabase_client', None)
                     
                 # Barra de Controle do Roteiro Específico
                 st.markdown("<br>", unsafe_allow_html=True)
