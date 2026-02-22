@@ -243,16 +243,16 @@ st.markdown("<span style='color: #0086ff; font-weight: bold; font-size: 14px; ma
 
 # --- PÁGINA 1: ESTÚDIO DE CRIAÇÃO ---
 if page == "Estúdio de Criação":
-    col_left, col_right = st.columns([1.2, 2.5], gap="medium")
-
-    with col_left:
-        st.subheader("Novo Roteiro")
-        
+    
+    # --- COMMAND CENTER (INPUTS) ---
+    expander_input = st.expander("📝 Command Center (Entradas de Dados)", expanded=True if 'roteiros' not in st.session_state else False)
+    
+    with expander_input:
         # Categoria padrão
         cat_selecionada_id = 1
 
         # Modo de entrada: Código do Produto ou Ficha Manual
-        modo_entrada = st.toggle("📝 Modo Manual (colar ficha técnica)", value=False)
+        modo_entrada = st.toggle("Modo Manual (colar ficha técnica)", value=False)
 
         if not modo_entrada:
             # --- MODO CÓDIGO DE PRODUTO (PADRÃO) ---
@@ -260,7 +260,7 @@ if page == "Estúdio de Criação":
             
             codigos_raw = st.text_area(
                 "Códigos dos Produtos",
-                height=150,
+                height=100,
                 placeholder="Ex:\n240304700\n240305700\n237060600",
                 key="codigos_input"
             )
@@ -308,6 +308,7 @@ if page == "Estúdio de Criação":
                         
                         progress.progress(1.0, text="✅ Concluído!")
                         st.session_state['roteiros'] = roteiros
+                        st.rerun() # Força o rerun para fechar o expander
                         
                     except Exception as e:
                         st.error(f"Erro na geração: {e}")
@@ -323,7 +324,7 @@ if page == "Estúdio de Criação":
             for i in range(st.session_state['num_fichas']):
                 val = st.text_area(
                     f"Ficha Técnica do Produto {i+1}",
-                    height=150,
+                    height=100,
                     key=f"ficha_input_{i}",
                     placeholder=""
                 )
@@ -362,147 +363,148 @@ if page == "Estúdio de Criação":
                                     "categoria_id": cat_selecionada_id
                                 })
                             st.session_state['roteiros'] = roteiros
+                            st.rerun() # Força o rerun para fechar o expander
                         except Exception as e:
                             st.error(f"Erro na geração: {e}")
 
-    with col_right:
-        st.subheader("Mesa de Trabalho")
+    # --- MESA DE TRABALHO (FULL WIDTH) ---
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.subheader("🖥️ Mesa de Trabalho")
         
-        if 'roteiros' in st.session_state and st.session_state['roteiros']:
-            # Controle de Mês para Exportação
-            meses_disponiveis = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
-            mes_atual = meses_disponiveis[datetime.now().month - 1]
-            
-            # Layout do cabeçalho da mesa de trabalho
-            col_btn, col_mes = st.columns([3, 1])
-            with col_mes:
-                mes_selecionado = st.selectbox("Mês de Ref. (Exportação)", meses_disponiveis, index=meses_disponiveis.index(mes_atual))
-            
-            with col_btn:
-                # Botão para baixar todos os roteiros em um ZIP
-                zip_bytes, zip_filename = export_all_roteiros_zip(st.session_state['roteiros'], selected_month=mes_selecionado)
-                st.download_button(
-                    label="📦 BAIXAR TODOS (ZIP)",
-                    data=zip_bytes,
-                    file_name=zip_filename,
-                    mime="application/zip",
-                    use_container_width=True,
-                    type="primary",
-                    help="Baixa todos os roteiros da lista abaixo em um único arquivo compactado."
-                )
-            
-            st.divider()
-            
-            for idx, item in enumerate(st.session_state['roteiros']):
-                linhas = item['ficha'].split('\n')
-                titulo_curto = linhas[0][:60] if linhas else f"Produto {idx+1}"
-                cat_id_roteiro = item.get("categoria_id", cat_selecionada_id)
-                codigo_produto = item.get("codigo", "")
-
-                with st.expander(f"📦 {titulo_curto}", expanded=True):
-                    tab_view, tab_edit = st.tabs(["👁️ Roteiro Formatado", "✏️ Editor (Markdown)"])
-
-                    with tab_view:
-                        # Exibe roteiro formatado: bold nas locuções, normal nas imagens
-                        formatted = format_for_display(item['roteiro_original'])
-                        st.markdown(f"<div style='background-color: var(--bg-card); padding: 20px; border-radius: 8px; border: 1px solid #2A3241; line-height: 1.8; font-family: Tahoma, sans-serif;'>{formatted}</div>", unsafe_allow_html=True)
-                        
-                        # Botão de exportar DOCX
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        docx_bytes, docx_filename = export_roteiro_docx(
-                            item['roteiro_original'],
-                            code=codigo_produto,
-                            product_name=titulo_curto,
-                            selected_month=mes_selecionado
-                        )
-                        st.download_button(
-                            label="📥 Exportar .docx",
-                            data=docx_bytes,
-                            file_name=docx_filename,
-                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                            key=f"export_{idx}",
-                            use_container_width=True,
-                            type="primary"
-                        )
-
-                    with tab_edit:
-                        edited = st.text_area(
-                            "Ajuste fino. Preserva Markdown para cópia.",
-                            value=item['roteiro_original'],
-                            height=250,
-                            key=f"editor_{idx}"
-                        )
-                        
-                        edited_val = st.session_state.get(f"editor_{idx}", item['roteiro_original'])
-                        sp_cli = st.session_state.get('supabase_client', None)
-                        
-                        # Botão de exportar (versão editada)
-                        docx_edited_bytes, docx_edited_fn = export_roteiro_docx(
-                            edited_val,
-                            code=codigo_produto,
-                            product_name=titulo_curto,
-                            selected_month=mes_selecionado
-                        )
-                        st.download_button(
-                            label="📥 Exportar Editado .docx",
-                            data=docx_edited_bytes,
-                            file_name=docx_edited_fn,
-                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                            key=f"export_edit_{idx}",
-                            use_container_width=True
-                        )
-                        
-                        st.divider()
-                        st.caption("Ações Rápidas de Aprendizado:")
-                        c1, c2, c3, c4, c5 = st.columns(5)
-                        
-                        with c1:
-                            if st.button("📋 Copiar", key=f"copy_{idx}", use_container_width=True, type="secondary"):
-                                st.code(edited_val, language="markdown")
-                                
-                        with c2:
-                            if st.button("👍 Bom", key=f"bom_{idx}", use_container_width=True):
-                                salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, 1)
-
-                        with c3:
-                            if st.button("👎 Ruim", key=f"ruim_{idx}", use_container_width=True):
-                                salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, -1)
-                        
-                        with c4:
-                            if st.button("🏆 Ouro", key=f"ouro_{idx}", use_container_width=True, type="primary"):
-                                salvar_ouro(sp_cli, cat_id_roteiro, titulo_curto, edited_val)
-                                
-                        with c5:
-                            with st.popover("🧠 Treinar", use_container_width=True):
-                                st.markdown("🔥 **Treinar Persona**")
-                                pilar_opc = st.selectbox("Qual pilar foi ajustado?", ["Acessível e Didática", "Empática e Conectada", "Positiva e Inspiradora", "Engajada e Consciente", "Estilo/Tom Geral"], key=f"pilar_{idx}")
-                                lex_opc = st.text_input("Gíria/Léxico sugerido:", placeholder="Ex: mara, partiu", key=f"lex_{idx}")
-                                erro_opc = st.text_input("Erro que ela cometeu:", placeholder="Ex: Excesso de formalidade", key=f"err_{idx}")
-                                if st.button("💃 Enviar Ajuste de Persona", key=f"btn_pers_{idx}", use_container_width=True, type="primary"):
-                                    salvar_persona(sp_cli, pilar_opc, item['roteiro_original'], edited_val, lex_opc, erro_opc)
-                                
-                                st.divider()
-                                
-                                st.markdown("🗣️ **Treinar Fonética**")
-                                t_err = st.text_input("Como a IA escreveu:", placeholder="Ex: 5G", key=f"te_{idx}")
-                                t_cor = st.text_input("Como o Breno (Humano) corrigiria:", placeholder="Ex: cinco gê", key=f"tc_{idx}")
-                                if st.button("🔊 Enviar Regra Fonética", key=f"btn_fon_{idx}", use_container_width=True, type="primary"):
-                                    salvar_fonetica(sp_cli, t_err, t_cor, edited_val)
-
-            st.divider()
-            if st.button("🗑️ Limpar Mesa de Trabalho", use_container_width=True, type="secondary"):
-                del st.session_state['roteiros']
-                st.rerun()
-        else:
-            st.markdown(
-                """
-                <div style='display: flex; height: 450px; align-items: center; justify-content: center; border: 2px dashed #2A3241; border-radius: 8px; color: #8b92a5; text-align: center; padding: 20px'>
-                Cole a ficha técnica no painel esquerdo e clique em Gerar.<br><br>
-                Os roteiros aparecerão aqui prontos para calibração, treino da IA ou envio para Ouro!
-                </div>
-                """, 
-                unsafe_allow_html=True
+    if 'roteiros' in st.session_state and st.session_state['roteiros']:
+        # Controle de Mês para Exportação
+        meses_disponiveis = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
+        mes_atual = meses_disponiveis[datetime.now().month - 1]
+        
+        # Layout do cabeçalho da mesa de trabalho
+        col_btn, col_mes = st.columns([3, 1])
+        with col_mes:
+            mes_selecionado = st.selectbox("Mês de Ref. (Exportação)", meses_disponiveis, index=meses_disponiveis.index(mes_atual))
+        
+        with col_btn:
+            # Botão para baixar todos os roteiros em um ZIP
+            zip_bytes, zip_filename = export_all_roteiros_zip(st.session_state['roteiros'], selected_month=mes_selecionado)
+            st.download_button(
+                label="📦 BAIXAR TODOS (ZIP)",
+                data=zip_bytes,
+                file_name=zip_filename,
+                mime="application/zip",
+                use_container_width=True,
+                type="primary",
+                help="Baixa todos os roteiros da lista abaixo em um único arquivo compactado."
             )
+        
+        st.divider()
+        
+        for idx, item in enumerate(st.session_state['roteiros']):
+            linhas = item['ficha'].split('\n')
+            titulo_curto = linhas[0][:60] if linhas else f"Produto {idx+1}"
+            cat_id_roteiro = item.get("categoria_id", cat_selecionada_id)
+            codigo_produto = item.get("codigo", "")
+
+            with st.container():
+                st.markdown(f"### 📦 {codigo_produto} - {titulo_curto}")
+                
+                # Layout Lado a Lado para edição visual
+                col_edit, col_view = st.columns(2, gap="large")
+
+                with col_edit:
+                    st.caption("✏️ **Mesa de Edição (Markdown)**")
+                    edited_val = st.text_area(
+                        "Ajuste fino (O texto renderizado ao lado atualiza no próximo clique ou alteração).",
+                        value=st.session_state.get(f"editor_{idx}", item['roteiro_original']),
+                        height=400,
+                        key=f"editor_{idx}",
+                        label_visibility="collapsed"
+                    )
+                    sp_cli = st.session_state.get('supabase_client', None)
+
+                with col_view:
+                    st.caption("👁️ **Visualização Final / Leitor**")
+                    # Exibe roteiro formatado instantaneamente (lendo do texto editado)
+                    formatted = format_for_display(edited_val)
+                    st.markdown(f"""
+                    <div style='background-color: var(--bg-card); padding: 20px; border-radius: 8px; 
+                    border: 1px solid #2A3241; line-height: 1.8; font-family: Tahoma, sans-serif; 
+                    height: 400px; overflow-y: auto;'>
+                    {formatted}
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                # Barra de Controle do Roteiro Específico
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                col_act1, col_act2 = st.columns([1, 2])
+                
+                with col_act1:
+                    docx_edited_bytes, docx_edited_fn = export_roteiro_docx(
+                        edited_val,
+                        code=codigo_produto,
+                        product_name=titulo_curto,
+                        selected_month=mes_selecionado
+                    )
+                    st.download_button(
+                        label="📥 Baixar DOCX deste Roteiro",
+                        data=docx_edited_bytes,
+                        file_name=docx_edited_fn,
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        key=f"export_edit_{idx}",
+                        use_container_width=True,
+                        type="secondary"
+                    )
+                    
+                with col_act2:
+                    # Espaçamento entre os controles
+                    c1, c2, c3, c4, c5 = st.columns(5)
+                    
+                    with c1:
+                        if st.button("📋 Copiar Texto", key=f"copy_{idx}", use_container_width=True):
+                            st.code(edited_val, language="markdown")
+                            
+                    with c2:
+                        if st.button("👍 Bom", key=f"bom_{idx}", use_container_width=True):
+                            salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, 1)
+
+                    with c3:
+                        if st.button("👎 Ruim", key=f"ruim_{idx}", use_container_width=True):
+                            salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, -1)
+                    
+                    with c4:
+                        if st.button("🏆 Ouro", key=f"ouro_{idx}", use_container_width=True, type="primary"):
+                            salvar_ouro(sp_cli, cat_id_roteiro, titulo_curto, edited_val)
+                            
+                    with c5:
+                        with st.popover("🧠 Treinar IA", use_container_width=True):
+                            st.markdown("🔥 **Treinar Persona**")
+                            pilar_opc = st.selectbox("Qual pilar foi ajustado?", ["Acessível e Didática", "Empática e Conectada", "Positiva e Inspiradora", "Engajada e Consciente", "Estilo/Tom Geral"], key=f"pilar_{idx}")
+                            lex_opc = st.text_input("Gíria/Léxico sugerido:", placeholder="Ex: mara, partiu", key=f"lex_{idx}")
+                            erro_opc = st.text_input("Erro que ela cometeu:", placeholder="Ex: Excesso de formalidade", key=f"err_{idx}")
+                            if st.button("💃 Enviar Ajuste de Persona", key=f"btn_pers_{idx}", use_container_width=True, type="primary"):
+                                salvar_persona(sp_cli, pilar_opc, item['roteiro_original'], edited_val, lex_opc, erro_opc)
+                            
+                            st.divider()
+                            
+                            st.markdown("🗣️ **Treinar Fonética**")
+                            t_err = st.text_input("Como a IA escreveu:", placeholder="Ex: 5G", key=f"te_{idx}")
+                            t_cor = st.text_input("Como o Breno corrigiria:", placeholder="Ex: cinco gê", key=f"tc_{idx}")
+                            if st.button("🔊 Enviar Regra Fonética", key=f"btn_fon_{idx}", use_container_width=True, type="primary"):
+                                salvar_fonetica(sp_cli, t_err, t_cor, edited_val)
+                
+                st.divider()
+
+        if st.button("🗑️ Limpar Mesa de Trabalho", use_container_width=True, type="secondary"):
+            del st.session_state['roteiros']
+            st.rerun()
+    else:
+        st.markdown(
+            """
+            <div style='display: flex; height: 300px; align-items: center; justify-content: center; border: 2px dashed #2A3241; border-radius: 8px; color: #8b92a5; text-align: center; padding: 20px'>
+            Cole os códigos no Inseridor (Command Center) acima e clique em Gerar.<br><br>
+            Os roteiros aparecerão aqui prontos para calibração, treino da IA ou envio para Ouro!
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
 
 
 
