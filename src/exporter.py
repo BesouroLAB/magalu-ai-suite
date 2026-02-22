@@ -10,11 +10,15 @@ from datetime import datetime
 from docx import Document
 from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
 
 
 def _add_header_line(doc, text: str):
     """Adiciona linha de cabeçalho: Tahoma 14pt Bold."""
     p = doc.add_paragraph()
+    p.paragraph_format.space_after = Pt(0)
+    p.paragraph_format.space_before = Pt(0)
     run = p.add_run(text)
     run.font.name = "Tahoma"
     run.font.size = Pt(14)
@@ -24,6 +28,8 @@ def _add_header_line(doc, text: str):
 def _add_separator(doc):
     """Adiciona linha separadora."""
     p = doc.add_paragraph()
+    p.paragraph_format.space_after = Pt(0)
+    p.paragraph_format.space_before = Pt(0)
     run = p.add_run("______________________________________________________________________")
     run.font.name = "Tahoma"
     run.font.size = Pt(12)
@@ -32,6 +38,8 @@ def _add_separator(doc):
 def _add_locucao(doc, text: str):
     """Adiciona linha de locução: Tahoma 12pt Bold."""
     p = doc.add_paragraph()
+    p.paragraph_format.space_after = Pt(0)
+    p.paragraph_format.space_before = Pt(0)
     run = p.add_run(text)
     run.font.name = "Tahoma"
     run.font.size = Pt(12)
@@ -41,6 +49,8 @@ def _add_locucao(doc, text: str):
 def _add_imagem(doc, text: str):
     """Adiciona linha de imagem/lettering: Tahoma 12pt Normal."""
     p = doc.add_paragraph()
+    p.paragraph_format.space_after = Pt(0)
+    p.paragraph_format.space_before = Pt(0)
     run = p.add_run(text)
     run.font.name = "Tahoma"
     run.font.size = Pt(12)
@@ -49,7 +59,9 @@ def _add_imagem(doc, text: str):
 
 def _add_empty_line(doc):
     """Adiciona linha em branco."""
-    doc.add_paragraph()
+    p = doc.add_paragraph()
+    p.paragraph_format.space_after = Pt(0)
+    p.paragraph_format.space_before = Pt(0)
 
 
 def _extract_product_name(roteiro_text: str) -> str:
@@ -60,6 +72,8 @@ def _extract_product_name(roteiro_text: str) -> str:
         name = match.group(1).strip()
         # Remove o prefixo "NW ..." se já existir
         name = re.sub(r'^NW\s+\w+\s+\d+\s+', '', name)
+        # Remove "TÍTULO DO PRODUTO:" ou similares da IA
+        name = re.sub(r'^\**TÍTULO( DO PRODUTO)?:?\**\s*', '', name, flags=re.IGNORECASE)
         return name
 
     # Fallback: procura no título (primeiras palavras do roteiro que parecem nome de produto)
@@ -116,23 +130,15 @@ def _parse_roteiro(roteiro_text: str) -> list[dict]:
     return blocks
 
 
-def generate_filename(code: str, product_name: str) -> str:
+def generate_filename(code: str, product_name: str, selected_month: str = "FEV") -> str:
     """Gera nome do arquivo no padrão: NW FEV {code} {product_name}.docx"""
-    now = datetime.now()
-    month_map = {
-        1: "JAN", 2: "FEV", 3: "MAR", 4: "ABR", 5: "MAI", 6: "JUN",
-        7: "JUL", 8: "AGO", 9: "SET", 10: "OUT", 11: "NOV", 12: "DEZ"
-    }
-    month = month_map.get(now.month, "FEV")
-
     # Limpa caracteres inválidos para nome de arquivo
     clean_name = re.sub(r'[<>:"/\\|?*]', '', product_name)
     clean_name = clean_name[:80]  # Limita tamanho
 
-    return f"NW {month} {code} {clean_name}.docx"
+    return f"NW {selected_month} {code} {clean_name}.docx"
 
-
-def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "") -> tuple[bytes, str]:
+def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "", selected_month: str = "FEV") -> tuple[bytes, str]:
     """
     Gera um documento Word (.docx) com a formatação de referência.
 
@@ -165,7 +171,7 @@ def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "
         # Gera cabeçalho padrão
         now = datetime.now()
         _add_header_line(doc, "Cliente: Magalu")
-        _add_header_line(doc, f"Roteirista: IA Magalu -- Data: {now.strftime('%d/%m/%y')}")
+        _add_header_line(doc, f"Roteirista: Tiago Fernandes -- Data: {now.strftime('%d/%m/%y')}")
         _add_header_line(doc, f"Produto: NW FEV {code} {product_name}")
         _add_separator(doc)
         _add_empty_line(doc)
@@ -199,7 +205,7 @@ def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "
     doc.save(buffer)
     buffer.seek(0)
 
-    filename = generate_filename(code, product_name)
+    filename = generate_filename(code, product_name, selected_month)
 
     return buffer.getvalue(), filename
 
@@ -240,12 +246,13 @@ def format_for_display(roteiro_text: str) -> str:
 
     return "\n".join(formatted)
 
-def export_all_roteiros_zip(roteiros: list) -> tuple[bytes, str]:
+def export_all_roteiros_zip(roteiros: list, selected_month: str = "FEV") -> tuple[bytes, str]:
     """
     Gera um arquivo ZIP contendo todos os roteiros em formato DOCX.
     
     Args:
         roteiros: Lista de dicionários contendo 'roteiro_original', 'codigo' e 'ficha' (opcional)
+        selected_month: Mês para o nome dos arquivos
         
     Returns:
         Tuple de (bytes do zip, nome do arquivo)
@@ -256,7 +263,8 @@ def export_all_roteiros_zip(roteiros: list) -> tuple[bytes, str]:
             doc_bytes, filename = export_roteiro_docx(
                 item['roteiro_original'],
                 code=item.get('codigo', ''),
-                product_name='' # Será extraído do texto do roteiro
+                product_name='', # Será extraído do texto do roteiro
+                selected_month=selected_month
             )
             # Garante que o nome do arquivo seja único dentro do ZIP se houver duplicatas
             zip_file.writestr(filename, doc_bytes)

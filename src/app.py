@@ -369,17 +369,28 @@ if page == "Estúdio de Criação":
         st.subheader("Mesa de Trabalho")
         
         if 'roteiros' in st.session_state and st.session_state['roteiros']:
-            # Botão para baixar todos os roteiros em um ZIP
-            zip_bytes, zip_filename = export_all_roteiros_zip(st.session_state['roteiros'])
-            st.download_button(
-                label="📦 BAIXAR TODOS (ZIP)",
-                data=zip_bytes,
-                file_name=zip_filename,
-                mime="application/zip",
-                use_container_width=True,
-                type="primary",
-                help="Baixa todos os roteiros da lista abaixo em um único arquivo compactado."
-            )
+            # Controle de Mês para Exportação
+            meses_disponiveis = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
+            mes_atual = meses_disponiveis[datetime.now().month - 1]
+            
+            # Layout do cabeçalho da mesa de trabalho
+            col_btn, col_mes = st.columns([3, 1])
+            with col_mes:
+                mes_selecionado = st.selectbox("Mês de Ref. (Exportação)", meses_disponiveis, index=meses_disponiveis.index(mes_atual))
+            
+            with col_btn:
+                # Botão para baixar todos os roteiros em um ZIP
+                zip_bytes, zip_filename = export_all_roteiros_zip(st.session_state['roteiros'], selected_month=mes_selecionado)
+                st.download_button(
+                    label="📦 BAIXAR TODOS (ZIP)",
+                    data=zip_bytes,
+                    file_name=zip_filename,
+                    mime="application/zip",
+                    use_container_width=True,
+                    type="primary",
+                    help="Baixa todos os roteiros da lista abaixo em um único arquivo compactado."
+                )
+            
             st.divider()
             
             for idx, item in enumerate(st.session_state['roteiros']):
@@ -401,7 +412,8 @@ if page == "Estúdio de Criação":
                         docx_bytes, docx_filename = export_roteiro_docx(
                             item['roteiro_original'],
                             code=codigo_produto,
-                            product_name=titulo_curto
+                            product_name=titulo_curto,
+                            selected_month=mes_selecionado
                         )
                         st.download_button(
                             label="📥 Exportar .docx",
@@ -428,7 +440,8 @@ if page == "Estúdio de Criação":
                         docx_edited_bytes, docx_edited_fn = export_roteiro_docx(
                             edited_val,
                             code=codigo_produto,
-                            product_name=titulo_curto
+                            product_name=titulo_curto,
+                            selected_month=mes_selecionado
                         )
                         st.download_button(
                             label="📥 Exportar Editado .docx",
