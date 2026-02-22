@@ -1,7 +1,5 @@
 ﻿streamlit
-google-generativeai
-beautifulsoup4
-requests
+google-genai
 python-dotenv
 supabase
 pandas

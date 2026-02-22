@@ -1,7 +1,8 @@
 import os
 import json
 import glob
-import google.generativeai as genai
+from google import genai
+from google.genai.types import GenerateContentConfig
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -13,9 +14,9 @@ class RoteiristaAgent:
         api_key = os.environ.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise ValueError("GEMINI_API_KEY não encontrada!")
-        genai.configure(api_key=api_key)
 
-        self.model = genai.GenerativeModel('gemini-2.5-flash')
+        self.client = genai.Client(api_key=api_key)
+        self.model_id = "gemini-2.5-flash"
         self.supabase = supabase_client
 
         # Carrega toda a base de conhecimento estática
@@ -143,5 +144,8 @@ class RoteiristaAgent:
             f"NÃO invente informações. Só use dados da ficha técnica acima."
         )
 
-        response = self.model.generate_content(final_prompt)
+        response = self.client.models.generate_content(
+            model=self.model_id,
+            contents=final_prompt,
+        )
         return response.text

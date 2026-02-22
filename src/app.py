@@ -8,6 +8,7 @@ from supabase import create_client, Client
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from src.agent import RoteiristaAgent
+from src.scraper import scrape_with_gemini, parse_codes, build_magalu_url
 
 load_dotenv()
 
@@ -246,60 +247,123 @@ if page == "Estúdio de Criação":
     with col_left:
         st.subheader("Novo Roteiro")
         
-        # Categoria padrão (Simplificação: removida seleção manual do usuário)
+        # Categoria padrão
         cat_selecionada_id = 1
 
-        st.markdown("<p style='font-size: 14px; color: #8b92a5'>Adicione os produtos que deseja gerar:</p>", unsafe_allow_html=True)
-        
-        if 'num_fichas' not in st.session_state:
-            st.session_state['num_fichas'] = 1
-            
-        fichas_informadas = []
-        
-        for i in range(st.session_state['num_fichas']):
-            val = st.text_area(
-                f"Ficha Técnica do Produto {i+1}",
-                height=150,
-                key=f"ficha_input_{i}",
-                placeholder=""
-            )
-            fichas_informadas.append(val)
-            
-        col_add, col_rem = st.columns(2)
-        with col_add:
-            if st.button("➕ Adicionar", use_container_width=True, type="secondary"):
-                st.session_state['num_fichas'] += 1
-                st.rerun()
-        with col_rem:
-            if st.session_state['num_fichas'] > 1:
-                if st.button("➖ Remover", use_container_width=True, type="secondary"):
-                    st.session_state['num_fichas'] -= 1
-                    st.rerun()
+        # Modo de entrada: Código do Produto ou Ficha Manual
+        modo_entrada = st.toggle("📝 Modo Manual (colar ficha técnica)", value=False)
 
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        if st.button("🚀 Gerar Roteiros Mágicos", use_container_width=True, type="primary"):
-            fichas = [f.strip() for f in fichas_informadas if f.strip()]
+        if not modo_entrada:
+            # --- MODO CÓDIGO DE PRODUTO (PADRÃO) ---
+            st.markdown("<p style='font-size: 14px; color: #8b92a5'>Digite os códigos dos produtos Magalu (um por linha ou separados por vírgula):</p>", unsafe_allow_html=True)
             
-            if not fichas:
-                st.warning("⚠️ Cole pelo menos uma ficha técnica antes de gerar.")
-            elif not api_key:
-                st.warning("⚠️ Forneça uma chave da API do Gemini no painel.")
-            else:
-                with st.spinner(f"Processando {len(fichas)} roteiro(s)..."):
+            codigos_raw = st.text_area(
+                "Códigos dos Produtos",
+                height=150,
+                placeholder="Ex:\n240304700\n240305700\n237060600",
+                key="codigos_input"
+            )
+            
+            st.caption("💡 O código fica na URL do produto: magazineluiza.com.br/.../p/**240304700**/...")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            if st.button("🚀 Gerar Roteiros Mágicos", use_container_width=True, type="primary"):
+                codigos = parse_codes(codigos_raw) if codigos_raw else []
+                
+                if not codigos:
+                    st.warning("⚠️ Digite pelo menos um código de produto.")
+                elif not api_key:
+                    st.warning("⚠️ Forneça uma chave da API do Gemini no painel.")
+                else:
                     try:
                         agent = RoteiristaAgent(supabase_client=st.session_state.get('supabase_client'))
                         roteiros = []
-                        for ficha in fichas:
-                            roteiro = agent.gerar_roteiro(ficha)
+                        
+                        progress = st.progress(0, text="Iniciando extração...")
+                        
+                        for i, code in enumerate(codigos):
+                            url = build_magalu_url(code)
+                            progress.progress(
+                                (i) / len(codigos),
+                                text=f"🔍 Extraindo dados do produto {code}... ({i+1}/{len(codigos)})"
+                            )
+                            
+                            # 1. Gemini extrai dados do produto via URL
+                            ficha_extraida = scrape_with_gemini(code)
+                            
+                            progress.progress(
+                                (i + 0.5) / len(codigos),
+                                text=f"✍️ Gerando roteiro para {code}... ({i+1}/{len(codigos)})"
+                            )
+                            
+                            # 2. Gera o roteiro com os dados extraídos
+                            roteiro = agent.gerar_roteiro(ficha_extraida)
                             roteiros.append({
-                                "ficha": ficha,
+                                "ficha": ficha_extraida,
                                 "roteiro_original": roteiro,
-                                "categoria_id": cat_selecionada_id
+                                "categoria_id": cat_selecionada_id,
+                                "codigo": code
                             })
+                        
+                        progress.progress(1.0, text="✅ Concluído!")
                         st.session_state['roteiros'] = roteiros
+                        
                     except Exception as e:
                         st.error(f"Erro na geração: {e}")
+        else:
+            # --- MODO MANUAL (FALLBACK) ---
+            st.markdown("<p style='font-size: 14px; color: #8b92a5'>Cole as fichas técnicas dos produtos:</p>", unsafe_allow_html=True)
+            
+            if 'num_fichas' not in st.session_state:
+                st.session_state['num_fichas'] = 1
+                
+            fichas_informadas = []
+            
+            for i in range(st.session_state['num_fichas']):
+                val = st.text_area(
+                    f"Ficha Técnica do Produto {i+1}",
+                    height=150,
+                    key=f"ficha_input_{i}",
+                    placeholder=""
+                )
+                fichas_informadas.append(val)
+                
+            col_add, col_rem = st.columns(2)
+            with col_add:
+                if st.button("➕ Adicionar", use_container_width=True, type="secondary"):
+                    st.session_state['num_fichas'] += 1
+                    st.rerun()
+            with col_rem:
+                if st.session_state['num_fichas'] > 1:
+                    if st.button("➖ Remover", use_container_width=True, type="secondary"):
+                        st.session_state['num_fichas'] -= 1
+                        st.rerun()
+
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            if st.button("🚀 Gerar Roteiros Mágicos", use_container_width=True, type="primary", key="btn_manual"):
+                fichas = [f.strip() for f in fichas_informadas if f.strip()]
+                
+                if not fichas:
+                    st.warning("⚠️ Cole pelo menos uma ficha técnica antes de gerar.")
+                elif not api_key:
+                    st.warning("⚠️ Forneça uma chave da API do Gemini no painel.")
+                else:
+                    with st.spinner(f"Processando {len(fichas)} roteiro(s)..."):
+                        try:
+                            agent = RoteiristaAgent(supabase_client=st.session_state.get('supabase_client'))
+                            roteiros = []
+                            for ficha in fichas:
+                                roteiro = agent.gerar_roteiro(ficha)
+                                roteiros.append({
+                                    "ficha": ficha,
+                                    "roteiro_original": roteiro,
+                                    "categoria_id": cat_selecionada_id
+                                })
+                            st.session_state['roteiros'] = roteiros
+                        except Exception as e:
+                            st.error(f"Erro na geração: {e}")
 
     with col_right:
         st.subheader("Mesa de Trabalho")
