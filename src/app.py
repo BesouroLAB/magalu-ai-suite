@@ -149,6 +149,50 @@ def salvar_ouro(sp_client, cat_id, titulo, roteiro_perfeito):
         st.error(f"❌ Erro: {e}")
         return False
 
+def salvar_persona(sp_client, pilar, texto_ia, texto_humano, lexico, erro):
+    if not sp_client:
+        st.error("Supabase não conectado.")
+        return False
+    try:
+        data = {
+            "pilar_persona": pilar,
+            "texto_gerado_ia": texto_ia,
+            "texto_corrigido_humano": texto_humano,
+            "lexico_sugerido": lexico,
+            "erro_cometido": erro
+        }
+        res = sp_client.table("treinamento_persona_lu").insert(data).execute()
+        if hasattr(res, 'data') and len(res.data) > 0:
+            st.success("💃 Feedback de Persona enviado para a base!")
+            return True
+        else:
+            st.error("⚠️ Falha ao salvar no Supabase (verifique RLS).")
+            return False
+    except Exception as e:
+        st.error(f"❌ Erro: {e}")
+        return False
+
+def salvar_fonetica(sp_client, termo_err, termo_cor, exemplo_rot):
+    if not sp_client:
+        st.error("Supabase não conectado.")
+        return False
+    try:
+        data = {
+            "termo_errado": termo_err,
+            "termo_corrigido": termo_cor,
+            "exemplo_no_roteiro": exemplo_rot
+        }
+        res = sp_client.table("treinamento_fonetica").insert(data).execute()
+        if hasattr(res, 'data') and len(res.data) > 0:
+            st.success("🗣️ Nova regra de Fonética cadastrada!")
+            return True
+        else:
+            st.error("⚠️ Falha ao salvar no Supabase (verifique RLS).")
+            return False
+    except Exception as e:
+        st.error(f"❌ Erro: {e}")
+        return False
+
 
 # --- SIDEBAR E NAVEGAÇÃO ---
 with st.sidebar:
@@ -299,24 +343,41 @@ if page == "Estúdio de Criação":
                         sp_cli = st.session_state.get('supabase_client', None)
                         
                         st.caption("Ações Rápidas de Aprendizado:")
-                        c1, c2, c3, c4 = st.columns(4)
+                        c1, c2, c3, c4, c5 = st.columns(5)
                         
                         with c1:
                             if st.button("📋 Copiar", key=f"copy_{idx}", use_container_width=True, type="secondary"):
                                 st.code(edited_val, language="markdown")
                                 
                         with c2:
-                            if st.button("👍 Salvar Bom", key=f"bom_{idx}", use_container_width=True):
+                            if st.button("👍 Bom", key=f"bom_{idx}", use_container_width=True):
                                 salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, 1)
 
                         with c3:
-                            if st.button("👎 Salvar Ruim", key=f"ruim_{idx}", use_container_width=True):
+                            if st.button("👎 Ruim", key=f"ruim_{idx}", use_container_width=True):
                                 salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, -1)
                         
                         with c4:
-                            # Botões de Ouro (Premium)
-                            if st.button("🏆 Marcar Ouro", key=f"ouro_{idx}", use_container_width=True, type="primary"):
+                            if st.button("🏆 Ouro", key=f"ouro_{idx}", use_container_width=True, type="primary"):
                                 salvar_ouro(sp_cli, cat_id_roteiro, titulo_curto, edited_val)
+                                
+                        with c5:
+                            # Dropdown menu / Popover do Streamlit (Disponivel em versões novas)
+                            with st.popover("🧠 Treinar", use_container_width=True):
+                                st.markdown("🔥 **Treinar Persona**")
+                                pilar_opc = st.selectbox("Qual pilar foi ajustado?", ["Acessível e Didática", "Empática e Conectada", "Positiva e Inspiradora", "Engajada e Consciente", "Estilo/Tom Geral"], key=f"pilar_{idx}")
+                                lex_opc = st.text_input("Gíria/Léxico sugerido:", placeholder="Ex: mara, partiu", key=f"lex_{idx}")
+                                erro_opc = st.text_input("Erro que ela cometeu:", placeholder="Ex: Excesso de formalidade", key=f"err_{idx}")
+                                if st.button("💃 Enviar Ajuste de Persona", key=f"btn_pers_{idx}", use_container_width=True, type="primary"):
+                                    salvar_persona(sp_cli, pilar_opc, item['roteiro_original'], edited_val, lex_opc, erro_opc)
+                                
+                                st.divider()
+                                
+                                st.markdown("🗣️ **Treinar Fonética**")
+                                t_err = st.text_input("Como a IA escreveu:", placeholder="Ex: 5G", key=f"te_{idx}")
+                                t_cor = st.text_input("Como o Breno (Humano) corrigiria:", placeholder="Ex: cinco gê", key=f"tc_{idx}")
+                                if st.button("🔊 Enviar Regra Fonética", key=f"btn_fon_{idx}", use_container_width=True, type="primary"):
+                                    salvar_fonetica(sp_cli, t_err, t_cor, edited_val)
 
         if st.button("🗑️ Limpar Mesa de Trabalho", use_container_width=True, type="secondary"):
             del st.session_state['roteiros']
@@ -371,7 +432,7 @@ elif page == "Dashboard de Inteligência":
                 
             st.markdown("### 📉 Feedbacks Recentes (Gaps para Correção Diária)")
             if not df_fb.empty:
-                st.dataframe(df_fb[['criado_em', 'avaliacao', 'categoria_id', 'ficha_tecnica', 'roteiro_original_ia', 'roteiro_final_humano']].sort_values(by='criado_em', ascending=False), use_container_width=True)
+                st.dataframe(df_fb[['criado_em', 'avaliacao', 'categoria_id', 'roteiro_original_ia', 'roteiro_final_humano']].sort_values(by='criado_em', ascending=False), use_container_width=True)
             else:
                 st.info("Nenhum feedback/avaliação registrado.")
                 
