@@ -136,40 +136,53 @@ class RoteiristaAgent:
 
         return "\n".join(parts)
 
-    def gerar_roteiro(self, scraped_data):
-        """Envia a requisição para o Gemini gerar o roteiro. Suporta Multimodal."""
+    def gerar_roteiro(self, scraped_data, modo_trabalho="NW (NewWeb)"):
+        """Envia a requisição para o Gemini gerar o roteiro. Suporta Multimodal e Modos de Trabalho."""
         context = self._build_context()
 
         # Verifica se o input tem imagem (novo fluxo do scraper)
         if isinstance(scraped_data, dict):
             text_data = scraped_data.get("text", "")
-            img_bytes = scraped_data.get("image_bytes", None)
-            img_mime = scraped_data.get("image_mime", None)
+            images_list = scraped_data.get("images", [])
         else:
             text_data = str(scraped_data)
-            img_bytes = None
-            img_mime = None
+            images_list = []
+            
+        # Roteamento básico de Prompt baseado no Modo (Expansão Futura)
+        diretriz_modo = f"Crie um roteiro focado no formato padrão NewWeb (descrição rica e completa)."
+        if "SOCIAL" in modo_trabalho:
+            diretriz_modo = f"ATENÇÃO: Este formato é para SOCIAL (Reels/TikTok). O roteiro deve ser EXTREMAMENTE curto, dinâmico e focado em retenção nos primeiros 3 segundos."
+        elif "3D" in modo_trabalho:
+            diretriz_modo = f"ATENÇÃO: Este formato é para 3D. Foque muito em descrever as texturas, cores exatas, reflexos e ângulos importantes para o time de modelagem."
+        elif "Review" in modo_trabalho:
+            diretriz_modo = f"ATENÇÃO: Este formato é um REVIEW. Foque em prós, contras, uso prático diário e uma opinião direta para quem vai gravar no estúdio."
 
         final_prompt = (
             f"{context}\n\n"
+            f"**MODO DE TRABALHO SOLICITADO:** {modo_trabalho}\n"
+            f"-> {diretriz_modo}\n\n"
             f"**CONTEXTO DO PRODUTO (INPUT TEXTUAL E/OU VISUAL):**\n{text_data}\n\n"
             f"**INSTRUÇÃO FINAL:**\n"
             f"Gere o roteiro no FORMATO DE SAÍDA OBRIGATÓRIO.\n"
             f"Siga RIGOROSAMENTE as Regras de Ouro do Estilo Breno.\n"
-            f"Se houver uma imagem fornecida, extraia o máximo de detalhes visuais (cor, textura, design) para enriquecer o roteiro.\n"
+            f"Se houverem imagens fornecidas, extraia o máximo de detalhes visuais (cor, textura, design dos vários ângulos) para enriquecer o roteiro.\n"
             f"Imite fielmente o estilo dos exemplos APROVADOS.\n"
             f"Use 'pra' no lugar de 'para'. Coloque a marca entre vírgulas.\n"
-            f"NÃO invente capacidades que não possam ser comprovadas pela imagem ou texto."
+            f"NÃO invente capacidades que não possam ser comprovadas pelas imagens ou texto."
         )
 
         contents = [final_prompt]
         
-        # Adiciona a imagem se houver
-        if img_bytes and img_mime:
+        # Adiciona a lista de imagens se houver
+        if images_list:
             from google.genai.types import Part
-            contents.append(
-                Part.from_bytes(data=img_bytes, mime_type=img_mime)
-            )
+            for img_dict in images_list:
+                img_bytes = img_dict.get("bytes")
+                img_mime = img_dict.get("mime")
+                if img_bytes and img_mime:
+                    contents.append(
+                        Part.from_bytes(data=img_bytes, mime_type=img_mime)
+                    )
 
         response = self.client.models.generate_content(
             model=self.model_id,

@@ -51,11 +51,11 @@ def scrape_with_gemini(code_or_url: str) -> dict:
         code_or_url: Código do produto (ex: '240304700') ou URL completa.
 
     Returns:
-        Dicionário com 'text' (dados estruturados), 'image_bytes' e 'image_mime'.
+        Dicionário com 'text' (dados estruturados) e 'images' (lista de dicts com 'bytes' e 'mime').
     """
     api_key = os.environ.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
     if not api_key:
-        return {"text": "❌ GEMINI_API_KEY não configurada. Configure no painel lateral.", "image_bytes": None, "image_mime": None}
+        return {"text": "❌ GEMINI_API_KEY não configurada. Configure no painel lateral.", "images": []}
 
     input_val = code_or_url.strip()
 
@@ -68,8 +68,8 @@ def scrape_with_gemini(code_or_url: str) -> dict:
 
     prompt = EXTRACTION_PROMPT.replace("{code}", code)
 
-    # Tenta extrair a imagem do produto usando BeautifulSoup
-    img_bytes, img_mime = _extract_image(code)
+    # Tenta extrair as imagens da galeria do produto
+    images_list = _extract_images(code)
     
     result_text = None
     # Método 1: Google Search + URL Context combinados (mais poderoso)
@@ -87,28 +87,51 @@ def scrape_with_gemini(code_or_url: str) -> dict:
 
     return {
         "text": result_text,
-        "image_bytes": img_bytes,
-        "image_mime": img_mime
+        "images": images_list
     }
 
-def _extract_image(code: str):
-    """Tenta baixar a imagem principal (og:image) do produto."""
+def _extract_images(code: str, max_images: int = 5):
+    """Tenta baixar imagens da galeria do produto."""
+    images = []
     try:
         url = f"https://www.magazineluiza.com.br/p/{code}"
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
         response = requests.get(url, headers=headers, timeout=5)
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
+            img_urls = []
+            
+            # 1. Tenta a og:image primeiro (garante pelo menos a principal)
             og_image = soup.find('meta', property='og:image')
             if og_image and og_image.get('content'):
-                img_url = og_image['content']
-                img_response = requests.get(img_url, timeout=5)
-                if img_response.status_code == 200:
-                    mime = img_response.headers.get('content-type', 'image/jpeg')
-                    return img_response.content, mime
+                img_urls.append(og_image['content'])
+                
+            # 2. Varrer código por imagens de showcase/produto (regex)
+            encontradas = re.findall(r'https://[^"\'\s]+\.(?:jpg|jpeg|png|webp)', response.text)
+            
+            for img in encontradas:
+                if 'showcase' in img or 'produto' in img or 'magazineluiza.com.br' in img:
+                    # Limpeza extra para evitar ícones minúsculos e links quebrados
+                    if 'thumb' not in img.lower() and 'icon' not in img.lower():
+                        img_urls.append(img)
+            
+            # Remove duplicatas mantendo a ordem (og:image primeiro)
+            seen = set()
+            unique_urls = [x for x in img_urls if not (x in seen or seen.add(x))]
+            
+            for img_url in unique_urls[:max_images]:
+                try:
+                    img_response = requests.get(img_url, timeout=5)
+                    if img_response.status_code == 200:
+                        mime = img_response.headers.get('content-type', 'image/jpeg')
+                        images.append({"bytes": img_response.content, "mime": mime})
+                except Exception:
+                    continue
+                    
     except Exception as e:
-        print(f"[scraper] Erro ao extrair imagem do produto {code}: {e}")
-    return None, None
+        print(f"[scraper] Erro ao extrair imagens do produto {code}: {e}")
+        
+    return images
 
 
 def _try_combined_search(prompt: str, api_key: str) -> str | None:
