@@ -236,7 +236,7 @@ with st.sidebar:
 
 # --- APLICAÇÃO PRINCIPAL ---
 st.title("Magalu AI Suite")
-st.markdown("<span style='color: #0086ff; font-weight: bold; font-size: 14px; margin-left: 10px'>V4.0 SÉRIE 5 (Fábrica de Inteligência)</span>", unsafe_allow_html=True)
+st.markdown("<span style='color: #0086ff; font-weight: bold; font-size: 14px; margin-left: 10px'>V1.0 SÉRIE 1 (Fábrica de Inteligência)</span>", unsafe_allow_html=True)
 
 
 # --- PÁGINA 1: ESTÚDIO DE CRIAÇÃO ---
