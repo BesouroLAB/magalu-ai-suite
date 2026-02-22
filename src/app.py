@@ -14,10 +14,10 @@ load_dotenv()
 import streamlit as st
 import os
 import sys
-import csv
 import pandas as pd
 from datetime import datetime
 from dotenv import load_dotenv
+from supabase import create_client, Client
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from src.agent import RoteiristaAgent
@@ -118,20 +118,42 @@ with st.sidebar:
     st.markdown("### ⚙️ Configurações API")
     
     api_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
+    supabase_url = os.environ.get("SUPABASE_URL") or st.secrets.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_KEY") or st.secrets.get("SUPABASE_KEY")
     
     if not api_key:
-        st.error("🔴 API Key não encontrada!")
-        api_key_input = st.text_input("Cole sua chave Gemini:", type="password")
-        if st.button("Salvar Chave"):
-            with open('.env', 'w', encoding='utf-8') as f:
-                f.write(f"GEMINI_API_KEY={api_key_input}\n")
+        api_key_input = st.text_input("🔑 Cole sua chave Gemini:", type="password")
+        if st.button("Salvar Chave Gemini"):
+            with open('.env', 'a', encoding='utf-8') as f:
+                f.write(f"\nGEMINI_API_KEY={api_key_input}")
             os.environ["GEMINI_API_KEY"] = api_key_input
             st.success("Salva! Pressione F5.")
             st.stop()
         st.stop()
     else:
-        st.success("🟢 API Conectada (Gemini 2.5 Flash)")
+        st.success("🟢 API Gemini Conectada")
         os.environ["GEMINI_API_KEY"] = api_key
+
+    if not supabase_url or not supabase_key:
+        st.divider()
+        st.error("🔴 Supabase Não Conectado")
+        supa_url_input = st.text_input("🔗 Supabase URL:")
+        supa_key_input = st.text_input("🔑 Supabase API Key:", type="password")
+        if st.button("Conectar Nuvem"):
+            with open('.env', 'a', encoding='utf-8') as f:
+                f.write(f"\nSUPABASE_URL={supa_url_input}")
+                f.write(f"\nSUPABASE_KEY={supa_key_input}")
+            st.success("Banco salvo! Pressione F5.")
+            st.stop()
+    else:
+        st.success("🟢 Nuvem Conectada (Supabase)")
+        
+        # Inicia cliente Supabase se estiver conectado
+        try:
+            supabase: Client = create_client(supabase_url, supabase_key)
+            st.session_state['supabase_client'] = supabase
+        except Exception as e:
+            st.error(f"Erro ao conectar supabase: {e}")
 
     st.divider()
     st.markdown("### 📋 Como Usar:")
@@ -233,21 +255,22 @@ with col_right:
                             st.code(edited_val, language="markdown")
                     
                     with col_actions_2:
-                        if st.button("✅ Enviar P/ Banco de Dados", key=f"approve_{idx}", use_container_width=True):
-                            log_file = "feedback_log.csv"
-                            file_exists = os.path.isfile(log_file)
-                            with open(log_file, mode='a', newline='', encoding='utf-8') as f:
-                                writer = csv.writer(f)
-                                if not file_exists:
-                                    writer.writerow(["Data", "Ficha_Tecnica", "Roteiro_Gerado_IA", "Roteiro_Aprovado_Humano"])
-                                edited_val = st.session_state.get(f"editor_{idx}", item['roteiro_original'])
-                                writer.writerow([
-                                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                    item['ficha'],
-                                    item['roteiro_original'],
-                                    edited_val
-                                ])
-                            st.success("✅ Treinamento injetado na Base!")
+                        if st.button("✅ Enviar P/ Supabase", type="primary", key=f"approve_{idx}", use_container_width=True):
+                            edited_val = st.session_state.get(f"editor_{idx}", item['roteiro_original'])
+                            if 'supabase_client' in st.session_state:
+                                sp_client = st.session_state['supabase_client']
+                                try:
+                                    # Usa UTC now (sem o import timezone, a string funciona pro supabase timestamp)
+                                    sp_client.table("roteiros_aprovados").insert({
+                                        "ficha_tecnica": item['ficha'],
+                                        "roteiro_original_ia": item['roteiro_original'],
+                                        "roteiro_editado_humano": edited_val
+                                    }).execute()
+                                    st.success("✅ Treinamento injetado na Base Nuvem!")
+                                except Exception as e:
+                                    st.error(f"❌ Erro ao enviar ao Supabase: {e}")
+                            else:
+                                st.error("Conecte o Supabase no painel lateral primeiro.")
                     
                     with col_actions_3:
                         if st.button("🔄 Refazer Roteiro", key=f"regen_{idx}", use_container_width=True):
@@ -257,7 +280,7 @@ with col_right:
                                 st.session_state['roteiros'][idx]['roteiro_original'] = novo
                                 st.rerun()
 
-        if st.button("🗑️ Limpar Mesa de Trabalho", type="primary", use_container_width=True):
+        if st.button("🗑️ Limpar Mesa de Trabalho", use_container_width=True):
             del st.session_state['roteiros']
             st.rerun()
     else:
