@@ -9,7 +9,7 @@ from supabase import create_client, Client
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from src.agent import RoteiristaAgent
 from src.scraper import scrape_with_gemini, parse_codes
-from src.exporter import export_roteiro_docx, format_for_display
+from src.exporter import export_roteiro_docx, format_for_display, export_all_roteiros_zip
 
 load_dotenv()
 
@@ -369,6 +369,19 @@ if page == "Estúdio de Criação":
         st.subheader("Mesa de Trabalho")
         
         if 'roteiros' in st.session_state and st.session_state['roteiros']:
+            # Botão para baixar todos os roteiros em um ZIP
+            zip_bytes, zip_filename = export_all_roteiros_zip(st.session_state['roteiros'])
+            st.download_button(
+                label="📦 BAIXAR TODOS (ZIP)",
+                data=zip_bytes,
+                file_name=zip_filename,
+                mime="application/zip",
+                use_container_width=True,
+                type="primary",
+                help="Baixa todos os roteiros da lista abaixo em um único arquivo compactado."
+            )
+            st.divider()
+            
             for idx, item in enumerate(st.session_state['roteiros']):
                 linhas = item['ficha'].split('\n')
                 titulo_curto = linhas[0][:60] if linhas else f"Produto {idx+1}"

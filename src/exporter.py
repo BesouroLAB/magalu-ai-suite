@@ -5,6 +5,7 @@ Padrão: Tahoma 14pt bold (cabeçalho), 12pt bold (locução), 12pt normal (imag
 """
 import io
 import re
+import zipfile
 from datetime import datetime
 from docx import Document
 from docx.shared import Pt
@@ -238,3 +239,30 @@ def format_for_display(roteiro_text: str) -> str:
             formatted.append(stripped)
 
     return "\n".join(formatted)
+
+def export_all_roteiros_zip(roteiros: list) -> tuple[bytes, str]:
+    """
+    Gera um arquivo ZIP contendo todos os roteiros em formato DOCX.
+    
+    Args:
+        roteiros: Lista de dicionários contendo 'roteiro_original', 'codigo' e 'ficha' (opcional)
+        
+    Returns:
+        Tuple de (bytes do zip, nome do arquivo)
+    """
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+        for idx, item in enumerate(roteiros):
+            doc_bytes, filename = export_roteiro_docx(
+                item['roteiro_original'],
+                code=item.get('codigo', ''),
+                product_name='' # Será extraído do texto do roteiro
+            )
+            # Garante que o nome do arquivo seja único dentro do ZIP se houver duplicatas
+            zip_file.writestr(filename, doc_bytes)
+            
+    zip_buffer.seek(0)
+    now = datetime.now()
+    zip_filename = f"ROTEIROS_MAGALU_{now.strftime('%d_%m_%Y_%H%M')}.zip"
+    
+    return zip_buffer.getvalue(), zip_filename
