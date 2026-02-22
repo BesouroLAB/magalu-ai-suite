@@ -217,14 +217,26 @@ def salvar_estrutura(sp_client, tipo, texto):
 
 
 with st.sidebar:
+    # --- Verificação de Status (antes de renderizar) ---
+    api_key_env = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
+    supabase_client = init_supabase()
+    if supabase_client:
+        st.session_state['supabase_client'] = supabase_client
+    
+    gemini_dot = "<span style='color:#10b981;font-size:10px;'>● Gemini</span>" if api_key_env else "<span style='color:#ef4444;font-size:10px;'>● Gemini</span>"
+    supa_dot = "<span style='color:#10b981;font-size:10px;'>● Supabase</span>" if supabase_client else "<span style='color:#ef4444;font-size:10px;'>● Supabase</span>"
+
     # --- LOGO & BRANDING ---
-    st.markdown("""
-    <div style="display: flex; flex-direction: column; width: 220px; line-height: 1.1; margin-bottom: 5px;">
+    st.markdown(f"""
+    <div style="display: flex; flex-direction: column; width: 220px; line-height: 1.1; margin-bottom: 4px;">
         <span style="color: #0086ff; font-weight: 800; font-size: 18px; letter-spacing: 3px;">MAGALU</span>
         <span style="color: white; font-weight: 300; font-size: 36px; letter-spacing: 1px;">AI Suite</span>
     </div>
-    <span style='color: #4b5563; font-weight: bold; font-size: 11px; letter-spacing: 1px;'>V1.5 PREMIUM SERIES</span>
-    <br><br>
+    <div style="display: flex; gap: 12px; align-items: center; margin-top: 4px;">
+        <span style='color: #4b5563; font-weight: bold; font-size: 11px; letter-spacing: 1px;'>V1.5</span>
+        {gemini_dot} &nbsp; {supa_dot}
+    </div>
+    <br>
     """, unsafe_allow_html=True)
     
     # --- MENU DE NAVEGAÇÃO ---
@@ -240,8 +252,6 @@ with st.sidebar:
     # --- CONFIGURAÇÕES API (MINIMALISTA) ---
     with st.expander("⚙️ Configurações", expanded=False):
         st.caption("Ajustes de Chaves e Conexão")
-        api_key_env = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
-        supabase_client = init_supabase()
         
         # Gestão Gemini
         if not api_key_env:
@@ -257,7 +267,6 @@ with st.sidebar:
 
         # Gestão Supabase
         if not supabase_client:
-            st.markdown("<span style='color: #ef4444; font-size: 12px;'>● Supabase Desconectado</span>", unsafe_allow_html=True)
             supa_url_input = st.text_input("🔗 URL Supabase:")
             supa_key_input = st.text_input("🔑 API Key Supabase:", type="password")
             if st.button("Conectar Banco"):
@@ -267,7 +276,6 @@ with st.sidebar:
                 st.success("Salvo! F5.")
                 st.stop()
         else:
-            st.session_state['supabase_client'] = supabase_client
             st.markdown("<span style='color: #10b981; font-size: 12px;'>● Supabase Ativo</span>", unsafe_allow_html=True)
 
 
@@ -604,7 +612,39 @@ elif page == "Treinar IA":
         tab_fb, tab_est, tab_fon, tab_ouro = st.tabs(["📉 Calibração (Logs & Comparação)", "💬 Estruturas (Aberturas/Fechamentos)", "🗣️ Fonética", "🏆 Roteiros Ouro"])
         
         with tab_fb:
-            st.markdown("### 📉 Tabela Comparativa (IA vs Aprovados pelo Breno)")
+            st.markdown("### 📉 Calibração: IA vs Breno")
+            st.caption("Compare o que a IA gerou com o que o Breno aprovou. Cada registro alimenta o aprendizado contínuo.")
+            
+            # --- FORMULÁRIO DE ENTRADA ---
+            with st.form("form_calibracao", clear_on_submit=True):
+                col_ia, col_breno = st.columns(2)
+                with col_ia:
+                    st.markdown("**🤖 ANTES (Roteiro da IA)**")
+                    roteiro_ia_input = st.text_area("Cole aqui o roteiro original gerado pela IA:", height=200, key="calib_ia")
+                with col_breno:
+                    st.markdown("**✅ DEPOIS (Aprovado pelo Breno)**")
+                    roteiro_breno_input = st.text_area("Cole aqui a versão final aprovada pelo Breno:", height=200, key="calib_breno")
+                
+                avaliacao_input = st.select_slider("Avaliação geral do roteiro original da IA:", options=["Ruim", "Regular", "Bom", "Ótimo"], value="Bom")
+                
+                submitted = st.form_submit_button("📥 Registrar Comparação", type="primary", use_container_width=True)
+                if submitted:
+                    if roteiro_ia_input.strip() and roteiro_breno_input.strip():
+                        try:
+                            data = {
+                                "roteiro_original_ia": roteiro_ia_input,
+                                "roteiro_final_humano": roteiro_breno_input,
+                                "avaliacao": avaliacao_input
+                            }
+                            sp_client.table("feedback_roteiros").insert(data).execute()
+                            st.success("✅ Comparação registrada com sucesso! A IA vai aprender com isso.")
+                        except Exception as e:
+                            st.error(f"Erro ao salvar: {e}")
+                    else:
+                        st.warning("Preencha ambos os campos (IA e Breno).")
+            
+            st.divider()
+            st.markdown("#### 📋 Histórico de Calibrações")
             if not df_fb.empty:
                 st.dataframe(df_fb[['criado_em', 'avaliacao', 'roteiro_original_ia', 'roteiro_final_humano']], use_container_width=True)
             else:
