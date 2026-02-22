@@ -261,7 +261,7 @@ if page == "Estúdio de Criação":
                 f"Ficha Técnica do Produto {i+1}",
                 height=150,
                 key=f"ficha_input_{i}",
-                placeholder="TÍTULO: Smart TV 55 LG\nDESCRIÇÃO: Assistir TV nunca foi tão incrível...\nFICHA TÉCNICA:\n- OLED\n- 4K"
+                placeholder=""
             )
             fichas_informadas.append(val)
             
