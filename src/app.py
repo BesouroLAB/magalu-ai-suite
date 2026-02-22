@@ -209,7 +209,12 @@ with col_right:
                 tab_view, tab_edit = st.tabs(["👁️ Roteiro Final (Visualização)", "✏️ Código Original (Markdown)"])
 
                 with tab_view:
-                    st.markdown(f"<div style='background-color: var(--bg-card); padding: 15px; border-radius: 8px; border: 1px solid #2A3241;'>{item['roteiro_original']}</div>", unsafe_allow_html=True)
+                    # Impede que o Markdown converta "traço + espaço" em bullet points (círculos)
+                    roteiro_view = item['roteiro_original'].replace('\n- ', '\n\- ')
+                    if roteiro_view.startswith('- '):
+                        roteiro_view = '\- ' + roteiro_view[2:]
+                        
+                    st.markdown(f"<div style='background-color: var(--bg-card); padding: 15px; border-radius: 8px; border: 1px solid #2A3241;'>{roteiro_view}</div>", unsafe_allow_html=True)
 
                 with tab_edit:
                     edited = st.text_area(
