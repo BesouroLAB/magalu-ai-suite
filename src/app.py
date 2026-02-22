@@ -8,7 +8,7 @@ from supabase import create_client, Client
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from src.agent import RoteiristaAgent
-from src.scraper import scrape_with_gemini, parse_codes, build_magalu_url
+from src.scraper import scrape_with_gemini, parse_codes
 
 load_dotenv()
 
@@ -283,7 +283,6 @@ if page == "Estúdio de Criação":
                         progress = st.progress(0, text="Iniciando extração...")
                         
                         for i, code in enumerate(codigos):
-                            url = build_magalu_url(code)
                             progress.progress(
                                 (i) / len(codigos),
                                 text=f"🔍 Extraindo dados do produto {code}... ({i+1}/{len(codigos)})"
