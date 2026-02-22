@@ -34,12 +34,14 @@ FICHA TÉCNICA PRINCIPAL:
 
 PREÇO: [se disponível]
 
-**REGRAS:**
-- Pesquise especificamente por: site:magazineluiza.com.br "{code}"
-- Extraia SOMENTE dados reais do produto encontrado. NÃO invente informações.
-- Se algum dado não estiver disponível, escreva "Não informado".
-- Foque nas especificações técnicas mais relevantes para um roteiro de vídeo.
-- Inclua dimensões, peso, voltagem, capacidade, materiais quando disponíveis.
+**REGRAS RIGOROSAS DE FONTE DE DADOS:**
+1. Pesquise primariamente e especificamente por: site:magazineluiza.com.br "{code}".
+2. Se a ficha da Magalu não possuir os dados técnicos necessários, você pode usar a ferramenta de busca para procurar **EXCLUSIVAMENTE no site oficial do FABRICANTE**. 
+3. É TERMINANTEMENTE PROIBIDO extrair dados de concorrentes (Amazon, Mercado Livre, Casas Bahia, etc).
+4. Se você extrair qualquer informação do site do fabricante (fora da Magalu), adicione uma linha no final da sua resposta exatamente assim: "FONTE EXTERNA: [coloque a URL do fabricante aqui]".
+5. Extraia SOMENTE dados reais do produto encontrado. NÃO invente informações.
+6. Se algum dado não estiver disponível sequer no fabricante, escreva "Não informado".
+7. Foque nas especificações técnicas mais relevantes para um roteiro de vídeo (dimensões, peso, voltagem, materiais, capacidades).
 """
 
 

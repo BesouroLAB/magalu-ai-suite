@@ -168,7 +168,8 @@ class RoteiristaAgent:
             f"Se houverem imagens fornecidas, extraia o máximo de detalhes visuais (cor, textura, design dos vários ângulos) para enriquecer o roteiro.\n"
             f"Imite fielmente o estilo dos exemplos APROVADOS.\n"
             f"Use 'pra' no lugar de 'para'. Coloque a marca entre vírgulas.\n"
-            f"NÃO invente capacidades que não possam ser comprovadas pelas imagens ou texto."
+            f"NÃO invente capacidades que não possam ser comprovadas pelas imagens ou texto.\n"
+            f"Se o contexto textual contiver uma 'FONTE EXTERNA' (indicando que dados do fabricante foram usados), adicione OBRIGATORIAMENTE o link de referência no final do roteiro."
         )
 
         contents = [final_prompt]

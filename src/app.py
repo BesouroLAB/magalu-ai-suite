@@ -282,20 +282,52 @@ if page == "Criar Roteiros":
 
         if not modo_entrada:
             # --- MODO CÓDIGO DE PRODUTO (PADRÃO) ---
-            st.markdown("<p style='font-size: 14px; color: #8b92a5'>Digite os códigos dos produtos Magalu (um por linha ou separados por vírgula). Máximo de 15 por vez.</p>", unsafe_allow_html=True)
-            
-            codigos_raw = st.text_area(
-                "Códigos dos Produtos",
-                height=100,
-                placeholder="Ex:\n240304700\n240305700",
-                key="codigos_input"
-            )
+            with st.container():
+                st.markdown("### 1. Escopo de Trabalho")
+                
+                # Seletor de Modo de Trabalho
+                modos_trabalho = {
+                    "NW (NewWeb)": "Descrição completa, Ficha e Foto (Padrão)",
+                    "SOCIAL (Reels/TikTok)": "Em breve: Foco em ganchos virais e retenção",
+                    "3D (NewWeb 3D)": "Em breve: Foco técnico em shaders e texturas 360",
+                    "Review (NwReview)": "Em breve: Foco em prós e contras pro apresentador"
+                }
+                
+                modo_selecionado = st.radio(
+                    "Selecione o Formato do Roteiro:",
+                    list(modos_trabalho.keys()),
+                    captions=list(modos_trabalho.values()),
+                    index=0,
+                    horizontal=True
+                )
+
+                st.markdown("<br>", unsafe_allow_html=True)
+
+                st.markdown("<p style='font-size: 14px; color: #8b92a5'>Digite os códigos dos produtos Magalu (um por linha ou separados por vírgula). Máximo de 15 por vez.</p>", unsafe_allow_html=True)
+                
+                codigos_raw = st.text_area(
+                    "Códigos dos Produtos",
+                    height=100,
+                    placeholder="Ex:\n240304700\n240305700",
+                    key="codigos_input"
+                )
+                st.caption("Pressione *Ctrl+Enter* para enviar ou use o botão abaixo. (Máximo: 15 códigos por lote).")
             
             st.caption("💡 O código fica na URL do produto: magazineluiza.com.br/.../p/**240304700**/...")
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            if st.button("🚀 Gerar Roteiros Mágicos", use_container_width=True, type="primary"):
+            # Regra de Bloqueio para Modos Futuros
+            geracao_bloqueada = modo_selecionado != "NW (NewWeb)"
+
+            if st.button("🚀 Iniciar Geração Magalu", use_container_width=True, type="primary", disabled=geracao_bloqueada):
+                if geracao_bloqueada:
+                    st.warning("🚧 Este formato de roteiro ainda está em desenvolvimento. Selecione 'NW (NewWeb)' para continuar.")
+                    st.stop()
+                elif len(codigos_raw.strip()) < 3:
+                    st.warning("⚠️ Digite pelo menos um código de produto.")
+                    st.stop()
+
                 codigos = parse_codes(codigos_raw) if codigos_raw else []
                 
                 if not codigos:
@@ -328,7 +360,7 @@ if page == "Criar Roteiros":
                             )
                             
                             # 2. Gera o roteiro com os dados extraídos
-                            roteiro = agent.gerar_roteiro(ficha_extraida)
+                            roteiro = agent.gerar_roteiro(ficha_extraida, modo_trabalho=modo_selecionado)
                             roteiros.append({
                                 "ficha": ficha_extraida,
                                 "roteiro_original": roteiro,
