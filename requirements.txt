@@ -4,3 +4,5 @@ python-dotenv
 supabase
 pandas
 python-docx
+requests
+beautifulsoup4
