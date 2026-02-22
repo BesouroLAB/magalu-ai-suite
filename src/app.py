@@ -578,12 +578,25 @@ elif page == "Treinar IA":
     else:
         sp_client = st.session_state['supabase_client']
         
+        # --- CARREGAMENTO GLOBAL DE DADOS PARA O HUB ---
+        try:
+            res_fb = sp_client.table("feedback_roteiros").select("*").execute()
+            res_est = sp_client.table("treinamento_estruturas").select("*").execute()
+            res_fon = sp_client.table("treinamento_fonetica").select("*").execute()
+            res_ouro = sp_client.table("roteiros_ouro").select("*").execute()
+            
+            df_fb = pd.DataFrame(res_fb.data if hasattr(res_fb, 'data') else [])
+            df_est = pd.DataFrame(res_est.data if hasattr(res_est, 'data') else [])
+            df_fon = pd.DataFrame(res_fon.data if hasattr(res_fon, 'data') else [])
+            df_ouro = pd.DataFrame(res_ouro.data if hasattr(res_ouro, 'data') else [])
+        except Exception as e:
+            st.error(f"Erro ao carregar dados do hub: {e}")
+            df_fb = df_est = df_fon = df_ouro = pd.DataFrame()
+
         tab_fb, tab_est, tab_fon, tab_ouro = st.tabs(["📉 Calibração (Logs & Comparação)", "💬 Estruturas (Aberturas/Fechamentos)", "🗣️ Fonética", "🏆 Roteiros Ouro"])
         
         with tab_fb:
             st.markdown("### 📉 Tabela Comparativa (IA vs Aprovados pelo Breno)")
-            res_fb = sp_client.table("feedback_roteiros").select("*").execute()
-            df_fb = pd.DataFrame(res_fb.data if hasattr(res_fb, 'data') else [])
             if not df_fb.empty:
                 st.dataframe(df_fb[['criado_em', 'avaliacao', 'roteiro_original_ia', 'roteiro_final_humano']], use_container_width=True)
             else:
@@ -613,16 +626,16 @@ elif page == "Treinar IA":
                 
         with tab_fon:
             st.markdown("🗣️ **Treinar Fonética**")
-            t_err = st.text_input("Como a IA escreveu:", placeholder="Ex: 5G", key=f"te_{idx}")
-            t_cor = st.text_input("Como a locução final deve ser (aprovada):", placeholder="Ex: cinco gê", key=f"tc_{idx}")
-            if st.button("🔊 Enviar Regra Fonética", key=f"btn_fon_{idx}", use_container_width=True, type="primary"):
+            t_err = st.text_input("Como a IA escreveu:", placeholder="Ex: 5G", key="hub_te")
+            t_cor = st.text_input("Como a locução final deve ser (aprovada):", placeholder="Ex: cinco gê", key="hub_tc")
+            if st.button("🔊 Enviar Regra Fonética", key="hub_btn_fon", use_container_width=True, type="primary"):
                 salvar_fonetica(sp_client, t_err, t_cor, "")
             
             st.divider()
-            res_fon = sp_client.table("treinamento_fonetica").select("*").execute()
-            df_fon = pd.DataFrame(res_fon.data if hasattr(res_fon, 'data') else [])
             if not df_fon.empty:
                 st.dataframe(df_fon[['termo_errado', 'termo_corrigido', 'criado_em']], use_container_width=True)
+            else:
+                st.info("Nenhuma regra fonética cadastrada.")
         
         with tab_ouro:
             st.markdown("### 🏆 Hall da Fama (Roteiros Ouro)")
@@ -632,10 +645,10 @@ elif page == "Treinar IA":
                 salvar_ouro(sp_client, 1, t_prod, t_rot)
             
             st.divider()
-            res_ouro = sp_client.table("roteiros_ouro").select("*").execute()
-            df_ouro = pd.DataFrame(res_ouro.data if hasattr(res_ouro, 'data') else [])
             if not df_ouro.empty:
                 st.dataframe(df_ouro[['titulo_produto', 'roteiro_perfeito']], use_container_width=True)
+            else:
+                st.info("Nenhum roteiro ouro cadastrado ainda.")
 
 # --- PÁGINA 3: DASHBOARD ---
 elif page == "Dashboard":
