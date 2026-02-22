@@ -63,3 +63,11 @@ create table if not exists treinamento_fonetica (
   termo_corrigido text not null,
   exemplo_no_roteiro text
 );
+
+-- Tabela 6: Treinamento de Estruturas (Aberturas e Fechamentos/CTAs)
+create table if not exists treinamento_estruturas (
+  id uuid default gen_random_uuid() primary key,
+  criado_em timestamp with time zone default timezone('utc'::text, now()) not null,
+  tipo_estrutura varchar(50) not null check (tipo_estrutura in ('Abertura (Gancho)', 'Fechamento (CTA)')),
+  texto_ouro text not null
+);

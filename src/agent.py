@@ -88,6 +88,13 @@ class RoteiristaAgent:
                 for f in res_fon.data:
                     sb_parts.append(f"- {f['termo_errado']} -> ({f['termo_corrigido']})")
                     
+            # 4. Estruturas Aprovadas (Aberturas e Fechamentos/CTAs)
+            res_est = self.supabase.table("treinamento_estruturas").select("*").execute()
+            if res_est.data:
+                sb_parts.append("\n**ESTRUTURAS APROVADAS PARA INSPIRAÇÃO (HOOKS E CTAs):**")
+                for est in res_est.data:
+                    sb_parts.append(f"- [{est['tipo_estrutura']}] {est['texto_ouro']}")
+                    
         except Exception as e:
             print(f"Erro ao buscar contexto no Supabase: {e}")
             
@@ -130,22 +137,42 @@ class RoteiristaAgent:
         return "\n".join(parts)
 
     def gerar_roteiro(self, scraped_data):
-        """Envia a requisição para o Gemini gerar o roteiro."""
+        """Envia a requisição para o Gemini gerar o roteiro. Suporta Multimodal."""
         context = self._build_context()
+
+        # Verifica se o input tem imagem (novo fluxo do scraper)
+        if isinstance(scraped_data, dict):
+            text_data = scraped_data.get("text", "")
+            img_bytes = scraped_data.get("image_bytes", None)
+            img_mime = scraped_data.get("image_mime", None)
+        else:
+            text_data = str(scraped_data)
+            img_bytes = None
+            img_mime = None
 
         final_prompt = (
             f"{context}\n\n"
-            f"**CONTEXTO DO PRODUTO (INPUT):**\n{scraped_data}\n\n"
+            f"**CONTEXTO DO PRODUTO (INPUT TEXTUAL E/OU VISUAL):**\n{text_data}\n\n"
             f"**INSTRUÇÃO FINAL:**\n"
             f"Gere o roteiro no FORMATO DE SAÍDA OBRIGATÓRIO.\n"
             f"Siga RIGOROSAMENTE as Regras de Ouro do Estilo Breno.\n"
+            f"Se houver uma imagem fornecida, extraia o máximo de detalhes visuais (cor, textura, design) para enriquecer o roteiro.\n"
             f"Imite fielmente o estilo dos exemplos APROVADOS.\n"
             f"Use 'pra' no lugar de 'para'. Coloque a marca entre vírgulas.\n"
-            f"NÃO invente informações. Só use dados da ficha técnica acima."
+            f"NÃO invente capacidades que não possam ser comprovadas pela imagem ou texto."
         )
+
+        contents = [final_prompt]
+        
+        # Adiciona a imagem se houver
+        if img_bytes and img_mime:
+            from google.genai.types import Part
+            contents.append(
+                Part.from_bytes(data=img_bytes, mime_type=img_mime)
+            )
 
         response = self.client.models.generate_content(
             model=self.model_id,
-            contents=final_prompt,
+            contents=contents,
         )
         return response.text

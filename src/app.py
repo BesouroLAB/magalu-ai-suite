@@ -195,10 +195,35 @@ def salvar_fonetica(sp_client, termo_err, termo_cor, exemplo_rot):
         st.error(f"❌ Erro: {e}")
         return False
 
+def salvar_estrutura(sp_client, tipo, texto):
+    if not sp_client:
+        st.error("Supabase não conectado.")
+        return False
+    try:
+        data = {
+            "tipo_estrutura": tipo,
+            "texto_ouro": texto
+        }
+        res = sp_client.table("treinamento_estruturas").insert(data).execute()
+        if hasattr(res, 'data') and len(res.data) > 0:
+            st.success(f"💬 {tipo} cadastrada com sucesso!")
+            return True
+        else:
+            st.error("⚠️ Falha ao salvar no Supabase (verifique RLS).")
+            return False
+    except Exception as e:
+        st.error(f"❌ Erro: {e}")
+        return False
+
 
 with st.sidebar:
-    st.markdown("<h1 style='font-size: 32px; font-weight: 800; margin-bottom: 0px; padding-bottom: 0px; line-height: 1.1;'>Magalu<br>AI Suite</h1>", unsafe_allow_html=True)
-    st.markdown("<span style='color: #0086ff; font-weight: bold; font-size: 14px;'>V1.0 SÉRIE 1</span>", unsafe_allow_html=True)
+    st.markdown("""
+    <div style="display: flex; flex-direction: column; width: 120px; line-height: 1;">
+        <span style="color: #0086ff; font-weight: 800; font-size: 14px; letter-spacing: 2px;">MAGALU</span>
+        <span style="color: white; font-weight: 400; font-size: 24px; letter-spacing: 0.5px;">AI Suite</span>
+    </div>
+    """, unsafe_allow_html=True)
+    st.markdown("<span style='color: #0086ff; font-weight: bold; font-size: 12px;'>V1.0 SÉRIE 1</span>", unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""<img src="https://logodownload.org/wp-content/uploads/2014/10/magalu-logo-1.png" width="120" style="margin-bottom: 20px;" />""", unsafe_allow_html=True)
     
@@ -524,7 +549,7 @@ elif page == "Treinar IA":
         tab_fb, tab_est, tab_fon, tab_ouro = st.tabs(["📉 Calibração (Logs & Comparação)", "💬 Estruturas (Aberturas/Fechamentos)", "🗣️ Fonética", "🏆 Roteiros Ouro"])
         
         with tab_fb:
-            st.markdown("### 📉 Tabela Comparativa (IA vs Breno)")
+            st.markdown("### 📉 Tabela Comparativa (IA vs Aprovados pelo Breno)")
             res_fb = sp_client.table("feedback_roteiros").select("*").execute()
             df_fb = pd.DataFrame(res_fb.data if hasattr(res_fb, 'data') else [])
             if not df_fb.empty:
@@ -534,21 +559,31 @@ elif page == "Treinar IA":
                 
         with tab_est:
             st.markdown("### 💬 Aberturas e Fechamentos (""Hooks & CTAs"")")
-            st.caption("A tabela `treinamento_estruturas` será criada no banco para armazenar frases pré-aprovadas.")
-            # Interface simplificada que futuramente será ligada ao banco
-            t_tipo = st.selectbox("Tipo de Estrutura:", ["Abertura (Gancho)", "Fechamento (CTA)"])
-            t_texto = st.text_area("Texto Ouro:")
+            st.caption("Armazena ganchos criativos e chamadas para ação Aprovadas para a IA usar como inspiração.")
+            
+            col_est1, col_est2 = st.columns([1, 2])
+            with col_est1:
+                t_tipo = st.selectbox("Tipo de Estrutura:", ["Abertura (Gancho)", "Fechamento (CTA)"])
+            with col_est2:
+                t_texto = st.text_area("Texto Ouro (Aprovado):")
+                
             if st.button("Salvar Estrutura", type="primary"):
-                st.success(f"{t_tipo} cadastrada com sucesso! (Integração DB pendente)")
+                if t_texto.strip():
+                    salvar_estrutura(sp_client, t_tipo, t_texto)
+                else:
+                    st.warning("Preencha o texto da estrutura.")
+                    
+            st.divider()
+            if not df_est.empty:
+                st.dataframe(df_est[['criado_em', 'tipo_estrutura', 'texto_ouro']].sort_values(by='criado_em', ascending=False), use_container_width=True)
+            else:
+                st.info("Nenhuma estrutura cadastrada ainda.")
                 
         with tab_fon:
-            st.markdown("### 🗣️ Dicionário Fonético")
-            col_fon1, col_fon2 = st.columns(2)
-            with col_fon1:
-                t_err = st.text_input("Como se escreve (ou IA erra):", placeholder="Ex: 5G")
-            with col_fon2:
-                t_cor = st.text_input("Como a Lu fala (fonética aprovada):", placeholder="Ex: cinco gê")
-            if st.button("➕ Adicionar Regra Fonética", type="primary"):
+            st.markdown("🗣️ **Treinar Fonética**")
+            t_err = st.text_input("Como a IA escreveu:", placeholder="Ex: 5G", key=f"te_{idx}")
+            t_cor = st.text_input("Como a locução final deve ser (aprovada):", placeholder="Ex: cinco gê", key=f"tc_{idx}")
+            if st.button("🔊 Enviar Regra Fonética", key=f"btn_fon_{idx}", use_container_width=True, type="primary"):
                 salvar_fonetica(sp_client, t_err, t_cor, "")
             
             st.divider()
@@ -586,17 +621,20 @@ elif page == "Dashboard":
             res_pers = sp_client.table("treinamento_persona_lu").select("*").execute()
             res_fon = sp_client.table("treinamento_fonetica").select("*").execute()
             res_cats = sp_client.table("categorias").select("*").execute()
+            res_est = sp_client.table("treinamento_estruturas").select("*").execute()
             
             fb_data = res_fb.data if hasattr(res_fb, 'data') else []
             ouro_data = res_ouro.data if hasattr(res_ouro, 'data') else []
             pers_data = res_pers.data if hasattr(res_pers, 'data') else []
             fon_data = res_fon.data if hasattr(res_fon, 'data') else []
+            est_data = res_est.data if hasattr(res_est, 'data') else []
             cats_dict = {c['id']: c['nome'] for c in res_cats.data} if hasattr(res_cats, 'data') else {}
             
             df_fb = pd.DataFrame(fb_data)
             df_ouro = pd.DataFrame(ouro_data)
             df_pers = pd.DataFrame(pers_data)
             df_fon = pd.DataFrame(fon_data)
+            df_est = pd.DataFrame(est_data)
             
             if not df_fb.empty: df_fb['categoria'] = df_fb['categoria_id'].map(cats_dict)
             if not df_ouro.empty: df_ouro['categoria'] = df_ouro['categoria_id'].map(cats_dict)

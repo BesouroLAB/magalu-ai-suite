@@ -5,6 +5,8 @@ O Gemini pesquisa no Google, encontra a página real e extrai os dados.
 """
 import os
 import re
+import requests
+from bs4 import BeautifulSoup
 from google import genai
 from google.genai.types import Tool, GenerateContentConfig
 from dotenv import load_dotenv
@@ -41,19 +43,19 @@ PREÇO: [se disponível]
 """
 
 
-def scrape_with_gemini(code_or_url: str) -> str:
+def scrape_with_gemini(code_or_url: str) -> dict:
     """
-    Extrai dados de produto do Magalu usando Gemini com Google Search + URL Context.
+    Extrai dados de produto do Magalu (Texto + Imagem).
 
     Args:
         code_or_url: Código do produto (ex: '240304700') ou URL completa.
 
     Returns:
-        String com os dados estruturados do produto.
+        Dicionário com 'text' (dados estruturados), 'image_bytes' e 'image_mime'.
     """
     api_key = os.environ.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
     if not api_key:
-        return "❌ GEMINI_API_KEY não configurada. Configure no painel lateral."
+        return {"text": "❌ GEMINI_API_KEY não configurada. Configure no painel lateral.", "image_bytes": None, "image_mime": None}
 
     input_val = code_or_url.strip()
 
@@ -66,17 +68,47 @@ def scrape_with_gemini(code_or_url: str) -> str:
 
     prompt = EXTRACTION_PROMPT.replace("{code}", code)
 
+    # Tenta extrair a imagem do produto usando BeautifulSoup
+    img_bytes, img_mime = _extract_image(code)
+    
+    result_text = None
     # Método 1: Google Search + URL Context combinados (mais poderoso)
     result = _try_combined_search(prompt, api_key)
     if result:
-        return result
+        result_text = result
+    else:
+        # Método 2: Apenas Google Search
+        result = _try_google_search(prompt, api_key)
+        if result:
+            result_text = result
 
-    # Método 2: Apenas Google Search
-    result = _try_google_search(prompt, api_key)
-    if result:
-        return result
+    if not result_text:
+        result_text = f"⚠️ Não foi possível extrair dados do produto {code}.\nCole a ficha técnica manualmente."
 
-    return f"⚠️ Não foi possível extrair dados do produto {code}.\nCole a ficha técnica manualmente."
+    return {
+        "text": result_text,
+        "image_bytes": img_bytes,
+        "image_mime": img_mime
+    }
+
+def _extract_image(code: str):
+    """Tenta baixar a imagem principal (og:image) do produto."""
+    try:
+        url = f"https://www.magazineluiza.com.br/p/{code}"
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        response = requests.get(url, headers=headers, timeout=5)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            og_image = soup.find('meta', property='og:image')
+            if og_image and og_image.get('content'):
+                img_url = og_image['content']
+                img_response = requests.get(img_url, timeout=5)
+                if img_response.status_code == 200:
+                    mime = img_response.headers.get('content-type', 'image/jpeg')
+                    return img_response.content, mime
+    except Exception as e:
+        print(f"[scraper] Erro ao extrair imagem do produto {code}: {e}")
+    return None, None
 
 
 def _try_combined_search(prompt: str, api_key: str) -> str | None:
