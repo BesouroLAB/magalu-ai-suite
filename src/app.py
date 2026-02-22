@@ -196,7 +196,7 @@ def salvar_fonetica(sp_client, termo_err, termo_cor, exemplo_rot):
 
 # --- SIDEBAR E NAVEGAÇÃO ---
 with st.sidebar:
-    st.image("https://logopng.com.br/logos/magazine-luiza-22.png", width=150)
+    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Magalu_2019_logo.svg/500px-Magalu_2019_logo.svg.png", width=150)
     
     st.markdown("### 🧭 Navegação")
     page = st.radio("Selecione o Módulo", ["Estúdio de Criação", "Dashboard de Inteligência"])
