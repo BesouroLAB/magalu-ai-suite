@@ -9,15 +9,16 @@ load_dotenv()
 PROJECT_ROOT = os.path.join(os.path.dirname(__file__), '..')
 
 class RoteiristaAgent:
-    def __init__(self):
+    def __init__(self, supabase_client=None):
         api_key = os.environ.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise ValueError("GEMINI_API_KEY não encontrada!")
         genai.configure(api_key=api_key)
 
         self.model = genai.GenerativeModel('gemini-2.5-flash')
+        self.supabase = supabase_client
 
-        # Carrega toda a base de conhecimento
+        # Carrega toda a base de conhecimento estática
         self.system_prompt = self._load_file(
             os.path.join(PROJECT_ROOT, ".agents", "system_prompt.txt"), ""
         )
@@ -58,8 +59,41 @@ class RoteiristaAgent:
                 pass
         return docs
 
+    def _fetch_supabase_context(self):
+        """Busca aprendizado dinâmico no Supabase."""
+        sb_parts = []
+        if not self.supabase:
+            return ""
+        
+        try:
+            # 1. Roteiros Ouro (Exemplos Master)
+            res_ouro = self.supabase.table("roteiros_ouro").select("*").limit(3).execute()
+            if res_ouro.data:
+                sb_parts.append("\n**REFERÊNCIAS DE ELITE (ROTEIROS OURO SÃO O ALVO):**")
+                for r in res_ouro.data:
+                    sb_parts.append(f"- Produto: {r['titulo_produto']}\n  Roteiro Perfeito: {r['roteiro_perfeito']}")
+
+            # 2. Ajustes de Persona
+            res_pers = self.supabase.table("treinamento_persona_lu").select("*").limit(5).execute()
+            if res_pers.data:
+                sb_parts.append("\n**AJUSTES DE PERSONA (LIÇÕES APRENDIDAS):**")
+                for p in res_pers.data:
+                    sb_parts.append(f"- Pilar: {p['pilar_persona']}\n  Erro Anterior: {p['erro_cometido']}\n  Correção Master: {p['texto_corrigido_humano']}")
+
+            # 3. Novas Regras Fonéticas
+            res_fon = self.supabase.table("treinamento_fonetica").select("*").execute()
+            if res_fon.data:
+                sb_parts.append("\n**NOVAS REGRAS DE FONÉTICA (OBRIGATÓRIO):**")
+                for f in res_fon.data:
+                    sb_parts.append(f"- {f['termo_errado']} -> ({f['termo_corrigido']})")
+                    
+        except Exception as e:
+            print(f"Erro ao buscar contexto no Supabase: {e}")
+            
+        return "\n".join(sb_parts)
+
     def _build_context(self):
-        """Monta o contexto completo: Prompt + KB Estratégica + Fonética + Few-Shot."""
+        """Monta o contexto completo: Prompt + KB Estratégica + Fonética + Few-Shot + Supabase."""
         parts = []
 
         # 1. System Prompt (Regras de Ouro do Breno)
@@ -73,24 +107,24 @@ class RoteiristaAgent:
             for doc in self.context_docs:
                 parts.append(doc)
 
-        # 3. Dicionário de fonética
+        # 3. Dicionário de fonética (Estático)
         if self.phonetics:
-            parts.append("\n**DICIONÁRIO DE FONÉTICA (OBRIGATÓRIO USAR SE A SIGLA APARECER):**")
+            parts.append("\n**DICIONÁRIO DE FONÉTICA BASE (PADRÃO):**")
             for sigla, pronuncia in self.phonetics.items():
                 parts.append(f"- {sigla} -> ({pronuncia})")
 
-        # 4. Few-Shot Learning (Antes vs Depois do Breno)
+        # 4. Few-Shot Learning (Estático)
         if self.few_shot_examples:
-            parts.append("\n**EXEMPLOS REAIS DE CORREÇÃO (ESTUDE COM ATENÇÃO):**")
-            parts.append("Abaixo estão roteiros que a IA gerou e como o editor Breno CORRIGIU.")
-            parts.append("Você DEVE imitar o estilo do texto APROVADO, não o texto gerado.")
+            parts.append("\n**EXEMPLOS HISTÓRICOS DE REFERÊNCIA:**")
             for ex in self.few_shot_examples:
                 parts.append(f"\n--- EXEMPLO: {ex.get('produto', '')} ---")
-                parts.append(f"❌ TEXTO RUIM (o que a IA gerou errado):")
-                parts.append(ex.get('output_antes_ia_ruim', ''))
-                parts.append(f"✅ TEXTO APROVADO (o que o Breno corrigiu):")
-                parts.append(ex.get('output_depois_breno_aprovado', ''))
-            parts.append("-" * 40)
+                parts.append(f"❌ TEXTO IA: {ex.get('output_antes_ia_ruim', '')}")
+                parts.append(f"✅ COMO O BRENO QUER: {ex.get('output_depois_breno_aprovado', '')}")
+
+        # 5. Aprendizado em Tempo Real (Supabase)
+        supabase_context = self._fetch_supabase_context()
+        if supabase_context:
+            parts.append(supabase_context)
 
         return "\n".join(parts)
 

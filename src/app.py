@@ -299,7 +299,7 @@ if page == "Estúdio de Criação":
             else:
                 with st.spinner(f"Processando {len(fichas)} roteiro(s)..."):
                     try:
-                        agent = RoteiristaAgent()
+                        agent = RoteiristaAgent(supabase_client=st.session_state.get('supabase_client'))
                         roteiros = []
                         for ficha in fichas:
                             roteiro = agent.gerar_roteiro(ficha)
@@ -326,9 +326,9 @@ if page == "Estúdio de Criação":
 
                     with tab_view:
                         # Impede que o Markdown converta "traço + espaço" em bullet points no Streamlit
-                        roteiro_view = item['roteiro_original'].replace('\n- ', '\n\- ')
+                        roteiro_view = item['roteiro_original'].replace('\n- ', '\n\\- ')
                         if roteiro_view.startswith('- '):
-                            roteiro_view = '\- ' + roteiro_view[2:]
+                            roteiro_view = '\\- ' + roteiro_view[2:]
                         st.markdown(f"<div style='background-color: var(--bg-card); padding: 15px; border-radius: 8px; border: 1px solid #2A3241;'>{roteiro_view}</div>", unsafe_allow_html=True)
 
                     with tab_edit:
@@ -379,16 +379,21 @@ if page == "Estúdio de Criação":
                                 if st.button("🔊 Enviar Regra Fonética", key=f"btn_fon_{idx}", use_container_width=True, type="primary"):
                                     salvar_fonetica(sp_cli, t_err, t_cor, edited_val)
 
-        if st.button("🗑️ Limpar Mesa de Trabalho", use_container_width=True, type="secondary"):
-            del st.session_state['roteiros']
-            st.rerun()
-    else:
-        st.markdown(
-            "<div style='display: flex; height: 450px; align-items: center; justify-content: center; border: 2px dashed #2A3241; border-radius: 8px; color: #8b92a5; text-align: center; padding: 20px'>"
-            "Cole a ficha técnica no painel esquerdo e clique em Gerar.<br><br>Os roteiros aparecerão aqui prontos para calibração, treino da IA ou envio para Ouro!"
-            "</div>", 
-            unsafe_allow_html=True
-        )
+            st.divider()
+            if st.button("🗑️ Limpar Mesa de Trabalho", use_container_width=True, type="secondary"):
+                del st.session_state['roteiros']
+                st.rerun()
+        else:
+            st.markdown(
+                """
+                <div style='display: flex; height: 450px; align-items: center; justify-content: center; border: 2px dashed #2A3241; border-radius: 8px; color: #8b92a5; text-align: center; padding: 20px'>
+                Cole a ficha técnica no painel esquerdo e clique em Gerar.<br><br>
+                Os roteiros aparecerão aqui prontos para calibração, treino da IA ou envio para Ouro!
+                </div>
+                """, 
+                unsafe_allow_html=True
+            )
+
 
 
 # --- PÁGINA 2: DASHBOARD DE INTELIGÊNCIA ---
@@ -404,12 +409,23 @@ elif page == "Dashboard de Inteligência":
         try:
             res_fb = sp_client.table("feedback_roteiros").select("*").execute()
             res_ouro = sp_client.table("roteiros_ouro").select("*").execute()
+            res_pers = sp_client.table("treinamento_persona_lu").select("*").execute()
+            res_fon = sp_client.table("treinamento_fonetica").select("*").execute()
+            res_cats = sp_client.table("categorias").select("*").execute()
             
             fb_data = res_fb.data if hasattr(res_fb, 'data') else []
             ouro_data = res_ouro.data if hasattr(res_ouro, 'data') else []
+            pers_data = res_pers.data if hasattr(res_pers, 'data') else []
+            fon_data = res_fon.data if hasattr(res_fon, 'data') else []
+            cats_dict = {c['id']: c['nome'] for c in res_cats.data} if hasattr(res_cats, 'data') else {}
             
             df_fb = pd.DataFrame(fb_data)
             df_ouro = pd.DataFrame(ouro_data)
+            df_pers = pd.DataFrame(pers_data)
+            df_fon = pd.DataFrame(fon_data)
+            
+            if not df_fb.empty: df_fb['categoria'] = df_fb['categoria_id'].map(cats_dict)
+            if not df_ouro.empty: df_ouro['categoria'] = df_ouro['categoria_id'].map(cats_dict)
             
             total_avaliados = len(df_fb)
             positivos = len(df_fb[df_fb['avaliacao'] == 1]) if not df_fb.empty and 'avaliacao' in df_fb.columns else 0
@@ -424,17 +440,35 @@ elif page == "Dashboard de Inteligência":
             
             st.divider()
             
-            st.markdown("### 📝 Últimos Roteiros Ouro (Base de Referência Premium)")
-            if not df_ouro.empty:
-                st.dataframe(df_ouro[['criado_em', 'categoria_id', 'titulo_produto', 'roteiro_perfeito']].sort_values(by='criado_em', ascending=False), use_container_width=True)
-            else:
-                st.info("Nenhum Roteiro Ouro cadastrado ainda.")
-                
-            st.markdown("### 📉 Feedbacks Recentes (Gaps para Correção Diária)")
-            if not df_fb.empty:
-                st.dataframe(df_fb[['criado_em', 'avaliacao', 'categoria_id', 'roteiro_original_ia', 'roteiro_final_humano']].sort_values(by='criado_em', ascending=False), use_container_width=True)
-            else:
-                st.info("Nenhum feedback/avaliação registrado.")
+            tab_ouro, tab_feed, tab_pers, tab_fon = st.tabs(["🏆 Roteiros Ouro", "📉 Feedbacks", "💃 Persona", "🗣️ Fonética"])
+            
+            with tab_ouro:
+                st.markdown("### 🏆 Referências Premium")
+                if not df_ouro.empty:
+                    st.dataframe(df_ouro[['criado_em', 'categoria', 'titulo_produto', 'roteiro_perfeito']].sort_values(by='criado_em', ascending=False), use_container_width=True)
+                else:
+                    st.info("Nenhum Roteiro Ouro cadastrado.")
+            
+            with tab_feed:
+                st.markdown("### 📉 Logs de Feedback")
+                if not df_fb.empty:
+                    st.dataframe(df_fb[['criado_em', 'avaliacao', 'categoria', 'roteiro_original_ia', 'roteiro_final_humano', 'comentarios']].sort_values(by='criado_em', ascending=False), use_container_width=True)
+                else:
+                    st.info("Nenhum feedback registrado.")
+            
+            with tab_pers:
+                st.markdown("### 💃 Treinamento de Persona")
+                if not df_pers.empty:
+                    st.dataframe(df_pers[['criado_em', 'pilar_persona', 'erro_cometido', 'texto_corrigido_humano', 'lexico_sugerido']].sort_values(by='criado_em', ascending=False), use_container_width=True)
+                else:
+                    st.info("Nenhum ajuste de persona cadastrado.")
+                    
+            with tab_fon:
+                st.markdown("### 🗣️ Regras de Fonética")
+                if not df_fon.empty:
+                    st.dataframe(df_fon[['criado_em', 'termo_errado', 'termo_corrigido', 'exemplo_no_roteiro']].sort_values(by='criado_em', ascending=False), use_container_width=True)
+                else:
+                    st.info("Nenhuma regra de fonética cadastrada.")
                 
         except Exception as e:
             st.error(f"Erro ao carregar os dados do dashboard: {e}")
