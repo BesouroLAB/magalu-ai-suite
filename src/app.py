@@ -30,14 +30,18 @@ DARK_MODE_CSS = """
     .stApp > header { background-color: transparent; }
     .stApp { background-color: var(--bg-main) !important; color: var(--text-primary) !important; }
 
-    h1, h2, h3, p, span, div { color: var(--text-primary) !important; font-family: 'Inter', sans-serif; }
-    .stMarkdown, .stText { color: var(--text-muted) !important; }
+    h1 { font-size: 1.6rem !important; }
+    h2 { font-size: 1.3rem !important; }
+    h3 { font-size: 1.1rem !important; }
+    p, span, div, label { color: var(--text-primary) !important; font-family: 'Inter', sans-serif; font-size: 0.92rem !important; }
+    .stMarkdown, .stText { color: var(--text-muted) !important; font-size: 0.9rem !important; }
     
     .stTextArea > div > div > textarea, .stTextInput > div > div > input, .stSelectbox > div > div > div {
         background-color: var(--bg-card) !important;
         color: var(--text-primary) !important;
         border: 1px solid #0a1b33 !important;
         border-radius: 8px;
+        font-size: 0.9rem !important;
     }
     .stTextArea > div > div > textarea:focus, .stTextInput > div > div > input:focus {
         border-color: var(--mglu-blue) !important;
@@ -47,6 +51,7 @@ DARK_MODE_CSS = """
     .stButton > button[data-baseweb="button"] {
         border-radius: 8px !important;
         font-weight: 600 !important;
+        font-size: 0.85rem !important;
         transition: all 0.2s ease-in-out !important;
     }
     
