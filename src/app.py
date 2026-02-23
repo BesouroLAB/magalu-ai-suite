@@ -944,6 +944,9 @@ elif page == "Treinar IA":
                     st.markdown("**✅ DEPOIS (Aprovado pelo Breno)**")
                     roteiro_breno_input = st.text_area("Cole aqui a versão final aprovada pelo Breno:", height=200, key="calib_breno")
                 
+                # Seletor de Categoria (necessário para o cérebro da IA)
+                cat_calib = st.selectbox("Categoria do Produto:", df_cats['nome'].tolist() if not df_cats.empty else ["Genérico"])
+                
                 avaliacao_input = st.select_slider("Avaliação geral do roteiro original da IA:", options=["Ruim", "Regular", "Bom", "Ótimo"], value="Bom")
                 
                 submitted = st.form_submit_button("⚖️ Registrar Comparação", type="primary", use_container_width=True)
@@ -971,7 +974,13 @@ elif page == "Treinar IA":
                             avaliacao_int = avaliacao_map.get(avaliacao_input, 0)
                             
                             # 3. Salva no banco
+                            selected_cat_id = 1
+                            if not df_cats.empty and cat_calib in df_cats['nome'].tolist():
+                                selected_cat_id = df_cats[df_cats['nome'] == cat_calib]['id'].values[0]
+
                             data = {
+                                "categoria_id": int(selected_cat_id),
+                                "ficha_tecnica": "(Calibração Manual)", # Placeholder para evitar erro NOT NULL
                                 "roteiro_original_ia": roteiro_ia_input,
                                 "roteiro_final_humano": roteiro_breno_input,
                                 "avaliacao": avaliacao_int,
