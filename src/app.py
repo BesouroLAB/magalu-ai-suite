@@ -177,12 +177,50 @@ DARK_MODE_CSS = """
         text-transform: uppercase;
         letter-spacing: 1px;
         margin-bottom: 0.5rem;
-    }
     .metric-value {
         font-size: 1.25rem !important;
         color: #ffffff !important;
         font-weight: 700;
         letter-spacing: -0.5px;
+    }
+
+    /* --- CHAT LU FLUTUANTE --- */
+    div[data-testid="stPopover"] {
+        position: fixed !important;
+        bottom: 30px !important;
+        right: 30px !important;
+        z-index: 999999 !important;
+    }
+    div[data-testid="stPopover"] > button {
+        border-radius: 50% !important;
+        width: 65px !important;
+        height: 65px !important;
+        background: linear-gradient(135deg, #0086ff 0%, #004db3 100%) !important;
+        color: white !important;
+        box-shadow: 0 4px 15px rgba(0, 134, 255, 0.4) !important;
+        border: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    div[data-testid="stPopover"] > button:hover {
+        transform: scale(1.05) !important;
+        box-shadow: 0 6px 20px rgba(0, 134, 255, 0.6) !important;
+        background: linear-gradient(135deg, #339dff 0%, #0066cc 100%) !important;
+    }
+    div[data-testid="stPopover"] > button p {
+        font-size: 32px !important;
+        line-height: 1 !important;
+    }
+    div[data-testid="stPopoverBody"] {
+        width: 380px !important;
+        height: 550px !important;
+        border-radius: 12px !important;
+        background: var(--bg-card) !important;
+        border: 1px solid rgba(0, 134, 255, 0.3) !important;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important;
+        padding: 5px !important;
+        overflow: hidden !important;
     }
 </style>
 """
@@ -944,42 +982,39 @@ if page == "Criar Roteiros":
     # --- MESA DE TRABALHO E HISTÓRICO LATERAL ---
     st.markdown("<br>", unsafe_allow_html=True)
     
-    col_hist_nav, col_main_work, col_lu_chat = st.columns([0.8, 2.3, 1.2]) # Layout 3 Colunas
+    col_hist_nav, col_main_work = st.columns([0.8, 3.5]) # Layout 2 Colunas
     
-    with col_lu_chat:
-        # Chat agora dentro de um expander colapsável conforme solicitado
-        with st.expander("💬 Assistente Lu (Chat)", expanded=True):
-            st.markdown("<div style='background: rgba(0, 134, 255, 0.03); padding: 5px; border-radius: 8px;'>", unsafe_allow_html=True)
-            
-            # Chat compactado na lateral
-            if "chat_history" not in st.session_state:
-                st.session_state.chat_history = [{"role": "Lu", "content": "Olá! Estou aqui ao lado para te ajudar. Alguma dúvida sobre os roteiros ou o banco de dados?"}]
-            
-            # Container de mensagens com altura fixa
-            chat_container = st.container(height=450)
-            with chat_container:
-                for message in st.session_state.chat_history:
-                    with st.chat_message(message["role"]):
-                        st.markdown(f"<span style='font-size: 13px;'>{message['content']}</span>", unsafe_allow_html=True)
+    # --- CHAT FLUTUANTE DA LU ---
+    with st.popover("💬", use_container_width=False):
+        st.markdown("<div style='background: rgba(0, 134, 255, 0.05); padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 15px;'><b style='color: #0086ff;'>✨ Assistente Lu</b></div>", unsafe_allow_html=True)
+        
+        if "chat_history" not in st.session_state:
+            st.session_state.chat_history = [{"role": "Lu", "content": "Olá! Estou aqui colapsada no canto para não atrapalhar sua tela. Como posso ajudar?"}]
+        
+        # Container de mensagens com altura fixa
+        chat_container = st.container(height=380)
+        with chat_container:
+            for message in st.session_state.chat_history:
+                with st.chat_message(message["role"]):
+                    st.markdown(f"<span style='font-size: 13px;'>{message['content']}</span>", unsafe_allow_html=True)
 
-            if prompt_side := st.chat_input("Pergunte algo...", key="chat_side_input"):
-                st.session_state.chat_history.append({"role": "user", "content": prompt_side})
-                
-                # Contexto rápido para a Lu
-                context_str = ""
-                sp = st.session_state.get('supabase_client')
-                if sp:
-                    try:
-                        res = sp.table("historico_roteiros").select("id", count="exact").limit(1).execute()
-                        total_db = res.count if hasattr(res, 'count') else 0
-                        context_str = f"Métricas: Total no banco = {total_db}. Versão 2.8.1."
-                    except: context_str = "Banco conectado."
-                
-                agent_chat = RoteiristaAgent(model_id=st.session_state.get('modelo_llm', 'gemini-2.5-flash'))
-                resposta = agent_chat.chat_with_context(prompt_side, st.session_state.chat_history, context_str)
-                st.session_state.chat_history.append({"role": "Lu", "content": resposta})
-                st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
+        if prompt_side := st.chat_input("Pergunte algo...", key="chat_side_input"):
+            st.session_state.chat_history.append({"role": "user", "content": prompt_side})
+            
+            # Contexto rápido para a Lu
+            context_str = ""
+            sp = st.session_state.get('supabase_client')
+            if sp:
+                try:
+                    res = sp.table("historico_roteiros").select("id", count="exact").limit(1).execute()
+                    total_db = res.count if hasattr(res, 'count') else 0
+                    context_str = f"Métricas: Total no banco = {total_db}. Versão 2.8.2."
+                except: context_str = "Banco conectado."
+            
+            agent_chat = RoteiristaAgent(model_id=st.session_state.get('modelo_llm', 'gemini-2.5-flash'))
+            resposta = agent_chat.chat_with_context(prompt_side, st.session_state.chat_history, context_str)
+            st.session_state.chat_history.append({"role": "Lu", "content": resposta})
+            st.rerun()
 
     with col_main_work:
         st.markdown("##### 📅 Roteiros Recentes")
@@ -1092,6 +1127,10 @@ if page == "Criar Roteiros":
                 cat_id_roteiro = item.get("categoria_id", cat_selecionada_id)
                 codigo_produto = item.get("codigo", "")
                 
+                custo = item.get('custo_brl', 0)
+                tag_custo = "⚡ Gratuito" if custo == 0 else f"💲 R$ {custo:.4f}"
+                tokens_text = "Sem Custo de Tokens" if custo == 0 else f"{item.get('tokens_in', 0)} / {item.get('tokens_out', 0)} tk"
+                
                 # Container estilizado para o roteiro ativo (Header Card)
                 st.markdown(f"""
                 <div style='background: #1e2530; padding: 20px; border-radius: 12px; border: 1px solid #0086ff; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: start;'>
@@ -1100,8 +1139,8 @@ if page == "Criar Roteiros":
                         <p style='margin: 5px 0 0 0; font-size: 13px; color: #8b92a5;'>{titulo_curto}</p>
                     </div>
                     <div style='text-align: right;'>
-                        <span style='background: rgba(0, 134, 255, 0.1); color: #0086ff; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;'>{item.get('model_id', 'LLM')}</span>
-                        <div style='margin-top: 5px; font-size: 10px; color: #4a5568;'>{item.get('tokens_in', 0)} / {item.get('tokens_out', 0)} tk</div>
+                        <span style='background: rgba(0, 134, 255, 0.1); color: #0086ff; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;'>{item.get('model_id', 'LLM')} | {tag_custo}</span>
+                        <div style='margin-top: 5px; font-size: 10px; color: #4a5568;'>{tokens_text}</div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)

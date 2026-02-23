@@ -45,62 +45,23 @@ PREÇO: [se disponível]
 """
 
 
-def scrape_with_gemini(code_or_url: str) -> dict:
-    """
-    Extrai dados de produto do Magalu (Texto + Imagem).
-
-    Args:
-        code_or_url: Código do produto (ex: '240304700') ou URL completa.
-
-    Returns:
-        Dicionário com 'text' (dados estruturados) e 'images' (lista de dicts com 'bytes' e 'mime').
-    """
-    api_key = os.environ.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        return {"text": "❌ GEMINI_API_KEY não configurada. Configure no painel lateral.", "images": []}
-
-    input_val = code_or_url.strip()
-
-    # Se for URL completa, tenta extrair o código dela
-    if input_val.startswith("http"):
-        match = re.search(r'/p/(\w+)', input_val)
-        code = match.group(1) if match else input_val
-    else:
-        code = re.sub(r'[^0-9a-zA-Z]', '', input_val)
-
-    prompt = EXTRACTION_PROMPT.replace("{code}", code)
-
-    # Tenta extrair as imagens da galeria do produto
-    images_list = _extract_images(code)
-    
-    result_text = None
-    # Método 1: Google Search + URL Context combinados (mais poderoso)
-    result = _try_combined_search(prompt, api_key)
-    if result:
-        result_text = result
-    else:
-        # Método 2: Apenas Google Search
-        result = _try_google_search(prompt, api_key)
-        if result:
-            result_text = result
-
-    if not result_text:
-        result_text = f"⚠️ Não foi possível extrair dados do produto {code}.\nCole a ficha técnica manualmente."
-
-    return {
-        "text": result_text,
-        "images": images_list
-    }
-
 def _extract_images(code: str, max_images: int = 5):
-    """Tenta baixar imagens da galeria do produto."""
+    """Tenta baixar imagens da galeria do produto e retorna também o texto bruto da página."""
     images = []
+    page_text = ""
     try:
         url = f"https://www.magazineluiza.com.br/p/{code}"
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
         response = requests.get(url, headers=headers, timeout=5)
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Extrair texto bruto da página para ajudar o Gemini caso a busca falhe
+            for script in soup(["script", "style", "nav", "footer", "header"]):
+                script.decompose()
+            text_blocks = soup.stripped_strings
+            page_text = " ".join(text_blocks)
+            
             img_urls = []
             
             # 1. Tenta a og:image primeiro (garante pelo menos a principal)
@@ -133,8 +94,59 @@ def _extract_images(code: str, max_images: int = 5):
     except Exception as e:
         print(f"[scraper] Erro ao extrair imagens do produto {code}: {e}")
         
-    return images
+    return images, page_text
 
+
+def scrape_with_gemini(code_or_url: str) -> dict:
+    """
+    Extrai dados de produto do Magalu (Texto + Imagem).
+
+    Args:
+        code_or_url: Código do produto (ex: '240304700') ou URL completa.
+
+    Returns:
+        Dicionário com 'text' (dados estruturados) e 'images' (lista de dicts com 'bytes' e 'mime').
+    """
+    api_key = os.environ.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return {"text": "❌ GEMINI_API_KEY não configurada. Configure no painel lateral.", "images": []}
+
+    input_val = code_or_url.strip()
+
+    # Se for URL completa, tenta extrair o código dela
+    if input_val.startswith("http"):
+        match = re.search(r'/p/(\w+)', input_val)
+        code = match.group(1) if match else input_val
+    else:
+        code = re.sub(r'[^0-9a-zA-Z]', '', input_val)
+
+    prompt = EXTRACTION_PROMPT.replace("{code}", code)
+
+    # Tenta extrair as imagens e texto direto da página
+    images_list, raw_page_text = _extract_images(code)
+    
+    # Se conseguiu o texto bruto, fornece como dica pesada para o Gemini
+    if raw_page_text and len(raw_page_text) > 200:
+        prompt += f"\n\n**DICA: AQUI ESTÁ TODO O TEXTO DA PÁGINA DESSE PRODUTO, CASO A BUSCA GOOGLE FALHE:**\n{raw_page_text[:8000]}"
+    
+    result_text = None
+    # Método 1: Google Search + URL Context combinados (mais poderoso)
+    result = _try_combined_search(prompt, api_key)
+    if result:
+        result_text = result
+    else:
+        # Método 2: Apenas Google Search
+        result = _try_google_search(prompt, api_key)
+        if result:
+            result_text = result
+
+    if not result_text:
+        result_text = f"⚠️ Não foi possível extrair dados do produto {code}.\nCole a ficha técnica manualmente."
+
+    return {
+        "text": result_text,
+        "images": images_list
+    }
 
 def _try_combined_search(prompt: str, api_key: str) -> str | None:
     """Tenta com Google Search + URL Context combinados."""
