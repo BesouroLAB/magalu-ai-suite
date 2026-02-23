@@ -638,7 +638,8 @@ if page == "Criar Roteiros":
                                 "tokens_in": resultado["tokens_in"],
                                 "tokens_out": resultado["tokens_out"],
                                 "custo_brl": resultado["custo_brl"],
-                                "global_num": global_id # Salva o número para exibição
+                                "global_num": global_id, # Salva o número para exibição
+                                "mes": mes_selecionado # Salva o mês de lançamento
                             })
                             
                             # Auto-log no histórico (silencioso) com tracking de custo
@@ -666,6 +667,7 @@ if page == "Criar Roteiros":
                         
                         progress.progress(1.0, text="✅ Lote Concluído com Sucesso!")
                         st.session_state['data_roteiro_global'] = data_roteiro_str
+                        st.session_state['mes_global'] = mes_selecionado
                         if 'roteiros' not in st.session_state:
                             st.session_state['roteiros'] = []
                         # Prepend o novo lote ao início da lista global da sessão
@@ -771,7 +773,8 @@ if page == "Criar Roteiros":
                                     "tokens_in": resultado["tokens_in"],
                                     "tokens_out": resultado["tokens_out"],
                                     "custo_brl": resultado["custo_brl"],
-                                    "global_num": global_id
+                                    "global_num": global_id,
+                                    "mes": mes_selecionado
                                 })
 
                                 # Auto-log no histórico (Modo Manual)
@@ -792,6 +795,7 @@ if page == "Criar Roteiros":
                                     pass
 
                             st.session_state['data_roteiro_global'] = data_roteiro_str
+                            st.session_state['mes_global'] = mes_selecionado
                             if 'roteiros' not in st.session_state:
                                 st.session_state['roteiros'] = []
                             # Prepend para o topo
@@ -849,6 +853,15 @@ if page == "Criar Roteiros":
                                         "model_id": r_row['modelo_llm'],
                                         "custo_brl": r_row['custo_estimado_brl']
                                     }
+                                    # Tenta extrair o mês da primeira linha se for NW LU [MES]
+                                    try:
+                                        first_line = r_row['roteiro_gerado'].split('\n')[0]
+                                        if "NW LU" in first_line:
+                                            parts = first_line.split()
+                                            if len(parts) >= 3:
+                                                rec_item["mes"] = parts[2]
+                                    except:
+                                        pass
                                     if 'roteiros' not in st.session_state:
                                         st.session_state['roteiros'] = []
                                     
@@ -868,31 +881,21 @@ if page == "Criar Roteiros":
 
     with col_main_work:
         if 'roteiros' in st.session_state and st.session_state['roteiros']:
-            # Controle de Mês para Exportação
-            meses_disponiveis = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
-            mes_atual = meses_disponiveis[datetime.now().month - 1]
-            
-            # Layout do cabeçalho da mesa de trabalho
-            col_btn, col_mes = st.columns([3, 1])
-            with col_mes:
-                mes_selecionado = st.selectbox("Mês de Ref. (Exportação)", meses_disponiveis, index=meses_disponiveis.index(mes_atual))
-            
-            with col_btn:
-                # Botão para baixar todos os roteiros em um ZIP
-                zip_bytes, zip_filename = export_all_roteiros_zip(
-                    st.session_state['roteiros'], 
-                    selected_month=mes_selecionado,
-                    selected_date=st.session_state.get('data_roteiro_global')
-                )
-                st.download_button(
-                    label="📦 BAIXAR TODOS (ZIP)",
-                    data=zip_bytes,
-                    file_name=zip_filename,
-                    mime="application/zip",
-                    use_container_width=True,
-                    type="primary",
-                    help="Baixa todos os roteiros da lista abaixo em um único arquivo compactado."
-                )
+            # Botão para baixar todos os roteiros em um ZIP (Full Width agora que o mês sumiu)
+            zip_bytes, zip_filename = export_all_roteiros_zip(
+                st.session_state['roteiros'], 
+                selected_month=st.session_state.get('mes_global', 'FEV'),
+                selected_date=st.session_state.get('data_roteiro_global')
+            )
+            st.download_button(
+                label="📦 BAIXAR TODOS (ZIP)",
+                data=zip_bytes,
+                file_name=zip_filename,
+                mime="application/zip",
+                use_container_width=True,
+                type="primary",
+                help="Baixa todos os roteiros da lista abaixo em um único arquivo compactado."
+            )
             
             st.divider()
             
@@ -958,7 +961,7 @@ if page == "Criar Roteiros":
                         edited_val,
                         code=codigo_produto,
                         product_name=titulo_curto,
-                        selected_month=mes_selecionado,
+                        selected_month=item.get('mes', st.session_state.get('mes_global', 'FEV')),
                         selected_date=st.session_state.get('data_roteiro_global')
                     )
                     st.download_button(
