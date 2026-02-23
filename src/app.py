@@ -521,48 +521,10 @@ with st.sidebar:
     gemini_status = "Ativo" if api_key_env else "Inativo"
     supa_status = "Ativo" if supabase_client else "Inativo"
     
-    with st.expander("⚙️ Configurações", expanded=False):
-        st.caption("Editar Chaves e Conexão")
-        
-        # LLM Key Management
-        keys_to_manage = [
-            ("Gemini", "GEMINI_API_KEY", api_key_env),
-            ("Puter (Grok)", "PUTER_API_KEY", puter_key_env),
-            ("OpenAI (GPT)", "OPENAI_API_KEY", openai_key_env),
-            ("OpenRouter", "OPENROUTER_API_KEY", openrouter_key_env),
-            ("Z.ai (GLM)", "ZAI_API_KEY", zai_key_env),
-            ("Kimi (Moonshot)", "KIMI_API_KEY", kimi_key_env)
-        ]
-        
-        for name, env_var, current_val in keys_to_manage:
-            if env_var in os.environ and os.environ.get(env_var):
-                st.success(f"✅ {name} (Configurado)")
-            else:
-                new_key = st.text_input(f"Adicionar chave {name}:", type="password", key=f"key_in_{env_var}")
-                if new_key:
-                    with open('.env', 'a', encoding='utf-8') as f:
-                        f.write(f"\n{env_var}={new_key}")
-                    os.environ[env_var] = new_key
-                    st.success(f"✅ {name} Adicionada!")
-                    st.rerun()
-
-        st.markdown("---")
-        
-        # Supabase
-        supa_url_env = os.environ.get("SUPABASE_URL", "")
-        supa_url_placeholder = supa_url_env[:30] + "..." if supa_url_env and len(supa_url_env) > 30 else ""
-        supa_url_input = st.text_input(
-            f"🔗 URL Supabase ({supa_status}):", 
-            placeholder=supa_url_placeholder if supa_url_env else "https://xxx.supabase.co"
-        )
-        supa_key_input = st.text_input("🔑 API Key Supabase:", type="password", placeholder="Cole para atualizar")
-        if st.button("Salvar Conexão Supabase"):
-            if supa_url_input.strip() and supa_key_input.strip():
-                with open('.env', 'a', encoding='utf-8') as f:
-                    f.write(f"\nSUPABASE_URL={supa_url_input}")
-                    f.write(f"\nSUPABASE_KEY={supa_key_input}")
-                st.success("Salvo! F5.")
-                st.stop()
+    is_config_active = st.session_state['page'] == "Configurações"
+    if st.button("⚙️ Configurações", use_container_width=True, type="primary" if is_config_active else "secondary"):
+        st.session_state['page'] = "Configurações"
+        st.rerun()
 
     page = st.session_state['page']
 
@@ -582,14 +544,14 @@ if page == "Criar Roteiros":
         # Categoria padrão
         cat_selecionada_id = 1
 
-        # Modo de entrada: Código do Produto ou Ficha Manual
-        modo_entrada = st.toggle("Modo Manual (colar ficha técnica)", value=False)
+        # Modo de entrada via Tabs
+        tab_auto, tab_manual = st.tabs(["⚡ Automático (SKUs da Magalu)", "✍️ Manual (Colar Fichas)"])
 
-        if not modo_entrada:
-            # --- MODO CÓDIGO DE PRODUTO (PADRÃO) ---
-            st.markdown("### 1. Escopo de Trabalho")
+        with tab_auto:
+            # --- MODO AUTOMÁTICO (MAGALU) ---
+            st.markdown("### 1. Formato do Roteiro")
             
-            # Seletor de Modo de Trabalho (Tag-Style com st.pills)
+            # Formatos de trabalho
             modos_trabalho = {
                 "📄 NW (NewWeb)": "NW (NewWeb)",
                 "📱 SOCIAL (Reels)": "SOCIAL (Reels/TikTok)",
@@ -624,18 +586,26 @@ if page == "Criar Roteiros":
                 modo_selecionado = "NW (NewWeb)"
                 st.caption("ℹ️ Descrição completa, Ficha e Foto (Padrão)")
 
+            st.markdown("---")
+            col_m_auto, col_d_auto = st.columns(2)
+            
+            with col_m_auto:
+                st.markdown("**Mês de Lançamento**")
+                mes_selecionado = st.selectbox(
+                    "Mês",
+                    ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"],
+                    index=datetime.now().month - 1,
+                    key="mes_auto",
+                    label_visibility="collapsed"
+                )
+            
+            with col_d_auto:
+                st.markdown("**Data do Roteiro**")
+                data_roteiro = st.date_input("Data", value=datetime.now(), format="DD/MM/YYYY", key="data_auto", label_visibility="collapsed")
+                data_roteiro_str = data_roteiro.strftime('%d/%m/%y')
+
             st.markdown("<br>", unsafe_allow_html=True)
-            
-            # Seletor de Mês
-            st.markdown("### 2. Mês de Lançamento")
-            st.markdown("<p style='font-size: 14px; color: #8b92a5'>Necessário para o cabeçalho oficial do roteiro.</p>", unsafe_allow_html=True)
-            
-            mes_selecionado = st.selectbox(
-                "Mês de Lançamento para o Roteiro",
-                ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"],
-                index=datetime.now().month - 1, # Default para mês atual
-                label_visibility="collapsed"
-            )
+            st.markdown("### 2. Códigos dos Produtos")
 
             st.markdown("### 3. Data do Roteiro")
             data_roteiro = st.date_input("Selecione a data que aparecerá no cabeçalho:", value=datetime.now(), format="DD/MM/YYYY")
@@ -644,13 +614,13 @@ if page == "Criar Roteiros":
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown("### 4. Códigos dos Produtos")
 
-            st.markdown("<p style='font-size: 14px; color: #8b92a5'>Digite os códigos Magalu, um por linha. Máximo de 15 por vez.</p>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size: 14px; color: #8b92a5'>Digite os códigos Magalu, um por linha. Mínimo 3 dígitos. Máximo 15 por vez.</p>", unsafe_allow_html=True)
             
             codigos_raw = st.text_area(
                 "Códigos dos Produtos",
-                height=180,
+                height=150,
                 placeholder="240304700\n240305700\n240306800",
-                key="codigos_input",
+                key="codigos_input_auto",
                 label_visibility="collapsed"
             )
             st.caption("💡 O código fica na URL: magazineluiza.com.br/.../p/**240304700**/...")
@@ -660,7 +630,7 @@ if page == "Criar Roteiros":
             # Regra de Bloqueio para Modos Futuros
             geracao_bloqueada = modo_selecionado != "NW (NewWeb)"
 
-            if st.button("🚀 Iniciar Geração Magalu", use_container_width=True, type="primary", disabled=geracao_bloqueada):
+            if st.button("🚀 Iniciar Extração e Geração", use_container_width=True, type="primary", disabled=geracao_bloqueada, key="btn_auto"):
                 if geracao_bloqueada:
                     st.warning("🚧 Este formato de roteiro ainda está em desenvolvimento. Selecione 'NW (NewWeb)' para continuar.")
                     st.stop()
@@ -776,10 +746,11 @@ if page == "Criar Roteiros":
                             
                         except Exception as e:
                             st.error(f"Erro na geração: {e}")
-        else:
+        
+        with tab_manual:
             # --- MODO MANUAL (FALLBACK) ---
             st.markdown("### 1. Dados dos Produtos")
-            st.markdown("<p style='font-size: 14px; color: #8b92a5'>Insira o código e a ficha técnica dos produtos:</p>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size: 14px; color: #8b92a5'>Cole o código e a ficha técnica dos produtos:</p>", unsafe_allow_html=True)
             
             if 'num_fichas' not in st.session_state:
                 st.session_state['num_fichas'] = 1
@@ -810,22 +781,26 @@ if page == "Criar Roteiros":
                         st.session_state['num_fichas'] -= 1
                         st.rerun()
 
-            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("---")
             
-            # Seletor de Mês (Fallback Modo Manual)
-            st.markdown("### 2. Mês e Data")
             col_m_man, col_d_man = st.columns(2)
             with col_m_man:
-                mes_selecionado = st.selectbox(
+                st.markdown("**Mês de Lançamento**")
+                mes_selecionado_man = st.selectbox(
                     "Mês de Lançamento",
                     ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"],
-                    index=datetime.now().month - 1
+                    index=datetime.now().month - 1,
+                    key="mes_man",
+                    label_visibility="collapsed"
                 )
             with col_d_man:
-                data_roteiro = st.date_input("Data do Roteiro:", value=datetime.now(), format="DD/MM/YYYY", key="date_man")
-                data_roteiro_str = data_roteiro.strftime('%d/%m/%y')
+                st.markdown("**Data do Roteiro**")
+                data_roteiro_man = st.date_input("Data do Roteiro:", value=datetime.now(), format="DD/MM/YYYY", key="date_man", label_visibility="collapsed")
+                data_roteiro_str_man = data_roteiro_man.strftime('%d/%m/%y')
             
-            if st.button("🚀 Gerar Roteiros Mágicos", use_container_width=True, type="primary", key="btn_manual"):
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            if st.button("🚀 Gerar Roteiros a partir de Fichas", use_container_width=True, type="primary", key="btn_manual"):
                 fichas_validas = [f for f in fichas_informadas if f["ficha"].strip() and f["sku"].strip()]
                 
                 if not fichas_validas:
@@ -856,8 +831,8 @@ if page == "Criar Roteiros":
                                     resultado = agent.gerar_roteiro(
                                         ficha, 
                                         modo_trabalho="NW (NewWeb)", 
-                                        mes=mes_selecionado, 
-                                        data_roteiro=data_roteiro_str,
+                                        mes=mes_selecionado_man, 
+                                        data_roteiro=data_roteiro_str_man,
                                         codigo=code,
                                         nome_produto=nome_p_man
                                     )
@@ -876,7 +851,7 @@ if page == "Criar Roteiros":
                                         "tokens_out": resultado["tokens_out"],
                                         "custo_brl": resultado["custo_brl"],
                                         "global_num": global_id,
-                                        "mes": mes_selecionado
+                                        "mes": mes_selecionado_man
                                     })
 
                                     # Auto-log no histórico (Modo Manual)
@@ -912,16 +887,23 @@ if page == "Criar Roteiros":
                             except Exception as e:
                                 st.error(f"Erro na geração: {e}")
 
-    # --- MESA DE TRABALHO (FULL WIDTH) ---
+    # --- MESA DE TRABALHO E HISTÓRICO LATERAL ---
     st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("🖥️ Mesa de Trabalho")
     
-    # --- INTEGRAÇÃO DE HISTÓRICO DIÁRIO NA MESA ---
     col_hist_nav, col_main_work = st.columns([1, 3])
     
     with col_hist_nav:
-        st.markdown("##### 📅 Histórico por Dia")
-        st.caption("Acesse roteiros de outros dias para revisão ou re-exportação.")
+        st.markdown("##### 📅 Roteiros Recentes")
+        st.caption("Acesse roteiros anteriores para revisão ou re-exportação.")
+        
+        if 'roteiros' in st.session_state and st.session_state['roteiros']:
+            st.markdown("---")
+            st.markdown("**Na sessão atual:**")
+            for idx, r_item in enumerate(st.session_state['roteiros']):
+                if st.button(f"📄 {r_item.get('codigo', 'Produto')}", key=f"session_btn_{idx}", use_container_width=True, type="primary" if st.session_state.get('roteiro_ativo_idx', 0) == idx else "secondary"):
+                    st.session_state['roteiro_ativo_idx'] = idx
+                    st.rerun()
+            st.markdown("---")
         
         if 'supabase_client' in st.session_state:
             sp_h = st.session_state['supabase_client']
@@ -988,74 +970,62 @@ if page == "Criar Roteiros":
 
     with col_main_work:
         if 'roteiros' in st.session_state and st.session_state['roteiros']:
-            # Botão para baixar todos os roteiros em um ZIP (Full Width agora que o mês sumiu)
+            # Botão para baixar todos os roteiros em um ZIP (Full Width)
             zip_bytes, zip_filename = export_all_roteiros_zip(
                 st.session_state['roteiros'], 
                 selected_month=st.session_state.get('mes_global', 'FEV'),
                 selected_date=st.session_state.get('data_roteiro_global')
             )
             st.download_button(
-                label="📦 BAIXAR TODOS (ZIP)",
+                label="📦 BAIXAR TODOS SESSÃO ATUAL (ZIP)",
                 data=zip_bytes,
                 file_name=zip_filename,
                 mime="application/zip",
                 use_container_width=True,
                 type="primary",
-                help="Baixa todos os roteiros da lista abaixo em um único arquivo compactado."
+                help="Baixa todos os roteiros recém gerados da sessão em um arquivo zipado."
             )
             
             st.divider()
+
+            # Pega o índice ativo setado pelos botões na coluna esquerda
+            idx = st.session_state.get('roteiro_ativo_idx', 0)
             
-            # Tags de Navegação (Canva Selection)
-            if 'roteiro_ativo_idx' not in st.session_state:
-                st.session_state['roteiro_ativo_idx'] = 0
-                
-            opcoes_tags = []
-            for i, item in enumerate(st.session_state['roteiros']):
-                codigo = item.get("codigo", "")
+            if idx < len(st.session_state['roteiros']):
+                item = st.session_state['roteiros'][idx]
                 ficha_raw = item.get('ficha', '')
                 ficha_str = ficha_raw.get('text', str(ficha_raw)) if isinstance(ficha_raw, dict) else str(ficha_raw)
                 linhas_ficha = ficha_str.split('\n')
-                nome_curto = linhas_ficha[0][:20] + "..." if linhas_ficha and len(linhas_ficha[0]) > 20 else (linhas_ficha[0] if linhas_ficha else f"Item {i+1}")
+                titulo_curto = linhas_ficha[0][:60] if linhas_ficha and len(linhas_ficha[0]) > 2 else f"Produto {idx+1}"
+                cat_id_roteiro = item.get("categoria_id", cat_selecionada_id)
+                codigo_produto = item.get("codigo", "")
                 
-                # Usa o número global histórico se disponível, senão usa contagem regressiva da sessão
-                global_num = item.get('global_num', len(st.session_state['roteiros']) - i)
-                opcoes_tags.append(f"{global_num:03d} - 📦 {codigo} {nome_curto}")
-                
-            st.markdown("### 🗂️ Selecione o Roteiro para Edição")
-            try:
-                # st.pills está disponível no Streamlit 1.34+ (pode usar radio horizontal se falhar)
-                selecionado = st.pills("Roteiros Gerados", opcoes_tags, default=opcoes_tags[st.session_state['roteiro_ativo_idx']])
-            except AttributeError:
-                selecionado = st.radio("Roteiros Gerados", opcoes_tags, index=st.session_state['roteiro_ativo_idx'], horizontal=True)
-                
-            if selecionado:
-                idx = opcoes_tags.index(selecionado)
-                st.session_state['roteiro_ativo_idx'] = idx
-            else:
-                idx = st.session_state['roteiro_ativo_idx']
-                
-            item = st.session_state['roteiros'][idx]
-            ficha_raw = item.get('ficha', '')
-            ficha_str = ficha_raw.get('text', str(ficha_raw)) if isinstance(ficha_raw, dict) else str(ficha_raw)
-            linhas = ficha_str.split('\n')
-            titulo_curto = linhas[0][:60] if linhas else f"Produto {idx+1}"
-            cat_id_roteiro = item.get("categoria_id", cat_selecionada_id)
-            codigo_produto = item.get("codigo", "")
-    
-            # O Canva do Roteiro Ativo
-            with st.container(border=True):
-                st.markdown(f"#### 🖌️ Canva: {codigo_produto} - {titulo_curto}")
-                
-                # Apenas uma saída editável em tela cheia (sem redundâncias)
-                st.caption("✏️ **Editor Final do Roteiro (Markdown)** - Esta é a versão final que será salva e exportada.")
-                edited_val = st.text_area(
-                    "Editor",
-                    value=st.session_state.get(f"editor_{idx}", item['roteiro_original']),
-                    height=450,
-                    key=f"editor_{idx}",
-                    label_visibility="collapsed"
-                )
+                # Container estilizado para o roteiro ativo (Header Card)
+                st.markdown(f"""
+                <div style='background: #1e2530; padding: 20px; border-radius: 12px; border: 1px solid #0086ff; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: start;'>
+                    <div>
+                        <h4 style='margin: 0; color: #0086ff; font-weight: 700;'>✨ Edição: {codigo_produto}</h4>
+                        <p style='margin: 5px 0 0 0; font-size: 13px; color: #8b92a5;'>{titulo_curto}</p>
+                    </div>
+                    <div style='text-align: right;'>
+                        <span style='background: rgba(0, 134, 255, 0.1); color: #0086ff; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;'>{item.get('model_id', 'LLM')}</span>
+                        <div style='margin-top: 5px; font-size: 10px; color: #4a5568;'>{item.get('tokens_in', 0)} / {item.get('tokens_out', 0)} tk</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+        
+                # O Canva do Roteiro Ativo
+                with st.container(border=True):
+                    
+                    # Apenas uma saída editável em tela cheia (sem redundâncias)
+                    st.caption("✏️ **Editor Final do Roteiro (Markdown)** - Esta é a versão final que será salva e exportada.")
+                    edited_val = st.text_area(
+                        "Editor",
+                        value=st.session_state.get(f"editor_{idx}", item['roteiro_original']),
+                        height=450,
+                        key=f"editor_{idx}",
+                        label_visibility="collapsed"
+                    )
                 sp_cli = st.session_state.get('supabase_client', None)
                     
                 # Barra de Controle do Roteiro Específico
@@ -1463,6 +1433,74 @@ elif page == "Guia de Modelos":
                 </div>
                 """, unsafe_allow_html=True)
         st.write("")
+
+# --- PÁGINA: CONFIGURAÇÕES ---
+elif page == "Configurações":
+    st.subheader("⚙️ Configurações do Sistema")
+    st.markdown("Gerencie suas chaves de API de Inteligência Artificial e a conexão com o banco de dados Supabase em um só lugar.")
+    st.divider()
+
+    col_llm, col_db = st.columns(2)
+
+    with col_llm:
+        st.markdown("#### 🧠 Chaves de IA (LLMs)")
+        st.caption("Adicione suas as chaves de API para desbloquear novos modelos.")
+        
+        keys_to_manage = [
+            ("Gemini", "GEMINI_API_KEY", api_key_env),
+            ("Puter (Grok/Llama)", "PUTER_API_KEY", puter_key_env),
+            ("OpenAI (GPT)", "OPENAI_API_KEY", openai_key_env),
+            ("OpenRouter", "OPENROUTER_API_KEY", openrouter_key_env),
+            ("Z.ai (GLM)", "ZAI_API_KEY", zai_key_env),
+            ("Moonshot (Kimi)", "KIMI_API_KEY", kimi_key_env)
+        ]
+        
+        for name, env_var, current_val in keys_to_manage:
+            with st.container():
+                st.markdown(f"**{name}**")
+                if env_var in os.environ and os.environ.get(env_var):
+                    st.success("✅ Conectado e Ativo")
+                else:
+                    new_key = st.text_input(f"Token/API Key", type="password", key=f"key_in_{env_var}", label_visibility="collapsed", placeholder=f"Cole sua chave {name} aqui")
+                    if new_key:
+                        with open('.env', 'a', encoding='utf-8') as f:
+                            f.write(f"\n{env_var}={new_key}")
+                        os.environ[env_var] = new_key
+                        st.toast(f"✅ {name} Adicionada com sucesso!")
+                        st.rerun()
+                st.write("") # Margem
+
+    with col_db:
+        st.markdown("#### 🗄️ Banco de Dados (Supabase)")
+        st.caption("Conexão com o Supabase para salvar métricas e histórico de roteiros.")
+        
+        gemini_status = "Ativo" if api_key_env else "Inativo"
+        supa_status_p = "Ativo" if supabase_client else "Inativo"
+
+        supa_url_env = os.environ.get("SUPABASE_URL", "")
+        supa_url_placeholder = supa_url_env[:30] + "..." if supa_url_env and len(supa_url_env) > 30 else ""
+        
+        st.markdown(f"**URL do Projeto** (Status: {supa_status_p})")
+        supa_url_input = st.text_input(
+            "URL Supabase",
+            placeholder=supa_url_placeholder if supa_url_env else "Ex: https://xyz.supabase.co",
+            label_visibility="collapsed"
+        )
+        
+        st.markdown("**Role Key (Service)**")
+        supa_key_input = st.text_input("API Key Supabase", type="password", placeholder="Cole sua Role Key (Service)", label_visibility="collapsed")
+        
+        if st.button("💾 Salvar Conexão Supabase", type="primary", use_container_width=True):
+            if supa_url_input.strip() and supa_key_input.strip():
+                with open('.env', 'a', encoding='utf-8') as f:
+                    f.write(f"\nSUPABASE_URL={supa_url_input}")
+                    f.write(f"\nSUPABASE_KEY={supa_key_input}")
+                st.toast("✅ Conexão com o Supabase atualizada!", icon="🚀")
+                import time
+                time.sleep(1) # Aguarda para dar percepção de salvar
+                st.rerun()
+            else:
+                st.error("Preencha a URL e a Key para salvar.")
 
 # --- PÁGINA 1.5: HISTÓRICO ---
 elif page == "Histórico":
