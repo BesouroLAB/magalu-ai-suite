@@ -371,7 +371,8 @@ class RoteiristaAgent:
             f"4. Imite fielmente o estilo dos exemplos APROVADOS.\n"
             f"5. Use 'pra' no lugar de 'para'. Coloque a marca entre vírgulas.\n"
             f"6. **ENRIQUECIMENTO DE CONTEXTO:** Para produtos mundialmente conhecidos (Ex: LEGO, Star Wars, iPhone), você PODE usar seu conhecimento interno para adicionar detalhes técnicos ou curiosidades que NÃO estejam na ficha, visando valorizar o roteiro.\n"
-            f"7. **REGRA DE REFERÊNCIA:** Se você usar conhecimento interno (item 6) OU dados de 'FONTE EXTERNA' (fabricante), você deve OBRIGATORIAMENTE adicionar uma nota de referência com o link da fonte (ou site oficial do fabricante) no rodapé do roteiro."
+            f"7. **REGRA DE REFERÊNCIA:** Se você usar conhecimento interno (item 6) OU dados de 'FONTE EXTERNA' (fabricante), você deve OBRIGATORIAMENTE adicionar uma nota de referência com o link da fonte (ou site oficial do fabricante) no rodapé do roteiro.\n"
+            f"8. **PROIBIÇÃO DE SCRIPTS HIPOTÉTICOS:** Se o contexto do produto (INPUT) contiver uma mensagem de erro ou estiver insuficiente para identificar o produto real, NÃO gere um roteiro hipotético ou de exemplo. Em vez disso, responda APENAS: 'ERRO: Dados insuficientes do produto para geração automática. Por favor, forneça a ficha técnica manualmente.'"
         )
 
         if self.client_gemini:

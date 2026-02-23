@@ -147,6 +147,43 @@ DARK_MODE_CSS = """
     }
     
     .block-container { padding-top: 2rem; }
+
+    /* Cards de Métricas Premium */
+    .metric-card-premium {
+        background: linear-gradient(135deg, rgba(5, 14, 29, 0.7) 0%, rgba(10, 27, 51, 0.4) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(0, 134, 255, 0.15);
+        border-radius: 12px;
+        padding: 1.25rem 1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        height: 110px;
+        margin-bottom: 20px;
+    }
+    .metric-card-premium:hover {
+        transform: translateY(-3px);
+        border-color: rgba(0, 134, 255, 0.4);
+        box-shadow: 0 8px 25px rgba(0, 134, 255, 0.15);
+    }
+    .metric-label {
+        font-size: 0.75rem !important;
+        color: var(--text-muted) !important;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 0.5rem;
+    }
+    .metric-value {
+        font-size: 1.25rem !important;
+        color: #ffffff !important;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
 </style>
 """
 st.markdown(DARK_MODE_CSS, unsafe_allow_html=True)
@@ -502,26 +539,25 @@ with st.sidebar:
     }
     
     for page_key, page_label in nav_items.items():
+        if page_key == "Assistente Lu": continue # Será movido para o rodapé
         is_active = st.session_state['page'] == page_key
-        # Primary se estiver ativo (azul forte), Secondary (fundo limpo com a regra CSS) caso contrário
         if st.button(page_label, use_container_width=True, type="primary" if is_active else "secondary"):
             st.session_state['page'] = page_key
             st.rerun()
     
-    # --- RODAPÉ: GUIA E CONFIGURAÇÕES ---
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.divider()
     
+    # --- RODAPÉ: GUIA, CHAT E CONFIGURAÇÕES ---
     is_guia_active = st.session_state['page'] == "Guia de Modelos"
     if st.button("📖 Guia de Modelos", use_container_width=True, type="primary" if is_guia_active else "secondary"):
         st.session_state['page'] = "Guia de Modelos"
         st.rerun()
 
-    st.divider()
-    
-    # --- CONFIGURAÇÕES API (SEMPRE EDITÁVEL) ---
-    gemini_status = "Ativo" if api_key_env else "Inativo"
-    supa_status = "Ativo" if supabase_client else "Inativo"
-    
+    is_lu_active = st.session_state['page'] == "Assistente Lu"
+    if st.button("💬 Assistente Lu (Chat)", use_container_width=True, type="primary" if is_lu_active else "secondary"):
+        st.session_state['page'] = "Assistente Lu"
+        st.rerun()
+
     is_config_active = st.session_state['page'] == "Configurações"
     if st.button("⚙️ Configurações", use_container_width=True, type="primary" if is_config_active else "secondary"):
         st.session_state['page'] = "Configurações"
@@ -595,7 +631,7 @@ if page == "Criar Roteiros":
                 mes_selecionado = st.selectbox(
                     "Mês",
                     ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"],
-                    index=datetime.now().month - 1,
+                    index=2, # Padrão MAR conforme solicitado
                     key="mes_auto",
                     label_visibility="collapsed"
                 )
@@ -682,19 +718,36 @@ if page == "Criar Roteiros":
                                 
                                 
                                 # 2. Gera o roteiro com os dados extraídos (retorna dict)
-                                # Extrai nome do produto (primeira linha da ficha)
                                 txt_ficha = ficha_extraida.get('text', str(ficha_extraida)) if isinstance(ficha_extraida, dict) else str(ficha_extraida)
-                                nome_p = txt_ficha.split('\n')[0].strip() if txt_ficha else "Produto"
                                 
-                                resultado = agent.gerar_roteiro(
-                                    ficha_extraida, 
-                                    modo_trabalho=modo_selecionado, 
-                                    mes=mes_selecionado, 
-                                    data_roteiro=data_roteiro_str,
-                                    codigo=code,
-                                    nome_produto=nome_p
-                                )
-                                roteiro_texto = resultado["roteiro"]
+                                # Verificação anti-alucinação: se o scraper falhar, não pedimos pro agente inventar
+                                if "Não foi possível extrair dados" in txt_ficha or "⚠️" in txt_ficha:
+                                    roteiro_texto = (
+                                        "⚠️ EXTRAÇÃO AUTOMÁTICA FALHOU\n\n"
+                                        "Não conseguimos encontrar os detalhes técnicos para este código automaticamente.\n\n"
+                                        "POR FAVOR, COLE A FICHA TÉCNICA MANUALMENTE ABAIXO E CLIQUE EM 'GERAR' NOVAMENTE."
+                                    )
+                                    resultado = {
+                                        "roteiro": roteiro_texto,
+                                        "model_id": "-",
+                                        "tokens_in": 0,
+                                        "tokens_out": 0,
+                                        "custo_brl": 0.0
+                                    }
+                                    nome_p = f"SKU {code} (Falha na Extração)"
+                                else:
+                                    # Extrai nome do produto (primeira linha da ficha)
+                                    nome_p = txt_ficha.split('\n')[0].strip() if txt_ficha else "Produto"
+                                    
+                                    resultado = agent.gerar_roteiro(
+                                        ficha_extraida, 
+                                        modo_trabalho=modo_selecionado, 
+                                        mes=mes_selecionado, 
+                                        data_roteiro=data_roteiro_str,
+                                        codigo=code,
+                                        nome_produto=nome_p
+                                    )
+                                    roteiro_texto = resultado["roteiro"]
                                 
                                 # Atribuímos o número sequencial histórico (o último é o número mais alto)
                                 global_id = base_count + i + 1
@@ -790,7 +843,7 @@ if page == "Criar Roteiros":
                 mes_selecionado_man = st.selectbox(
                     "Mês de Lançamento",
                     ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"],
-                    index=datetime.now().month - 1,
+                    index=2, # MAR
                     key="mes_man",
                     label_visibility="collapsed"
                 )
@@ -891,17 +944,55 @@ if page == "Criar Roteiros":
     # --- MESA DE TRABALHO E HISTÓRICO LATERAL ---
     st.markdown("<br>", unsafe_allow_html=True)
     
-    col_hist_nav, col_main_work = st.columns([1, 3])
+    col_hist_nav, col_main_work, col_lu_chat = st.columns([0.8, 2.3, 1.2]) # Layout 3 Colunas
     
-    with col_hist_nav:
+    with col_lu_chat:
+        # Chat agora dentro de um expander colapsável conforme solicitado
+        with st.expander("💬 Assistente Lu (Chat)", expanded=True):
+            st.markdown("<div style='background: rgba(0, 134, 255, 0.03); padding: 5px; border-radius: 8px;'>", unsafe_allow_html=True)
+            
+            # Chat compactado na lateral
+            if "chat_history" not in st.session_state:
+                st.session_state.chat_history = [{"role": "Lu", "content": "Olá! Estou aqui ao lado para te ajudar. Alguma dúvida sobre os roteiros ou o banco de dados?"}]
+            
+            # Container de mensagens com altura fixa
+            chat_container = st.container(height=450)
+            with chat_container:
+                for message in st.session_state.chat_history:
+                    with st.chat_message(message["role"]):
+                        st.markdown(f"<span style='font-size: 13px;'>{message['content']}</span>", unsafe_allow_html=True)
+
+            if prompt_side := st.chat_input("Pergunte algo...", key="chat_side_input"):
+                st.session_state.chat_history.append({"role": "user", "content": prompt_side})
+                
+                # Contexto rápido para a Lu
+                context_str = ""
+                sp = st.session_state.get('supabase_client')
+                if sp:
+                    try:
+                        res = sp.table("historico_roteiros").select("id", count="exact").limit(1).execute()
+                        total_db = res.count if hasattr(res, 'count') else 0
+                        context_str = f"Métricas: Total no banco = {total_db}. Versão 2.8.1."
+                    except: context_str = "Banco conectado."
+                
+                agent_chat = RoteiristaAgent(model_id=st.session_state.get('modelo_llm', 'gemini-2.5-flash'))
+                resposta = agent_chat.chat_with_context(prompt_side, st.session_state.chat_history, context_str)
+                st.session_state.chat_history.append({"role": "Lu", "content": resposta})
+                st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
+
+    with col_main_work:
         st.markdown("##### 📅 Roteiros Recentes")
         st.caption("Acesse roteiros anteriores para revisão ou re-exportação.")
         
         if 'roteiros' in st.session_state and st.session_state['roteiros']:
             st.markdown("---")
-            st.markdown("**Na sessão atual:**")
+            st.markdown("**Sessão Atual:** (Recentes no topo)")
             for idx, r_item in enumerate(st.session_state['roteiros']):
-                if st.button(f"📄 {r_item.get('codigo', 'Produto')}", key=f"session_btn_{idx}", use_container_width=True, type="primary" if st.session_state.get('roteiro_ativo_idx', 0) == idx else "secondary"):
+                # Lógica de número inverso: Se temos #102, #101...
+                num_tag = f"#{r_item.get('global_num', '?')}"
+                btn_txt = f"{num_tag} - {r_item.get('codigo', '...')}"
+                if st.button(btn_txt, key=f"session_btn_{idx}", use_container_width=True, type="primary" if st.session_state.get('roteiro_ativo_idx', 0) == idx else "secondary"):
                     st.session_state['roteiro_ativo_idx'] = idx
                     st.rerun()
             st.markdown("---")
@@ -1534,10 +1625,16 @@ elif page == "Histórico":
                         modelo_mais_usado = "-"
                 
                 col_m1, col_m2, col_m3, col_m4 = st.columns(4)
-                col_m1.metric("📝 Roteiros Gerados", total_registros)
-                col_m2.metric("💰 Custo Total", f"R$ {custo_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'))
-                col_m3.metric("📋 Custo Médio/Roteiro", f"R$ {custo_medio:,.4f}".replace(',', 'X').replace('.', ',').replace('X', '.'))
-                col_m4.metric("🧠 Modelo Mais Usado", modelo_mais_usado)
+                with col_m1:
+                    st.markdown(f'<div class="metric-card-premium"><div class="metric-label">📝 Roteiros Gerados</div><div class="metric-value">{total_registros}</div></div>', unsafe_allow_html=True)
+                with col_m2:
+                    val_tot = f"R$ {custo_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+                    st.markdown(f'<div class="metric-card-premium"><div class="metric-label">💰 Custo Total</div><div class="metric-value">{val_tot}</div></div>', unsafe_allow_html=True)
+                with col_m3:
+                    val_med = f"R$ {custo_medio:,.4f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+                    st.markdown(f'<div class="metric-card-premium"><div class="metric-label">📋 Custo Médio</div><div class="metric-value">{val_med}</div></div>', unsafe_allow_html=True)
+                with col_m4:
+                    st.markdown(f'<div class="metric-card-premium"><div class="metric-label">🧠 Modelo Mais Usado</div><div class="metric-value">{modelo_mais_usado}</div></div>', unsafe_allow_html=True)
                 
                 st.divider()
                 
@@ -1711,21 +1808,21 @@ elif page == "Dashboard":
             
             st.markdown(f"""
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
-                    <div style="background: rgba(0, 134, 255, 0.05); border: 1px solid rgba(0, 134, 255, 0.2); border-radius: 12px; padding: 20px; text-align: center;">
-                        <p style="color: #8b92a5; font-size: 14px; margin: 0; font-weight: 500;">📝 Roteiros Gerados</p>
-                        <h2 style="color: #0086ff; margin: 10px 0 0 0; font-size: 32px; font-weight: 800;">{total_historico}</h2>
+                    <div class="metric-card-premium">
+                        <div class="metric-label">📝 Roteiros Gerados</div>
+                        <div class="metric-value">{total_historico}</div>
                     </div>
-                    <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 20px; text-align: center;">
-                        <p style="color: #8b92a5; font-size: 14px; margin: 0; font-weight: 500;">💰 Custo Total</p>
-                        <h2 style="color: #10b981; margin: 10px 0 0 0; font-size: 32px; font-weight: 800;">R$ {custo_total_dash:.2f}</h2>
+                    <div class="metric-card-premium">
+                        <div class="metric-label">💰 Custo Total</div>
+                        <div class="metric-value" style="color: #10b981 !important;">R$ {custo_total_dash:,.2f}</div>
                     </div>
-                    <div style="background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 12px; padding: 20px; text-align: center;">
-                        <p style="color: #8b92a5; font-size: 14px; margin: 0; font-weight: 500;">🏆 Roteiros Ouro</p>
-                        <h2 style="color: #f59e0b; margin: 10px 0 0 0; font-size: 32px; font-weight: 800;">{total_ouro}</h2>
+                    <div class="metric-card-premium">
+                        <div class="metric-label">🏆 Roteiros Ouro</div>
+                        <div class="metric-value" style="color: #f59e0b !important;">{total_ouro}</div>
                     </div>
-                    <div style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 12px; padding: 20px; text-align: center;">
-                        <p style="color: #8b92a5; font-size: 14px; margin: 0; font-weight: 500;">🎯 Taxa Aprovação</p>
-                        <h2 style="color: #6366f1; margin: 10px 0 0 0; font-size: 32px; font-weight: 800;">{taxa_aprovacao:.1f}%</h2>
+                    <div class="metric-card-premium">
+                        <div class="metric-label">🎯 Taxa Aprovação</div>
+                        <div class="metric-value" style="color: #6366f1 !important;">{taxa_aprovacao:.1f}%</div>
                     </div>
                 </div>
             """, unsafe_allow_html=True)

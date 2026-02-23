@@ -130,7 +130,7 @@ def _parse_roteiro(roteiro_text: str) -> list[dict]:
     return blocks
 
 
-def generate_filename(code: str, product_name: str, selected_month: str = "FEV") -> str:
+def generate_filename(code: str, product_name: str, selected_month: str = "MAR") -> str:
     """Gera nome do arquivo no padrão: NW LU {selected_month} {code} {product_name}.docx"""
     # Limpa caracteres inválidos para nome de arquivo
     clean_name = re.sub(r'[<>:"/\\|?*]', '', product_name)
@@ -138,7 +138,7 @@ def generate_filename(code: str, product_name: str, selected_month: str = "FEV")
 
     return f"NW LU {selected_month} {code} {clean_name}.docx"
 
-def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "", selected_month: str = "FEV", selected_date: str = None) -> tuple[bytes, str]:
+def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "", selected_month: str = "MAR", selected_date: str = None) -> tuple[bytes, str]:
     """
     Gera um documento Word (.docx) com a formatação de referência.
 
@@ -246,7 +246,7 @@ def format_for_display(roteiro_text: str) -> str:
 
     return "\n".join(formatted)
 
-def export_all_roteiros_zip(roteiros: list, selected_month: str = "FEV", selected_date: str = None) -> tuple[bytes, str]:
+def export_all_roteiros_zip(roteiros: list, selected_month: str = "MAR", selected_date: str = None) -> tuple[bytes, str]:
     """
     Gera um arquivo ZIP contendo todos os roteiros em formato DOCX.
     
@@ -260,8 +260,13 @@ def export_all_roteiros_zip(roteiros: list, selected_month: str = "FEV", selecte
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
         for idx, item in enumerate(roteiros):
+            roteiro_text = item.get('roteiro_original', '')
+            # Pula roteiros que são avisos de erro de extração
+            if roteiro_text.startswith("⚠️"):
+                continue
+                
             doc_bytes, filename = export_roteiro_docx(
-                item['roteiro_original'],
+                roteiro_text,
                 code=item.get('codigo', ''),
                 product_name='', # Será extraído do texto do roteiro
                 selected_month=selected_month,
