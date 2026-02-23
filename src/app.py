@@ -184,44 +184,6 @@ DARK_MODE_CSS = """
         letter-spacing: -0.5px;
     }
 
-    /* --- CHAT LU FLUTUANTE --- */
-    div[data-testid="stPopover"] {
-        position: fixed !important;
-        bottom: 30px !important;
-        right: 30px !important;
-        z-index: 999999 !important;
-    }
-    div[data-testid="stPopover"] > button {
-        border-radius: 50% !important;
-        width: 65px !important;
-        height: 65px !important;
-        background: linear-gradient(135deg, #0086ff 0%, #004db3 100%) !important;
-        color: white !important;
-        box-shadow: 0 4px 15px rgba(0, 134, 255, 0.4) !important;
-        border: none !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-    }
-    div[data-testid="stPopover"] > button:hover {
-        transform: scale(1.05) !important;
-        box-shadow: 0 6px 20px rgba(0, 134, 255, 0.6) !important;
-        background: linear-gradient(135deg, #339dff 0%, #0066cc 100%) !important;
-    }
-    div[data-testid="stPopover"] > button p {
-        font-size: 32px !important;
-        line-height: 1 !important;
-    }
-    div[data-testid="stPopoverBody"] {
-        width: 380px !important;
-        height: 550px !important;
-        border-radius: 12px !important;
-        background: var(--bg-card) !important;
-        border: 1px solid rgba(0, 134, 255, 0.3) !important;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important;
-        padding: 5px !important;
-        overflow: hidden !important;
-    }
 </style>
 """
 st.markdown(DARK_MODE_CSS, unsafe_allow_html=True)
@@ -984,38 +946,6 @@ if page == "Criar Roteiros":
     
     col_hist_nav, col_main_work = st.columns([0.8, 3.5]) # Layout 2 Colunas
     
-    # --- CHAT FLUTUANTE DA LU ---
-    with st.popover("💬", use_container_width=False):
-        st.markdown("<div style='background: rgba(0, 134, 255, 0.05); padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 15px;'><b style='color: #0086ff;'>✨ Assistente Lu</b></div>", unsafe_allow_html=True)
-        
-        if "chat_history" not in st.session_state:
-            st.session_state.chat_history = [{"role": "Lu", "content": "Olá! Estou aqui colapsada no canto para não atrapalhar sua tela. Como posso ajudar?"}]
-        
-        # Container de mensagens com altura fixa
-        chat_container = st.container(height=380)
-        with chat_container:
-            for message in st.session_state.chat_history:
-                with st.chat_message(message["role"]):
-                    st.markdown(f"<span style='font-size: 13px;'>{message['content']}</span>", unsafe_allow_html=True)
-
-        if prompt_side := st.chat_input("Pergunte algo...", key="chat_side_input"):
-            st.session_state.chat_history.append({"role": "user", "content": prompt_side})
-            
-            # Contexto rápido para a Lu
-            context_str = ""
-            sp = st.session_state.get('supabase_client')
-            if sp:
-                try:
-                    res = sp.table("historico_roteiros").select("id", count="exact").limit(1).execute()
-                    total_db = res.count if hasattr(res, 'count') else 0
-                    context_str = f"Métricas: Total no banco = {total_db}. Versão 2.8.2."
-                except: context_str = "Banco conectado."
-            
-            agent_chat = RoteiristaAgent(model_id=st.session_state.get('modelo_llm', 'gemini-2.5-flash'))
-            resposta = agent_chat.chat_with_context(prompt_side, st.session_state.chat_history, context_str)
-            st.session_state.chat_history.append({"role": "Lu", "content": resposta})
-            st.rerun()
-
     with col_main_work:
         st.markdown("##### 📅 Roteiros Recentes")
         st.caption("Acesse roteiros anteriores para revisão ou re-exportação.")
