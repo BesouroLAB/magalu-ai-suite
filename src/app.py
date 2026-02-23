@@ -406,8 +406,19 @@ with st.sidebar:
     }
     _llm_active = bool(_env_map.get(_prov))
     
-    _llm_names = {"gemini": "Gemini", "openai": "GPT", "puter": "Grok", "openrouter": "Router", "zai": "GLM", "kimi": "Kimi"}
-    _llm_name = _llm_names.get(_prov, "LLM")
+    _nomes_modelos = {v: k for k, v in MODELOS_DISPONIVEIS.items()}
+    _full_name = _nomes_modelos.get(_modelo_atual, "LLM Desconhecida")
+    
+    # Ex: "⚡ Gemini 2.5 Flash — Grátis" -> "Gemini 2.5 Flash"
+    _llm_name = _full_name.split(' — ')[0]
+    
+    # Remove emoji/símbolo inicial se houver espaco logo apos
+    if _llm_name and " " in _llm_name and ord(_llm_name[0]) > 127:
+        _llm_name = _llm_name.split(" ", 1)[-1].strip()
+        
+    if len(_llm_name) > 15:
+        _llm_name = _llm_name[:13] + ".."
+
     
     sc_llm = "#00ff88" if _llm_active else "#ff4b4b"
     sl_llm = "ON" if _llm_active else "OFF"
