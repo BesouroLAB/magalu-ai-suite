@@ -223,8 +223,8 @@ with st.sidebar:
     if supabase_client:
         st.session_state['supabase_client'] = supabase_client
     
-    gemini_dot = "<span style='color:#10b981;font-size:10px;'>● Gemini</span>" if api_key_env else "<span style='color:#ef4444;font-size:10px;'>● Gemini</span>"
-    supa_dot = "<span style='color:#10b981;font-size:10px;'>● Supabase</span>" if supabase_client else "<span style='color:#ef4444;font-size:10px;'>● Supabase</span>"
+    gemini_status = "🟢 Gemini" if api_key_env else "🔴 Gemini"
+    supa_status = "🟢 Supabase" if supabase_client else "🔴 Supabase"
 
     # --- LOGO & BRANDING ---
     st.markdown(f"""
@@ -232,12 +232,9 @@ with st.sidebar:
         <span style="color: #0086ff; font-weight: 800; font-size: 18px; letter-spacing: 3px;">MAGALU</span>
         <span style="color: white; font-weight: 300; font-size: 36px; letter-spacing: 1px;">AI Suite</span>
     </div>
-    <div style="display: flex; gap: 12px; align-items: center; margin-top: 4px;">
-        <span style='color: #4b5563; font-weight: bold; font-size: 11px; letter-spacing: 1px;'>V1.5</span>
-        {gemini_dot} &nbsp; {supa_dot}
-    </div>
-    <br>
     """, unsafe_allow_html=True)
+    st.caption(f"V1.5 &nbsp;&nbsp; {gemini_status} &nbsp; {supa_status}")
+    st.markdown("")
     
     # --- MENU DE NAVEGAÇÃO ---
     page = st.radio(
@@ -249,34 +246,43 @@ with st.sidebar:
     st.markdown("<br><br><br>", unsafe_allow_html=True)
     st.divider()
     
-    # --- CONFIGURAÇÕES API (MINIMALISTA) ---
+    # --- CONFIGURAÇÕES API (SEMPRE EDITÁVEL) ---
     with st.expander("⚙️ Configurações", expanded=False):
-        st.caption("Ajustes de Chaves e Conexão")
+        st.caption("Editar Chaves e Conexão")
         
-        # Gestão Gemini
-        if not api_key_env:
-            api_key_input = st.text_input("🔑 Chave Gemini:", type="password")
-            if st.button("Salvar Chave", key="save_gemini"):
+        # Gemini Key
+        gemini_placeholder = "••••••••" + api_key_env[-4:] if api_key_env and len(api_key_env) > 4 else ""
+        api_key_input = st.text_input(
+            f"🔑 Chave Gemini ({gemini_status}):", 
+            type="password", 
+            placeholder=gemini_placeholder if api_key_env else "Cole sua chave aqui"
+        )
+        if st.button("Salvar Chave Gemini", key="save_gemini"):
+            if api_key_input.strip():
                 with open('.env', 'a', encoding='utf-8') as f:
                     f.write(f"\nGEMINI_API_KEY={api_key_input}")
                 os.environ["GEMINI_API_KEY"] = api_key_input
                 st.success("Salva! F5.")
                 st.stop()
-        else:
-            st.markdown("<span style='color: #10b981; font-size: 12px;'>● Gemini Ativo</span>", unsafe_allow_html=True)
 
-        # Gestão Supabase
-        if not supabase_client:
-            supa_url_input = st.text_input("🔗 URL Supabase:")
-            supa_key_input = st.text_input("🔑 API Key Supabase:", type="password")
-            if st.button("Conectar Banco"):
+        st.markdown("---")
+        
+        # Supabase
+        supa_url_env = os.environ.get("SUPABASE_URL", "")
+        supa_url_placeholder = supa_url_env[:30] + "..." if supa_url_env and len(supa_url_env) > 30 else ""
+        supa_url_input = st.text_input(
+            f"🔗 URL Supabase ({supa_status}):", 
+            placeholder=supa_url_placeholder if supa_url_env else "https://xxx.supabase.co"
+        )
+        supa_key_input = st.text_input("🔑 API Key Supabase:", type="password", placeholder="Cole para atualizar")
+        if st.button("Salvar Conexão Supabase"):
+            if supa_url_input.strip() and supa_key_input.strip():
                 with open('.env', 'a', encoding='utf-8') as f:
                     f.write(f"\nSUPABASE_URL={supa_url_input}")
                     f.write(f"\nSUPABASE_KEY={supa_key_input}")
                 st.success("Salvo! F5.")
                 st.stop()
-        else:
-            st.markdown("<span style='color: #10b981; font-size: 12px;'>● Supabase Ativo</span>", unsafe_allow_html=True)
+
 
 
 # --- APLICAÇÃO PRINCIPAL ---
