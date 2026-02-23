@@ -690,13 +690,29 @@ elif page == "Treinar IA":
                 if submitted:
                     if roteiro_ia_input.strip() and roteiro_breno_input.strip():
                         try:
+                            # 1. Gera a memória com a IA
+                            memoria = ""
+                            try:
+                                api_key_env = os.environ.get("GEMINI_API_KEY")
+                                if api_key_env:
+                                    ag = RoteiristaAgent(supabase_client=sp_client)
+                                    with st.spinner("🧠 IA auto-avaliando o erro..."):
+                                        memoria = ag.gerar_memoria_calibracao(roteiro_ia_input, roteiro_breno_input)
+                            except Exception as e:
+                                memoria = "Erro interno ao avaliar."
+
+                            # 2. Salva no banco
                             data = {
                                 "roteiro_original_ia": roteiro_ia_input,
                                 "roteiro_final_humano": roteiro_breno_input,
-                                "avaliacao": avaliacao_input
+                                "avaliacao": avaliacao_input,
+                                "comentarios": memoria
                             }
                             sp_client.table("feedback_roteiros").insert(data).execute()
-                            st.success("✅ Comparação registrada com sucesso! A IA vai aprender com isso.")
+                            st.success(f"✅ Comparação registrada! Memória gerada: '{memoria}'")
+                            
+                            # Rerun para atualizar a tabela
+                            st.rerun()
                         except Exception as e:
                             st.error(f"Erro ao salvar: {e}")
                     else:
@@ -705,7 +721,10 @@ elif page == "Treinar IA":
             st.divider()
             st.markdown("#### 📋 Histórico de Calibrações")
             if not df_fb.empty:
-                st.dataframe(df_fb[['criado_em', 'avaliacao', 'roteiro_original_ia', 'roteiro_final_humano']], use_container_width=True)
+                # Mostra a coluna comentarios como "Memória da IA"
+                df_view = df_fb[['criado_em', 'avaliacao', 'comentarios']].copy()
+                df_view.rename(columns={'comentarios': 'Memória da IA (Lição Aprendida)'}, inplace=True)
+                st.dataframe(df_view, use_container_width=True)
             else:
                 st.info("Nenhum feedback registrado ainda.")
                 

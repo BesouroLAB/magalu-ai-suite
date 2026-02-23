@@ -95,6 +95,14 @@ class RoteiristaAgent:
                 for est in res_est.data:
                     sb_parts.append(f"- [{est['tipo_estrutura']}] {est['texto_ouro']}")
                     
+            # 5. Memória de Calibração (Lições Recentes do Antes x Depois)
+            res_fb = self.supabase.table("feedback_roteiros").select("comentarios").neq("comentarios", "null").limit(5).order('criado_em', desc=True).execute()
+            if res_fb.data:
+                valid_mems = [f for f in res_fb.data if f.get('comentarios') and f['comentarios'].strip()]
+                if valid_mems:
+                    sb_parts.append("\n**MEMÓRIA RECENTE DE CORREÇÕES (NÃO REPITA ESTES ERROS):**")
+                    for fb in valid_mems:
+                        sb_parts.append(f"- O Breno corrigiu recentemente: {fb['comentarios']}")
         except Exception as e:
             print(f"Erro ao buscar contexto no Supabase: {e}")
             
@@ -135,6 +143,37 @@ class RoteiristaAgent:
             parts.append(supabase_context)
 
         return "\n".join(parts)
+
+    def gerar_memoria_calibracao(self, ia_text, breno_text):
+        """Analisa a diferença entre o texto da IA e o aprovado, e extrai a 'lição'."""
+        prompt = (
+            "Você é um copywriter sênior analisando a diferença entre o rascunho de um redator júnior (você mesmo no passado) "
+            "e a versão final aprovada pelo Diretor de Criação (Breno).\n\n"
+            "TEXTO ORIGINAL (JÚNIOR/IA):\n"
+            f"{ia_text}\n\n"
+            "TEXTO APROVADO (DIRETOR/BRENO):\n"
+            f"{breno_text}\n\n"
+            "Sua tarefa: Escreva UMA ÚNICA frase afirmativa (máximo 150 caracteres) resumindo o que o júnior errou e qual foi a correção de tom/estilo aplicada pelo Breno. "
+            "Fale na terceira pessoa. Exemplo: 'O redator usou termos muito técnicos, o Breno corrigiu simplificando a linguagem para o dia a dia.' Vá direto ao ponto."
+        )
+        try:
+            from google import genai
+            from google.genai import types
+            import os
+            api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
+            if not api_key:
+                return "API Key ausente para gerar memória."
+            
+            client = genai.Client(api_key=api_key)
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt,
+                config=types.GenerateContentConfig(temperature=0.3)
+            )
+            return response.text.replace('\n', ' ').strip()
+        except Exception as e:
+            print(f"Erro na auto-avaliação: {e}")
+            return "Erro ao gerar memória."
 
     def gerar_roteiro(self, scraped_data, modo_trabalho="NW (NewWeb)"):
         """Envia a requisição para o Gemini gerar o roteiro. Suporta Multimodal e Modos de Trabalho."""
