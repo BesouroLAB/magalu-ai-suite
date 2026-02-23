@@ -1,11 +1,6 @@
--- Tabela 0: Roteiros Aprovados (Original)
-create table if not exists roteiros_aprovados (
-  id uuid default gen_random_uuid() primary key,
-  criado_em timestamp with time zone default timezone('utc'::text, now()) not null,
-  ficha_tecnica text not null,
-  roteiro_original_ia text not null,
-  roteiro_editado_humano text not null
-);
+-- ==========================================
+-- MAGALU AI SUITE - SCHEMA CONSOLIDADO V1.5
+-- ==========================================
 
 -- Tabela 1: Categorias (Organiza o Cérebro da IA)
 create table if not exists categorias (
@@ -28,10 +23,9 @@ create table if not exists feedback_roteiros (
   id uuid default gen_random_uuid() primary key,
   criado_em timestamp with time zone default timezone('utc'::text, now()) not null,
   categoria_id int references categorias(id),
-  ficha_tecnica text not null,
   roteiro_original_ia text not null,
   roteiro_final_humano text not null,
-  avaliacao int, -- 1 para Bom (👍), -1 para Ruim (👎)
+  avaliacao varchar(50), -- Ruim, Regular, Bom, Ótimo
   comentarios text
 );
 
@@ -64,7 +58,7 @@ create table if not exists treinamento_fonetica (
   exemplo_no_roteiro text
 );
 
--- Tabela 6: Treinamento de Estruturas (Aberturas e Fechamentos/CTAs)
+-- Tabela 6: Treinamento de Estruturas (Hooks & CTAs)
 create table if not exists treinamento_estruturas (
   id uuid default gen_random_uuid() primary key,
   criado_em timestamp with time zone default timezone('utc'::text, now()) not null,
@@ -72,7 +66,7 @@ create table if not exists treinamento_estruturas (
   texto_ouro text not null
 );
 
--- Tabela 7: Histórico de Roteiros Gerados
+-- Tabela 7: Histórico de Roteiros Gerados (Log Automático)
 create table if not exists historico_roteiros (
   id uuid default gen_random_uuid() primary key,
   criado_em timestamp with time zone default timezone('utc'::text, now()) not null,
@@ -82,8 +76,11 @@ create table if not exists historico_roteiros (
   ficha_extraida text,
   status varchar(30) default 'gerado'
 );
--- Ativando RLS para proteção base em todas as tabelas
-alter table roteiros_aprovados enable row level security;
+
+-- ==========================================
+-- ATIVANDO ROW LEVEL SECURITY (RLS)
+-- ==========================================
+
 alter table categorias enable row level security;
 alter table feedback_roteiros enable row level security;
 alter table roteiros_ouro enable row level security;
@@ -92,29 +89,46 @@ alter table treinamento_fonetica enable row level security;
 alter table treinamento_estruturas enable row level security;
 alter table historico_roteiros enable row level security;
 
--- Política simples: Permite acesso total apenas para chaves autenticadas (authenticated context) ou service_role.
--- Como você está alimentando o app Python com as keys direto no .env, isso já barra "visitantes anônimos da internet"
--- caso usem uma chamada de navegador não assinada. 
-create policy "Allow full access for authenticated requests"
-on roteiros_aprovados for all using (true);
+-- ==========================================
+-- POLÍTICAS DE ACESSO (PERMISSIO TOTAL PARA AUTENTICADOS)
+-- ==========================================
 
-create policy "Allow full access for authenticated requests"
-on categorias for all using (true);
+-- Como criamos as políticas pelo SQL Editor, garantimos que apenas quem tem a Service Key/Anon Key do app acesse.
 
-create policy "Allow full access for authenticated requests"
-on feedback_roteiros for all using (true);
+do $$ 
+begin
+  -- Categorias
+  if not exists (select 1 from pg_policies where policyname = 'Allow access' and tablename = 'categorias') then
+    create policy "Allow access" on categorias for all using (true);
+  end if;
+  
+  -- Feedback
+  if not exists (select 1 from pg_policies where policyname = 'Allow access' and tablename = 'feedback_roteiros') then
+    create policy "Allow access" on feedback_roteiros for all using (true);
+  end if;
 
-create policy "Allow full access for authenticated requests"
-on roteiros_ouro for all using (true);
+  -- Roteiros Ouro
+  if not exists (select 1 from pg_policies where policyname = 'Allow access' and tablename = 'roteiros_ouro') then
+    create policy "Allow access" on roteiros_ouro for all using (true);
+  end if;
 
-create policy "Allow full access for authenticated requests"
-on treinamento_persona_lu for all using (true);
+  -- Persona
+  if not exists (select 1 from pg_policies where policyname = 'Allow access' and tablename = 'treinamento_persona_lu') then
+    create policy "Allow access" on treinamento_persona_lu for all using (true);
+  end if;
 
-create policy "Allow full access for authenticated requests"
-on treinamento_fonetica for all using (true);
+  -- Fonetica
+  if not exists (select 1 from pg_policies where policyname = 'Allow access' and tablename = 'treinamento_fonetica') then
+    create policy "Allow access" on treinamento_fonetica for all using (true);
+  end if;
 
-create policy "Allow full access for authenticated requests"
-on treinamento_estruturas for all using (true);
+  -- Estruturas
+  if not exists (select 1 from pg_policies where policyname = 'Allow access' and tablename = 'treinamento_estruturas') then
+    create policy "Allow access" on treinamento_estruturas for all using (true);
+  end if;
 
-create policy "Allow full access for authenticated requests"
-on historico_roteiros for all using (true);
+  -- Histórico
+  if not exists (select 1 from pg_policies where policyname = 'Allow access' and tablename = 'historico_roteiros') then
+    create policy "Allow access" on historico_roteiros for all using (true);
+  end if;
+end $$;
