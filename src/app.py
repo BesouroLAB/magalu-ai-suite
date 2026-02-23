@@ -104,7 +104,23 @@ st.markdown(DARK_MODE_CSS, unsafe_allow_html=True)
 
 # --- LOGIN GATE ---
 def check_login():
-    """Tela de login simples. Bloqueia o app até autenticar."""
+    """Tela de login com persistência simples."""
+    auth_file = os.path.join(os.path.dirname(__file__), ".auth_token")
+    
+    # 1. Tenta recuperar sessão salva
+    if 'authenticated' not in st.session_state:
+        if os.path.exists(auth_file):
+            try:
+                with open(auth_file, "r") as f:
+                    saved_token = f.read().strip()
+                # Token simples: concatenamos usuario:senha (não é o mais seguro, mas atende ao uso individual)
+                valid_user = os.environ.get("APP_USER", "admin").strip()
+                valid_pwd = os.environ.get("APP_PASSWORD", "admin").strip()
+                if saved_token == f"{valid_user}:{valid_pwd}":
+                    st.session_state['authenticated'] = True
+            except:
+                pass
+
     if st.session_state.get('authenticated'):
         return True
     
@@ -122,15 +138,18 @@ def check_login():
         with st.form("login_form"):
             user = st.text_input("Usuário:", placeholder="admin")
             pwd = st.text_input("Senha:", type="password", placeholder="••••••")
+            remember = st.checkbox("Lembrar de mim", value=True)
             submitted = st.form_submit_button("🔐 Entrar", use_container_width=True, type="primary")
             
             if submitted:
-                # Credenciais (podem ser movidas para st.secrets depois)
                 valid_user = os.environ.get("APP_USER", "admin").strip()
                 valid_pwd = os.environ.get("APP_PASSWORD", "admin").strip()
                 
                 if user.strip() == valid_user and pwd.strip() == valid_pwd:
                     st.session_state['authenticated'] = True
+                    if remember:
+                        with open(auth_file, "w") as f:
+                            f.write(f"{valid_user}:{valid_pwd}")
                     st.rerun()
                 else:
                     st.error("❌ Usuário ou senha incorretos.")
@@ -850,8 +869,21 @@ elif page == "Dashboard":
             
             st.divider()
             
-            tab_ouro, tab_feed, tab_pers, tab_fon = st.tabs(["🏆 Roteiros Ouro", "📉 Feedbacks", "💃 Persona", "🗣️ Fonética"])
+            tab_hist, tab_ouro, tab_feed, tab_pers, tab_fon = st.tabs(["🕒 Histórico Completo", "🏆 Roteiros Ouro", "⚖️ Feedbacks", "💃 Persona", "🗣️ Fonética"])
             
+            with tab_hist:
+                st.markdown("### 🕒 Todos os Roteiros Gerados")
+                st.caption("Log automático de cada script gerado pelo sistema.")
+                try:
+                    res_hist = sp_client.table("historico_roteiros").select("*").order('criado_em', desc=True).execute()
+                    if res_hist.data:
+                        df_hist = pd.DataFrame(res_hist.data)
+                        st.dataframe(df_hist[['criado_em', 'codigo_produto', 'modo_trabalho', 'roteiro_gerado']], use_container_width=True)
+                    else:
+                        st.info("Nenhum roteiro no histórico ainda.")
+                except Exception as e:
+                    st.error(f"Erro ao carregar histórico: {e}")
+
             with tab_ouro:
                 st.markdown("### 🏆 Referências Premium")
                 if not df_ouro.empty:
