@@ -1031,7 +1031,7 @@ elif page == "Histórico":
 
 # --- PÁGINA 3: DASHBOARD ---
 elif page == "Dashboard":
-    st.subheader("📊 Métricas de Desempenho da IA")
+    st.subheader("📊 Painel de Inteligência da IA")
     
     if 'supabase_client' not in st.session_state:
         st.warning("Conecte o Supabase no painel lateral para visualizar os dados.")
@@ -1046,12 +1046,14 @@ elif page == "Dashboard":
             res_fon = sp_client.table("treinamento_fonetica").select("*").execute()
             res_cats = sp_client.table("categorias").select("*").execute()
             res_est = sp_client.table("treinamento_estruturas").select("*").execute()
+            res_hist = sp_client.table("historico_roteiros").select("criado_em, modo_trabalho").execute()
             
             fb_data = res_fb.data if hasattr(res_fb, 'data') else []
             ouro_data = res_ouro.data if hasattr(res_ouro, 'data') else []
             pers_data = res_pers.data if hasattr(res_pers, 'data') else []
             fon_data = res_fon.data if hasattr(res_fon, 'data') else []
             est_data = res_est.data if hasattr(res_est, 'data') else []
+            hist_data = res_hist.data if hasattr(res_hist, 'data') else []
             cats_dict = {c['id']: c['nome'] for c in res_cats.data} if hasattr(res_cats, 'data') else {}
             
             df_fb = pd.DataFrame(fb_data)
@@ -1059,6 +1061,7 @@ elif page == "Dashboard":
             df_pers = pd.DataFrame(pers_data)
             df_fon = pd.DataFrame(fon_data)
             df_est = pd.DataFrame(est_data)
+            df_hist_dash = pd.DataFrame(hist_data)
             
             # --- CONVERSÃO DE FUSO HORÁRIO GLOBAL (UTC -> SÃO PAULO) ---
             for df in [df_fb, df_ouro, df_pers, df_fon, df_est]:
@@ -1072,40 +1075,93 @@ elif page == "Dashboard":
             positivos = len(df_fb[df_fb['avaliacao'] == 1]) if not df_fb.empty and 'avaliacao' in df_fb.columns else 0
             negativos = len(df_fb[df_fb['avaliacao'] == -1]) if not df_fb.empty and 'avaliacao' in df_fb.columns else 0
             total_ouro = len(df_ouro)
+            total_historico = len(df_hist_dash)
             
-            col1, col2, col3, col4 = st.columns(4)
-            col1.metric("Roteiros Avaliados (Logs)", total_avaliados)
-            col2.metric("👍 Avaliações Positivas", positivos)
-            col3.metric("👎 Avaliações Negativas", negativos)
-            col4.metric("🏆 Roteiros Ouro (Few-Shot)", total_ouro)
+            # === SEÇÃO 1: MÉTRICAS RESUMO ===
+            col1, col2, col3, col4, col5 = st.columns(5)
+            col1.metric("📝 Roteiros Gerados", total_historico)
+            col2.metric("⚖️ Calibrações", total_avaliados)
+            col3.metric("👍 Positivas", positivos)
+            col4.metric("👎 Negativas", negativos)
+            col5.metric("🏆 Roteiros Ouro", total_ouro)
             
             st.divider()
             
+            # === SEÇÃO 2: GRÁFICOS VISUAIS ===
+            col_chart1, col_chart2 = st.columns(2)
+            
+            with col_chart1:
+                st.markdown("#### 📈 Produção de Roteiros por Dia")
+                if not df_hist_dash.empty and 'criado_em' in df_hist_dash.columns:
+                    df_timeline = df_hist_dash.copy()
+                    df_timeline['data'] = pd.to_datetime(df_timeline['criado_em']).dt.date
+                    chart_data = df_timeline.groupby('data').size().reset_index(name='roteiros')
+                    chart_data = chart_data.set_index('data')
+                    st.bar_chart(chart_data, color="#0086ff")
+                else:
+                    st.info("Sem dados de produção ainda.")
+            
+            with col_chart2:
+                st.markdown("#### 🧠 Saúde da Base de Conhecimento")
+                kb_data = {
+                    "Componente": ["Fonéticas", "Estruturas (Hooks/CTAs)", "Calibrações", "Roteiros Ouro", "Persona"],
+                    "Registros": [len(df_fon), len(df_est), total_avaliados, total_ouro, len(df_pers)]
+                }
+                df_kb = pd.DataFrame(kb_data).set_index("Componente")
+                st.bar_chart(df_kb, color="#10b981")
+            
+            st.divider()
+            
+            # === SEÇÃO 3: DISTRIBUIÇÃO POR MODO ===
+            col_modo, col_aval = st.columns(2)
+            
+            with col_modo:
+                st.markdown("#### 🎯 Distribuição por Modo de Trabalho")
+                if not df_hist_dash.empty and 'modo_trabalho' in df_hist_dash.columns:
+                    modo_counts = df_hist_dash['modo_trabalho'].value_counts().reset_index()
+                    modo_counts.columns = ['Modo', 'Quantidade']
+                    modo_counts = modo_counts.set_index('Modo')
+                    st.bar_chart(modo_counts, color="#6366f1")
+                else:
+                    st.info("Sem dados de modos.")
+            
+            with col_aval:
+                st.markdown("#### ⚖️ Distribuição de Avaliações")
+                if not df_fb.empty and 'avaliacao' in df_fb.columns:
+                    aval_map = {-1: "Ruim", 0: "Regular", 1: "Bom", 2: "Ótimo"}
+                    df_fb['avaliacao_label'] = df_fb['avaliacao'].map(aval_map).fillna("Outro")
+                    aval_counts = df_fb['avaliacao_label'].value_counts().reset_index()
+                    aval_counts.columns = ['Avaliação', 'Quantidade']
+                    aval_counts = aval_counts.set_index('Avaliação')
+                    st.bar_chart(aval_counts, color="#f59e0b")
+                else:
+                    st.info("Sem avaliações registradas.")
+            
+            st.divider()
+            
+            # === SEÇÃO 4: TABELAS DETALHADAS ===
+            st.markdown("### 📋 Dados Detalhados")
             tab_ouro, tab_feed, tab_pers, tab_fon = st.tabs(["🏆 Roteiros Ouro", "⚖️ Feedbacks", "💃 Persona", "🗣️ Fonética"])
             
             with tab_ouro:
-                st.markdown("### 🏆 Referências Premium")
                 if not df_ouro.empty:
                     st.dataframe(df_ouro[['criado_em', 'categoria', 'titulo_produto', 'roteiro_perfeito']].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhum Roteiro Ouro cadastrado.")
             
             with tab_feed:
-                st.markdown("### ⚖️ Logs de Feedback")
                 if not df_fb.empty:
                     st.dataframe(df_fb[['criado_em', 'avaliacao', 'categoria', 'roteiro_original_ia', 'roteiro_final_humano', 'comentarios']].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhum feedback registrado.")
             
             with tab_pers:
-                st.markdown("### 💃 Treinamento de Persona")
                 if not df_pers.empty:
                     st.dataframe(df_pers[['criado_em', 'pilar_persona', 'erro_cometido', 'texto_corrigido_humano', 'lexico_sugerido']].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhum ajuste de persona cadastrado.")
                     
             with tab_fon:
-                st.markdown("### 🗣️ Regras de Fonética")
                 if not df_fon.empty:
                     st.dataframe(df_fon[['criado_em', 'termo_errado', 'termo_corrigido', 'exemplo_no_roteiro']].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
