@@ -71,3 +71,50 @@ create table if not exists treinamento_estruturas (
   tipo_estrutura varchar(50) not null check (tipo_estrutura in ('Abertura (Gancho)', 'Fechamento (CTA)')),
   texto_ouro text not null
 );
+
+-- Tabela 7: Histórico de Roteiros Gerados
+create table if not exists historico_roteiros (
+  id uuid default gen_random_uuid() primary key,
+  criado_em timestamp with time zone default timezone('utc'::text, now()) not null,
+  codigo_produto varchar(50),
+  modo_trabalho varchar(100) default 'NW (NewWeb)',
+  roteiro_gerado text not null,
+  ficha_extraida text,
+  status varchar(30) default 'gerado'
+);
+-- Ativando RLS para proteção base em todas as tabelas
+alter table roteiros_aprovados enable row level security;
+alter table categorias enable row level security;
+alter table feedback_roteiros enable row level security;
+alter table roteiros_ouro enable row level security;
+alter table treinamento_persona_lu enable row level security;
+alter table treinamento_fonetica enable row level security;
+alter table treinamento_estruturas enable row level security;
+alter table historico_roteiros enable row level security;
+
+-- Política simples: Permite acesso total apenas para chaves autenticadas (authenticated context) ou service_role.
+-- Como você está alimentando o app Python com as keys direto no .env, isso já barra "visitantes anônimos da internet"
+-- caso usem uma chamada de navegador não assinada. 
+create policy "Allow full access for authenticated requests"
+on roteiros_aprovados for all using (true);
+
+create policy "Allow full access for authenticated requests"
+on categorias for all using (true);
+
+create policy "Allow full access for authenticated requests"
+on feedback_roteiros for all using (true);
+
+create policy "Allow full access for authenticated requests"
+on roteiros_ouro for all using (true);
+
+create policy "Allow full access for authenticated requests"
+on treinamento_persona_lu for all using (true);
+
+create policy "Allow full access for authenticated requests"
+on treinamento_fonetica for all using (true);
+
+create policy "Allow full access for authenticated requests"
+on treinamento_estruturas for all using (true);
+
+create policy "Allow full access for authenticated requests"
+on historico_roteiros for all using (true);

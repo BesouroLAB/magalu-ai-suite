@@ -97,6 +97,45 @@ DARK_MODE_CSS = """
 st.markdown(DARK_MODE_CSS, unsafe_allow_html=True)
 
 
+# --- LOGIN GATE ---
+def check_login():
+    """Tela de login simples. Bloqueia o app até autenticar."""
+    if st.session_state.get('authenticated'):
+        return True
+    
+    col_left, col_center, col_right = st.columns([1, 2, 1])
+    with col_center:
+        st.markdown("")
+        st.markdown("")
+        st.markdown("""
+        <div style="text-align: center; margin-bottom: 20px;">
+            <span style="color: #0086ff; font-weight: 800; font-size: 20px; letter-spacing: 3px;">MAGALU</span><br>
+            <span style="color: white; font-weight: 300; font-size: 42px; letter-spacing: 1px;">AI Suite</span>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        with st.form("login_form"):
+            user = st.text_input("Usuário:", placeholder="admin")
+            pwd = st.text_input("Senha:", type="password", placeholder="••••••")
+            submitted = st.form_submit_button("🔐 Entrar", use_container_width=True, type="primary")
+            
+            if submitted:
+                # Credenciais (podem ser movidas para st.secrets depois)
+                valid_user = os.environ.get("APP_USER", "admin")
+                valid_pwd = os.environ.get("APP_PASSWORD", "admin")
+                if user == valid_user and pwd == valid_pwd:
+                    st.session_state['authenticated'] = True
+                    st.rerun()
+                else:
+                    st.error("❌ Usuário ou senha incorretos.")
+        
+        st.caption("Acesso restrito à equipe de conteúdo Magalu.")
+    return False
+
+if not check_login():
+    st.stop()
+
+
 # --- FUNÇÕES SUPABASE ---
 def init_supabase():
     url = os.environ.get("SUPABASE_URL") or st.secrets.get("SUPABASE_URL")
@@ -389,6 +428,20 @@ if page == "Criar Roteiros":
                                 "categoria_id": cat_selecionada_id,
                                 "codigo": code
                             })
+                            
+                            # Auto-log no histórico (silencioso)
+                            try:
+                                sp_hist = st.session_state.get('supabase_client')
+                                if sp_hist:
+                                    ficha_text = ficha_extraida.get('text', '') if isinstance(ficha_extraida, dict) else str(ficha_extraida)
+                                    sp_hist.table("historico_roteiros").insert({
+                                        "codigo_produto": code,
+                                        "modo_trabalho": modo_selecionado,
+                                        "roteiro_gerado": roteiro,
+                                        "ficha_extraida": ficha_text[:5000]
+                                    }).execute()
+                            except Exception:
+                                pass  # Não bloqueia a geração se o log falhar
                             
                             # Delay para evitar 429 Too Many Requests
                             if i < len(codigos) - 1:
