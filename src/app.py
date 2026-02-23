@@ -419,7 +419,7 @@ with st.sidebar:
 
     st.markdown(f"""
         <div style='font-size: 8px; color: #8b92a5; margin-bottom: 25px; margin-top: 5px; display: flex; align-items: center; gap: 8px;'>
-            <span style='font-weight: 400; letter-spacing: 0.5px;'>V2.7</span>
+            <span style='font-weight: 400; letter-spacing: 0.5px;'>V2.8</span>
             <span style='color: #2A3241;'>|</span>
             <div style='display: flex; align-items: center; gap: 4px;'>
                 <span style='color: {sc_llm}; font-weight: 400; font-size: 8px;'>{_llm_name}</span>
@@ -444,13 +444,16 @@ with st.sidebar:
     
     # Se mudou o modelo, mostramos o loading e validamos
     if st.session_state.get('last_model') != modelo_id_selecionado:
-        with st.spinner(f"Ativando {modelo_label.split(' — ')[0]}..."):
+        with st.spinner(f"⚡ Sincronizando nova Inteligência: {modelo_label.split(' — ')[0]}..."):
+            import time
+            time.sleep(1.5) # Delay deliberado para percepção visual do usuário
             try:
-                # Teste rápido de inicialização (apenas verifica se a chave existe e o client sobe)
+                # Teste rápido de inicialização
                 _temp_agent = RoteiristaAgent(model_id=modelo_id_selecionado)
                 st.session_state['modelo_llm'] = modelo_id_selecionado
                 st.session_state['last_model'] = modelo_id_selecionado
-                st.toast(f"✅ {modelo_label.split(' — ')[0]} Ativado!", icon="🚀")
+                st.toast(f"Módulo {modelo_label.split(' — ')[0]} carregado e pronto!", icon="🧠")
+                time.sleep(1.0) # Espera o toast ser lido antes do rebuild
             except Exception as e:
                 st.error(f"Erro ao ativar modelo: {e}")
                 st.session_state['modelo_llm'] = "gemini-2.5-flash" # Fallback
