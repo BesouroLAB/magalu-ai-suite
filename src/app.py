@@ -311,9 +311,15 @@ with st.sidebar:
 
     # --- LOGO & BRANDING ---
     logo_path = os.path.join(os.path.dirname(__file__), "..", "assets", "logo.png")
+    logo_loaded = False
     if os.path.exists(logo_path):
-        st.image(logo_path, use_container_width=True)
-    else:
+        try:
+            st.image(logo_path, use_container_width=True)
+            logo_loaded = True
+        except Exception:
+            pass
+    
+    if not logo_loaded:
         st.markdown(f"""
         <div style="display: flex; flex-direction: column; width: 220px; line-height: 1.1; margin-bottom: 4px;">
             <span style="color: #0086ff; font-weight: 800; font-size: 18px; letter-spacing: 3px;">MAGALU</span>
