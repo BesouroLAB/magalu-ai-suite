@@ -316,7 +316,7 @@ with st.sidebar:
     # --- MENU DE NAVEGAÇÃO ---
     page = st.radio(
         "Módulo do Sistema:", 
-        ["Criar Roteiros", "Treinar IA", "Dashboard"],
+        ["Criar Roteiros", "Histórico", "Treinar IA", "Dashboard"],
         label_visibility="collapsed"
     )
     
@@ -822,6 +822,40 @@ elif page == "Treinar IA":
             else:
                 st.info("Nenhum roteiro ouro cadastrado ainda.")
 
+# --- PÁGINA 1.5: HISTÓRICO ---
+elif page == "Histórico":
+    st.subheader("🕒 Histórico de Roteiros")
+    st.markdown("Confira todos os roteiros gerados automaticamente pelo sistema. Tudo o que você cria fica salvo aqui para consulta rápida.")
+    
+    if 'supabase_client' not in st.session_state:
+        st.warning("Conecte o Supabase no painel lateral para visualizar o histórico.")
+    else:
+        sp_client = st.session_state['supabase_client']
+        try:
+            with st.spinner("Carregando histórico..."):
+                res_hist = sp_client.table("historico_roteiros").select("*").order('criado_em', desc=True).execute()
+                
+            if res_hist.data:
+                df_hist = pd.DataFrame(res_hist.data)
+                
+                # Barra de busca simples
+                search = st.text_input("🔍 Buscar no histórico (Código ou Roteiro):", placeholder="Digite o código do produto...")
+                if search:
+                    df_hist = df_hist[
+                        df_hist['codigo_produto'].str.contains(search, case=False, na=False) | 
+                        df_hist['roteiro_gerado'].str.contains(search, case=False, na=False)
+                    ]
+
+                st.dataframe(
+                    df_hist[['criado_em', 'codigo_produto', 'modo_trabalho', 'roteiro_gerado']], 
+                    use_container_width=True,
+                    height=600
+                )
+            else:
+                st.info("Nenhum roteiro gerado ainda. Vá em 'Criar Roteiros' para começar!")
+        except Exception as e:
+            st.error(f"Erro ao carregar histórico: {e}")
+
 # --- PÁGINA 3: DASHBOARD ---
 elif page == "Dashboard":
     st.subheader("📊 Métricas de Desempenho da IA")
@@ -869,21 +903,8 @@ elif page == "Dashboard":
             
             st.divider()
             
-            tab_hist, tab_ouro, tab_feed, tab_pers, tab_fon = st.tabs(["🕒 Histórico Completo", "🏆 Roteiros Ouro", "⚖️ Feedbacks", "💃 Persona", "🗣️ Fonética"])
+            tab_ouro, tab_feed, tab_pers, tab_fon = st.tabs(["🏆 Roteiros Ouro", "⚖️ Feedbacks", "💃 Persona", "🗣️ Fonética"])
             
-            with tab_hist:
-                st.markdown("### 🕒 Todos os Roteiros Gerados")
-                st.caption("Log automático de cada script gerado pelo sistema.")
-                try:
-                    res_hist = sp_client.table("historico_roteiros").select("*").order('criado_em', desc=True).execute()
-                    if res_hist.data:
-                        df_hist = pd.DataFrame(res_hist.data)
-                        st.dataframe(df_hist[['criado_em', 'codigo_produto', 'modo_trabalho', 'roteiro_gerado']], use_container_width=True)
-                    else:
-                        st.info("Nenhum roteiro no histórico ainda.")
-                except Exception as e:
-                    st.error(f"Erro ao carregar histórico: {e}")
-
             with tab_ouro:
                 st.markdown("### 🏆 Referências Premium")
                 if not df_ouro.empty:
@@ -892,7 +913,7 @@ elif page == "Dashboard":
                     st.info("Nenhum Roteiro Ouro cadastrado.")
             
             with tab_feed:
-                st.markdown("### 📉 Logs de Feedback")
+                st.markdown("### ⚖️ Logs de Feedback")
                 if not df_fb.empty:
                     st.dataframe(df_fb[['criado_em', 'avaliacao', 'categoria', 'roteiro_original_ia', 'roteiro_final_humano', 'comentarios']].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
