@@ -58,27 +58,41 @@ DARK_MODE_CSS = """
         transition: all 0.2s ease-in-out !important;
     }
     
-    /* Botões Primários (Global) */
+    /* Botões Primários (Global) - Gradiente Moderno */
     button[kind="primary"], .stButton > button[kind="primary"], [data-testid="stFormSubmitButton"] > button, .stFormSubmitButton > button {
-        background-color: var(--mglu-blue) !important;
+        background: linear-gradient(135deg, #0086ff 0%, #004db3 100%) !important;
         color: white !important;
         border: none !important;
-        box-shadow: none !important;
+        box-shadow: 0 2px 8px rgba(0, 134, 255, 0.3) !important;
     }
     button[kind="primary"]:hover, .stButton > button[kind="primary"]:hover, [data-testid="stFormSubmitButton"] > button:hover, .stFormSubmitButton > button:hover {
-        background-color: #0066cc !important;
+        background: linear-gradient(135deg, #339dff 0%, #0066cc 100%) !important;
         transform: scale(1.02) !important;
+        box-shadow: 0 4px 12px rgba(0, 134, 255, 0.45) !important;
     }
     
-    /* Botões Secundários */
+    /* Botões Secundários - Gradiente Sutil */
     button[kind="secondary"] {
-        background-color: #001f4d !important;
+        background: linear-gradient(135deg, #0a1b33 0%, #001f4d 100%) !important;
         color: var(--text-primary) !important;
         border: 1px solid #003380 !important;
     }
     button[kind="secondary"]:hover {
-        background-color: #003380 !important;
+        background: linear-gradient(135deg, #001f4d 0%, #003380 100%) !important;
         border-color: var(--mglu-blue) !important;
+        box-shadow: 0 2px 8px rgba(0, 134, 255, 0.2) !important;
+    }
+    
+    /* Download buttons - Gradiente Verde */
+    .stDownloadButton > button {
+        background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important;
+        color: white !important;
+        border: none !important;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3) !important;
+    }
+    .stDownloadButton > button:hover {
+        background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.45) !important;
     }
     
     .streamlit-expanderHeader {
@@ -107,6 +121,13 @@ DARK_MODE_CSS = """
         mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 35%, transparent 100%),
                     linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
         mask-composite: intersect;
+    }
+    
+    /* Sidebar navigation radio buttons - fonte maior */
+    [data-testid="stSidebar"] [role="radiogroup"] label {
+        font-size: 1.05rem !important;
+        font-weight: 500 !important;
+        padding: 6px 0 !important;
     }
     
     .block-container { padding-top: 2rem; }
@@ -334,7 +355,7 @@ with st.sidebar:
         
     st.markdown(f"""
         <div style='font-size: 11px; color: #8b92a5; margin-bottom: 25px; margin-top: 5px;'>
-            V1.5 &nbsp;&nbsp;|&nbsp;&nbsp; 
+            V2.0 &nbsp;&nbsp;|&nbsp;&nbsp; 
             <span style='color: {status_color_gem}'>● Gemini</span> &nbsp; 
             <span style='color: {status_color_supa}'>● Supabase</span>
         </div>
