@@ -901,13 +901,24 @@ elif page == "Histórico":
                 if not df_hist.empty and 'criado_em' in df_hist.columns:
                     df_hist['criado_em'] = df_hist['criado_em'].apply(convert_to_sp_time)
                 
-                # Barra de busca simples
-                search = st.text_input("🔍 Buscar no histórico (Código ou Roteiro):", placeholder="Digite o código do produto...")
+                # Barra de busca avançada
+                search = st.text_input("🔍 Filtrar Histórico (Insira códigos ou palavras-chave separados por vírgula ou espaço):", placeholder="Ex: 240304700, 235289100, Geladeira")
                 if search:
-                    df_hist = df_hist[
-                        df_hist['codigo_produto'].str.contains(search, case=False, na=False) | 
-                        df_hist['roteiro_gerado'].str.contains(search, case=False, na=False)
-                    ]
+                    import re
+                    # Divide a busca por vírgulas ou espaços e remove vazios
+                    termos = [t.strip() for t in re.split(r'[,\s]+', search) if t.strip()]
+                    
+                    if termos:
+                        # Cria uma máscara que é verdadeira se QUALQUER UM dos termos estiver na linha (OR lógico)
+                        mask = pd.Series(False, index=df_hist.index)
+                        for termo in termos:
+                            mask_termo = (
+                                df_hist['codigo_produto'].str.contains(termo, case=False, na=False) |
+                                df_hist['roteiro_gerado'].str.contains(termo, case=False, na=False)
+                            )
+                            mask = mask | mask_termo
+                            
+                        df_hist = df_hist[mask]
                 
                 # Define o index da tabela para começar do 01, 02...
                 df_hist.reset_index(drop=True, inplace=True)
