@@ -310,16 +310,10 @@ with st.sidebar:
     status_color_supa = "#10b981" if supabase_client else "#4b5563"
 
     # --- LOGO & BRANDING ---
-    logo_path = os.path.join(os.path.dirname(__file__), "..", "assets", "logo.png")
-    logo_loaded = False
-    if os.path.exists(logo_path):
-        try:
-            st.image(logo_path, use_container_width=True)
-            logo_loaded = True
-        except Exception:
-            pass
-    
-    if not logo_loaded:
+    LOGO_URL = "https://hvlnltccuekptytwgfrl.supabase.co/storage/v1/object/sign/media/logo_ml_ai_suite.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xMzdkZWExZi0yODU5LTQ1NTAtYWY3ZS0xZTdlY2M1NjE4ZGUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJtZWRpYS9sb2dvX21sX2FpX3N1aXRlLnBuZyIsImlhdCI6MTc3MTgxNDM3NywiZXhwIjoxODAzMzUwMzc3fQ.TNDhROj8HLpGqwkC71zA2sv_gWRxPNUleJkM2NPvloI"
+    try:
+        st.image(LOGO_URL, use_container_width=True)
+    except Exception:
         st.markdown(f"""
         <div style="display: flex; flex-direction: column; width: 220px; line-height: 1.1; margin-bottom: 4px;">
             <span style="color: #0086ff; font-weight: 800; font-size: 18px; letter-spacing: 3px;">MAGALU</span>
