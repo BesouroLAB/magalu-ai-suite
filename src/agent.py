@@ -17,13 +17,19 @@ PRICING_USD_PER_1M = {
     "gemini-2.0-flash":  {"input": 0.10, "output": 0.40},
     # Novos modelos (Z.ai, Kimi, etc. em modo free por enquanto)
     "gpt-4o-mini": {"input": 0.00, "output": 0.00},
-    "grok-4-1-fast": {"input": 0.00, "output": 0.00},
-    "grok-2": {"input": 0.00, "output": 0.00},
+    "x-ai/grok-4-1-fast": {"input": 0.00, "output": 0.00},
+    "x-ai/grok-2": {"input": 0.00, "output": 0.00},
     "moonshot-v1-8k": {"input": 0.00, "output": 0.00},
     "glm-4-flash": {"input": 0.00, "output": 0.00},
-    "deepseek-chat-v3-0324:free": {"input": 0.00, "output": 0.00},
-    "deepseek-r1:free": {"input": 0.00, "output": 0.00},
-    "gemini-2.5-flash-preview": {"input": 0.15, "output": 0.60},
+    "deepseek/deepseek-chat-v3-0324:free": {"input": 0.00, "output": 0.00},
+    "deepseek/deepseek-r1:free": {"input": 0.00, "output": 0.00},
+    "google/gemini-2.5-flash-preview": {"input": 0.15, "output": 0.60},
+    "google/gemma-2-9b-it:free": {"input": 0.00, "output": 0.00},
+    "mistralai/mistral-7b-instruct:free": {"input": 0.00, "output": 0.00},
+    "microsoft/phi-3-mini-128k-instruct:free": {"input": 0.00, "output": 0.00},
+    "qwen/qwen-2-7b-instruct:free": {"input": 0.00, "output": 0.00},
+    "meta-llama/llama-3.1-70b-instruct": {"input": 0.00, "output": 0.00},
+    "claude-3-5-sonnet": {"input": 0.00, "output": 0.00},
 }
 USD_TO_BRL = 5.80
 
@@ -37,8 +43,14 @@ MODELOS_DISPONIVEIS = {
     "🐋 DeepSeek V3 — Grátis (OpenRouter)": "openrouter/deepseek/deepseek-chat-v3-0324:free",
     "🧠 DeepSeek R1 — Grátis (OpenRouter)": "openrouter/deepseek/deepseek-r1:free",
     "⚡ Gemini 2.5 Flash — Créditos (OpenRouter)": "openrouter/google/gemini-2.5-flash-preview",
+    "💎 Gemma 2 9B — Grátis (OpenRouter)": "openrouter/google/gemma-2-9b-it:free",
+    "🌪️ Mistral 7B — Grátis (OpenRouter)": "openrouter/mistralai/mistral-7b-instruct:free",
+    "🔬 Phi-3 Mini — Grátis (OpenRouter)": "openrouter/microsoft/phi-3-mini-128k-instruct:free",
+    "🉐 Qwen 2 7B — Grátis (OpenRouter)": "openrouter/qwen/qwen-2-7b-instruct:free",
     "🇨🇳 GLM-4 Flash — Grátis (Z.ai)": "zai/glm-4-flash",
     "🌙 Kimi v1 — Grátis (Moonshot)": "kimi/moonshot-v1-8k",
+    "🦙 Llama 3.1 70B — Grátis (Puter)": "puter/meta-llama/llama-3.1-70b-instruct",
+    "🎭 Claude 3.5 Sonnet — Grátis (Puter)": "puter/claude-3-5-sonnet",
 }
 
 # Mapeamento de provider -> env var necessária
