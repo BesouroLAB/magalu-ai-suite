@@ -22,8 +22,22 @@ MODELOS_DISPONIVEIS = {
     "Gemini 2.5 Flash (Rápido)": "gemini-2.5-flash",
     "Gemini 2.5 Pro (Qualidade)": "gemini-2.5-pro",
     "Gemini 2.0 Flash (Econômico)": "gemini-2.0-flash",
-    "Grok 4.1 Fast (Puter/xAI)": "x-ai/grok-4-1-fast",
-    "Grok 2 (Puter/xAI)": "x-ai/grok-2",
+    "GPT-4o Mini (OpenAI Grátis)": "openai/gpt-4o-mini",
+    "Grok 4.1 Fast (Puter/xAI)": "puter/x-ai/grok-4-1-fast",
+    "Grok 2 (Puter/xAI)": "puter/x-ai/grok-2",
+    "DeepSeek Chat V3 (OpenRouter)": "openrouter/deepseek/deepseek-chat-v3-0324:free",
+    "DeepSeek R1 (OpenRouter)": "openrouter/deepseek/deepseek-r1:free",
+    "Gemini 2.5 Flash (OpenRouter)": "openrouter/google/gemini-2.5-flash-preview",
+    "GLM-5 (Z.ai Grátis)": "zai/glm-5",
+}
+
+# Mapeamento de provider -> env var necessária
+PROVIDER_KEY_MAP = {
+    "gemini": "GEMINI_API_KEY",
+    "openai": "OPENAI_API_KEY",
+    "puter": "PUTER_API_KEY",
+    "openrouter": "OPENROUTER_API_KEY",
+    "zai": "ZAI_API_KEY",
 }
 
 def calcular_custo_brl(model_id, tokens_in, tokens_out):
@@ -38,13 +52,16 @@ class RoteiristaAgent:
         self.supabase = supabase_client
         self.client_gemini = None
         self.client_openai = None
+        self.provider = "gemini"
 
-        if "gemini" in self.model_id.lower():
+        if self.model_id.startswith("gemini"):
+            self.provider = "gemini"
             api_key = os.environ.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
             if not api_key:
                 raise ValueError("GEMINI_API_KEY não encontrada!")
             self.client_gemini = genai.Client(api_key=api_key)
-        else:
+        elif self.model_id.startswith("puter/"):
+            self.provider = "puter"
             puter_key = os.environ.get("PUTER_API_KEY")
             if not puter_key:
                 raise ValueError("PUTER_API_KEY não encontrada!")
@@ -52,6 +69,34 @@ class RoteiristaAgent:
                 api_key=puter_key,
                 base_url="https://api.puter.com/puterai/openai/v1/"
             )
+            self.model_id = self.model_id.replace("puter/", "")
+        elif self.model_id.startswith("openai/"):
+            self.provider = "openai"
+            openai_key = os.environ.get("OPENAI_API_KEY")
+            if not openai_key:
+                raise ValueError("OPENAI_API_KEY não encontrada!")
+            self.client_openai = OpenAI(api_key=openai_key)
+            self.model_id = self.model_id.replace("openai/", "")
+        elif self.model_id.startswith("openrouter/"):
+            self.provider = "openrouter"
+            or_key = os.environ.get("OPENROUTER_API_KEY")
+            if not or_key:
+                raise ValueError("OPENROUTER_API_KEY não encontrada!")
+            self.client_openai = OpenAI(
+                api_key=or_key,
+                base_url="https://openrouter.ai/api/v1"
+            )
+            self.model_id = self.model_id.replace("openrouter/", "")
+        elif self.model_id.startswith("zai/"):
+            self.provider = "zai"
+            zai_key = os.environ.get("ZAI_API_KEY")
+            if not zai_key:
+                raise ValueError("ZAI_API_KEY não encontrada!")
+            self.client_openai = OpenAI(
+                api_key=zai_key,
+                base_url="https://api.z.ai/api/paas/v4/"
+            )
+            self.model_id = self.model_id.replace("zai/", "")
 
         # Carrega toda a base de conhecimento estática
         self.system_prompt = self._load_file(

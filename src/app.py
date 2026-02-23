@@ -372,6 +372,9 @@ def salvar_nuance(sp_client, frase, analise, exemplo):
 with st.sidebar:
     # --- Verificação de Status (antes de renderizar) ---
     api_key_env = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
+    puter_key_env = os.environ.get("PUTER_API_KEY") or st.secrets.get("PUTER_API_KEY")
+    openai_key_env = os.environ.get("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
+    openrouter_key_env = os.environ.get("OPENROUTER_API_KEY") or st.secrets.get("OPENROUTER_API_KEY")
     supabase_client = init_supabase()
     if supabase_client:
         st.session_state['supabase_client'] = supabase_client
@@ -389,34 +392,33 @@ with st.sidebar:
         """, unsafe_allow_html=True)
     
     # --- STATUS INDICATORS (VIBRANT TAGS) ---
-    status_color_gem = "#00ff88" if api_key_env else "#ff4b4b"
-    status_label_gem = "ON" if api_key_env else "OFF"
-    status_bg_gem = "rgba(0, 255, 136, 0.12)" if api_key_env else "rgba(255, 75, 75, 0.12)"
+    def _si(active):
+        c = "#00ff88" if active else "#ff4b4b"
+        l = "ON" if active else "OFF"
+        b = "rgba(0, 255, 136, 0.12)" if active else "rgba(255, 75, 75, 0.12)"
+        return c, l, b
     
-    status_color_puter = "#00ff88" if puter_key_env else "#ff4b4b"
-    status_label_puter = "ON" if puter_key_env else "OFF"
-    status_bg_puter = "rgba(0, 255, 136, 0.12)" if puter_key_env else "rgba(255, 75, 75, 0.12)"
-    
-    status_color_supa = "#00ff88" if supabase_client else "#ff4b4b"
-    status_label_supa = "ON" if supabase_client else "OFF"
-    status_bg_supa = "rgba(0, 255, 136, 0.12)" if supabase_client else "rgba(255, 75, 75, 0.12)"
+    sc_gem, sl_gem, sb_gem = _si(api_key_env)
+    sc_oai, sl_oai, sb_oai = _si(openai_key_env)
+    sc_put, sl_put, sb_put = _si(puter_key_env)
+    sc_or, sl_or, sb_or = _si(openrouter_key_env)
+    sc_sup, sl_sup, sb_sup = _si(supabase_client)
+
+    def _tag(name, color, bg, label):
+        return f"""<div style='display: flex; align-items: center; gap: 4px;'>
+            <span style='color: {color}; font-weight: 400; font-size: 8px;'>{name}</span>
+            <span style='background: {bg}; color: {color}; padding: 0.2px 3px; border-radius: 2px; font-size: 6px; font-weight: 600; border: 1px solid {color}22;'>{label}</span>
+        </div>"""
 
     st.markdown(f"""
-        <div style='font-size: 8px; color: #8b92a5; margin-bottom: 25px; margin-top: 5px; display: flex; align-items: center; gap: 8px;'>
-            <span style='font-weight: 400; letter-spacing: 0.5px;'>V2.5</span>
+        <div style='font-size: 8px; color: #8b92a5; margin-bottom: 25px; margin-top: 5px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;'>
+            <span style='font-weight: 400; letter-spacing: 0.5px;'>V2.6</span>
             <span style='color: #2A3241;'>|</span>
-            <div style='display: flex; align-items: center; gap: 4px;'>
-                <span style='color: {status_color_gem}; font-weight: 400; font-size: 8px;'>Gemini</span>
-                <span style='background: {status_bg_gem}; color: {status_color_gem}; padding: 0.2px 3px; border-radius: 2px; font-size: 6px; font-weight: 600; border: 1px solid {status_color_gem}22;'>{status_label_gem}</span>
-            </div>
-            <div style='display: flex; align-items: center; gap: 4px;'>
-                <span style='color: {status_color_puter}; font-weight: 400; font-size: 8px;'>Grok</span>
-                <span style='background: {status_bg_puter}; color: {status_color_puter}; padding: 0.2px 3px; border-radius: 2px; font-size: 6px; font-weight: 600; border: 1px solid {status_color_puter}22;'>{status_label_puter}</span>
-            </div>
-            <div style='display: flex; align-items: center; gap: 4px;'>
-                <span style='color: {status_color_supa}; font-weight: 400; font-size: 8px;'>Supabase</span>
-                <span style='background: {status_bg_supa}; color: {status_color_supa}; padding: 0.2px 3px; border-radius: 2px; font-size: 6px; font-weight: 600; border: 1px solid {status_color_supa}22;'>{status_label_supa}</span>
-            </div>
+            {_tag('Gemini', sc_gem, sb_gem, sl_gem)}
+            {_tag('GPT', sc_oai, sb_oai, sl_oai)}
+            {_tag('Grok', sc_put, sb_put, sl_put)}
+            {_tag('Router', sc_or, sb_or, sl_or)}
+            {_tag('Supa', sc_sup, sb_sup, sl_sup)}
         </div>
     """, unsafe_allow_html=True)
     
@@ -600,105 +602,107 @@ if page == "Criar Roteiros":
                     st.warning("⚠️ Digite pelo menos um código de produto.")
                 elif len(codigos) > 15:
                     st.warning("⚠️ Limite excedido: Por favor, insira no máximo 15 códigos por vez (Rate Limit da API).")
-                elif "gemini" in modelo_id and not api_key_env:
-                    st.warning("⚠️ Forneça uma chave da API do Gemini no painel.")
-                elif "grok" in modelo_id and not puter_key_env:
-                    st.warning("⚠️ Forneça o token de autenticação do Puter no painel.")
                 else:
-                    try:
-                        agent = RoteiristaAgent(
-                            supabase_client=st.session_state.get('supabase_client'),
-                            model_id=modelo_id
-                        )
-                        roteiros = []
-                        # Busca a base do histórico para numeração (o total já feito)
-                        base_count = get_total_script_count(st.session_state.get('supabase_client'))
-                        
-                        progress = st.progress(0, text="Iniciando extração...")
-                        
-                        for i, code in enumerate(codigos):
-                            import time
-                            
-                            progress.progress(
-                                (i) / len(codigos),
-                                text=f"🔍 [{code}] Buscando página na Magalu... ({i+1}/{len(codigos)})"
+                    # Validação genérica de API Key baseada no provider
+                    _provider = modelo_id.split('/')[0] if '/' in modelo_id else 'gemini'
+                    _env_var = PROVIDER_KEY_MAP.get(_provider)
+                    if _env_var and not os.environ.get(_env_var):
+                        st.warning(f"⚠️ Forneça a chave `{_env_var}` no painel de Configurações.")
+                    else:
+                        try:
+                            agent = RoteiristaAgent(
+                                supabase_client=st.session_state.get('supabase_client'),
+                                model_id=modelo_id
                             )
+                            roteiros = []
+                            # Busca a base do histórico para numeração (o total já feito)
+                            base_count = get_total_script_count(st.session_state.get('supabase_client'))
                             
-                            # 1. Gemini extrai dados do produto via URL
-                            ficha_extraida = scrape_with_gemini(code)
+                            progress = st.progress(0, text="Iniciando extração...")
                             
-                            progress.progress(
-                                (i + 0.5) / len(codigos),
-                                text=f"✍️ [{code}] Analisando contexto e escrevendo roteiro... ({i+1}/{len(codigos)})"
-                            )
+                            for i, code in enumerate(codigos):
+                                import time
+                                
+                                progress.progress(
+                                    (i) / len(codigos),
+                                    text=f"🔍 [{code}] Buscando página na Magalu... ({i+1}/{len(codigos)})"
+                                )
+                                
+                                # 1. Gemini extrai dados do produto via URL
+                                ficha_extraida = scrape_with_gemini(code)
+                                
+                                progress.progress(
+                                    (i + 0.5) / len(codigos),
+                                    text=f"✍️ [{code}] Analisando contexto e escrevendo roteiro... ({i+1}/{len(codigos)})"
+                                )
+                                
+                                
+                                # 2. Gera o roteiro com os dados extraídos (retorna dict)
+                                # Extrai nome do produto (primeira linha da ficha)
+                                txt_ficha = ficha_extraida.get('text', str(ficha_extraida)) if isinstance(ficha_extraida, dict) else str(ficha_extraida)
+                                nome_p = txt_ficha.split('\n')[0].strip() if txt_ficha else "Produto"
+                                
+                                resultado = agent.gerar_roteiro(
+                                    ficha_extraida, 
+                                    modo_trabalho=modo_selecionado, 
+                                    mes=mes_selecionado, 
+                                    data_roteiro=data_roteiro_str,
+                                    codigo=code,
+                                    nome_produto=nome_p
+                                )
+                                roteiro_texto = resultado["roteiro"]
+                                
+                                # Atribuímos o número sequencial histórico (o último é o número mais alto)
+                                global_id = base_count + i + 1
+                                
+                                roteiros.insert(0, { # Insere no INÍCIO para o último ficar no topo
+                                    "ficha": ficha_extraida,
+                                    "roteiro_original": roteiro_texto,
+                                    "categoria_id": cat_selecionada_id,
+                                    "codigo": code,
+                                    "model_id": resultado["model_id"],
+                                    "tokens_in": resultado["tokens_in"],
+                                    "tokens_out": resultado["tokens_out"],
+                                    "custo_brl": resultado["custo_brl"],
+                                    "global_num": global_id, # Salva o número para exibição
+                                    "mes": mes_selecionado # Salva o mês de lançamento
+                                })
+                                
+                                # Auto-log no histórico (silencioso) com tracking de custo
+                                try:
+                                    sp_hist = st.session_state.get('supabase_client')
+                                    if sp_hist:
+                                        ficha_text = ficha_extraida.get('text', '') if isinstance(ficha_extraida, dict) else str(ficha_extraida)
+                                        sp_hist.table("historico_roteiros").insert({
+                                            "codigo_produto": code,
+                                            "modo_trabalho": modo_selecionado,
+                                            "roteiro_gerado": roteiro_texto,
+                                            "ficha_extraida": ficha_text[:5000],
+                                            "modelo_llm": resultado["model_id"],
+                                            "tokens_entrada": resultado["tokens_in"],
+                                            "tokens_saida": resultado["tokens_out"],
+                                            "custo_estimado_brl": resultado["custo_brl"]
+                                        }).execute()
+                                except Exception:
+                                    pass  # Não bloqueia a geração se o log falhar
+                                
+                                # Delay para evitar 429 Too Many Requests
+                                if i < len(codigos) - 1:
+                                    progress.progress((i + 0.8) / len(codigos), text=f"⏳ [{code}] Cota de segurança... Aguardando 3s.")
+                                    time.sleep(3)
                             
+                            progress.progress(1.0, text="✅ Lote Concluído com Sucesso!")
+                            st.session_state['data_roteiro_global'] = data_roteiro_str
+                            st.session_state['mes_global'] = mes_selecionado
+                            if 'roteiros' not in st.session_state:
+                                st.session_state['roteiros'] = []
+                            # Prepend o novo lote ao início da lista global da sessão
+                            st.session_state['roteiros'] = roteiros + st.session_state.get('roteiros', [])
+                            st.session_state['roteiro_ativo_idx'] = 0 # Foca no mais novo
+                            st.rerun() 
                             
-                            # 2. Gera o roteiro com os dados extraídos (retorna dict)
-                            # Extrai nome do produto (primeira linha da ficha)
-                            txt_ficha = ficha_extraida.get('text', str(ficha_extraida)) if isinstance(ficha_extraida, dict) else str(ficha_extraida)
-                            nome_p = txt_ficha.split('\n')[0].strip() if txt_ficha else "Produto"
-                            
-                            resultado = agent.gerar_roteiro(
-                                ficha_extraida, 
-                                modo_trabalho=modo_selecionado, 
-                                mes=mes_selecionado, 
-                                data_roteiro=data_roteiro_str,
-                                codigo=code,
-                                nome_produto=nome_p
-                            )
-                            roteiro_texto = resultado["roteiro"]
-                            
-                            # Atribuímos o número sequencial histórico (o último é o número mais alto)
-                            global_id = base_count + i + 1
-                            
-                            roteiros.insert(0, { # Insere no INÍCIO para o último ficar no topo
-                                "ficha": ficha_extraida,
-                                "roteiro_original": roteiro_texto,
-                                "categoria_id": cat_selecionada_id,
-                                "codigo": code,
-                                "model_id": resultado["model_id"],
-                                "tokens_in": resultado["tokens_in"],
-                                "tokens_out": resultado["tokens_out"],
-                                "custo_brl": resultado["custo_brl"],
-                                "global_num": global_id, # Salva o número para exibição
-                                "mes": mes_selecionado # Salva o mês de lançamento
-                            })
-                            
-                            # Auto-log no histórico (silencioso) com tracking de custo
-                            try:
-                                sp_hist = st.session_state.get('supabase_client')
-                                if sp_hist:
-                                    ficha_text = ficha_extraida.get('text', '') if isinstance(ficha_extraida, dict) else str(ficha_extraida)
-                                    sp_hist.table("historico_roteiros").insert({
-                                        "codigo_produto": code,
-                                        "modo_trabalho": modo_selecionado,
-                                        "roteiro_gerado": roteiro_texto,
-                                        "ficha_extraida": ficha_text[:5000],
-                                        "modelo_llm": resultado["model_id"],
-                                        "tokens_entrada": resultado["tokens_in"],
-                                        "tokens_saida": resultado["tokens_out"],
-                                        "custo_estimado_brl": resultado["custo_brl"]
-                                    }).execute()
-                            except Exception:
-                                pass  # Não bloqueia a geração se o log falhar
-                            
-                            # Delay para evitar 429 Too Many Requests
-                            if i < len(codigos) - 1:
-                                progress.progress((i + 0.8) / len(codigos), text=f"⏳ [{code}] Cota de segurança... Aguardando 3s.")
-                                time.sleep(3)
-                        
-                        progress.progress(1.0, text="✅ Lote Concluído com Sucesso!")
-                        st.session_state['data_roteiro_global'] = data_roteiro_str
-                        st.session_state['mes_global'] = mes_selecionado
-                        if 'roteiros' not in st.session_state:
-                            st.session_state['roteiros'] = []
-                        # Prepend o novo lote ao início da lista global da sessão
-                        st.session_state['roteiros'] = roteiros + st.session_state.get('roteiros', [])
-                        st.session_state['roteiro_ativo_idx'] = 0 # Foca no mais novo
-                        st.rerun() 
-                        
-                    except Exception as e:
-                        st.error(f"Erro na geração: {e}")
+                        except Exception as e:
+                            st.error(f"Erro na geração: {e}")
         else:
             # --- MODO MANUAL (FALLBACK) ---
             st.markdown("### 1. Dados dos Produtos")
@@ -753,81 +757,82 @@ if page == "Criar Roteiros":
                 
                 if not fichas_validas:
                     st.warning("⚠️ Preencha o Código e a Ficha Técnica de pelo menos um produto.")
-                elif "gemini" in st.session_state.get('modelo_llm', '') and not api_key_env:
-                    st.warning("⚠️ Forneça uma chave da API do Gemini no painel.")
-                elif "grok" in st.session_state.get('modelo_llm', '') and not puter_key_env:
-                    st.warning("⚠️ Forneça o token de autenticação do Puter no painel.")
                 else:
                     modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
-                    with st.spinner(f"Processando {len(fichas_validas)} roteiro(s)..."):
-                        try:
-                            agent = RoteiristaAgent(
-                                supabase_client=st.session_state.get('supabase_client'),
-                                model_id=modelo_id
-                            )
-                            roteiros = []
-                            # Busca a base do histórico para numeração
-                            base_count = get_total_script_count(st.session_state.get('supabase_client'))
-                            
-                            for i, item_man in enumerate(fichas_validas):
-                                ficha = item_man["ficha"]
-                                code = item_man["sku"]
-                                # Extrai nome do produto da ficha manual (primeira linha)
-                                nome_p_man = ficha.split('\n')[0].strip() if ficha else "Produto"
-                                
-                                resultado = agent.gerar_roteiro(
-                                    ficha, 
-                                    modo_trabalho="NW (NewWeb)", 
-                                    mes=mes_selecionado, 
-                                    data_roteiro=data_roteiro_str,
-                                    codigo=code,
-                                    nome_produto=nome_p_man
+                    _provider = modelo_id.split('/')[0] if '/' in modelo_id else 'gemini'
+                    _env_var = PROVIDER_KEY_MAP.get(_provider)
+                    if _env_var and not os.environ.get(_env_var):
+                        st.warning(f"⚠️ Forneça a chave `{_env_var}` no painel de Configurações.")
+                    else:
+                        with st.spinner(f"Processando {len(fichas_validas)} roteiro(s)..."):
+                            try:
+                                agent = RoteiristaAgent(
+                                    supabase_client=st.session_state.get('supabase_client'),
+                                    model_id=modelo_id
                                 )
-                                roteiro_texto = resultado["roteiro"]
+                                roteiros = []
+                                # Busca a base do histórico para numeração
+                                base_count = get_total_script_count(st.session_state.get('supabase_client'))
                                 
-                                # Atribuímos o número sequencial histórico
-                                global_id = base_count + i + 1
+                                for i, item_man in enumerate(fichas_validas):
+                                    ficha = item_man["ficha"]
+                                    code = item_man["sku"]
+                                    # Extrai nome do produto da ficha manual (primeira linha)
+                                    nome_p_man = ficha.split('\n')[0].strip() if ficha else "Produto"
+                                    
+                                    resultado = agent.gerar_roteiro(
+                                        ficha, 
+                                        modo_trabalho="NW (NewWeb)", 
+                                        mes=mes_selecionado, 
+                                        data_roteiro=data_roteiro_str,
+                                        codigo=code,
+                                        nome_produto=nome_p_man
+                                    )
+                                    roteiro_texto = resultado["roteiro"]
+                                    
+                                    # Atribuímos o número sequencial histórico
+                                    global_id = base_count + i + 1
 
-                                roteiros.insert(0, { # Newest at the beginning
-                                    "ficha": ficha,
-                                    "roteiro_original": roteiro_texto,
-                                    "categoria_id": cat_selecionada_id,
-                                    "codigo": code,
-                                    "model_id": resultado["model_id"],
-                                    "tokens_in": resultado["tokens_in"],
-                                    "tokens_out": resultado["tokens_out"],
-                                    "custo_brl": resultado["custo_brl"],
-                                    "global_num": global_id,
-                                    "mes": mes_selecionado
-                                })
+                                    roteiros.insert(0, { # Newest at the beginning
+                                        "ficha": ficha,
+                                        "roteiro_original": roteiro_texto,
+                                        "categoria_id": cat_selecionada_id,
+                                        "codigo": code,
+                                        "model_id": resultado["model_id"],
+                                        "tokens_in": resultado["tokens_in"],
+                                        "tokens_out": resultado["tokens_out"],
+                                        "custo_brl": resultado["custo_brl"],
+                                        "global_num": global_id,
+                                        "mes": mes_selecionado
+                                    })
 
-                                # Auto-log no histórico (Modo Manual)
-                                try:
-                                    sp_hist = st.session_state.get('supabase_client')
-                                    if sp_hist:
-                                        sp_hist.table("historico_roteiros").insert({
-                                            "codigo_produto": code,
-                                            "modo_trabalho": "Manual NW",
-                                            "roteiro_gerado": roteiro_texto,
-                                            "ficha_extraida": ficha[:5000],
-                                            "modelo_llm": resultado["model_id"],
-                                            "tokens_entrada": resultado["tokens_in"],
-                                            "tokens_saida": resultado["tokens_out"],
-                                            "custo_estimado_brl": resultado["custo_brl"]
-                                        }).execute()
-                                except Exception:
-                                    pass
+                                    # Auto-log no histórico (Modo Manual)
+                                    try:
+                                        sp_hist = st.session_state.get('supabase_client')
+                                        if sp_hist:
+                                            sp_hist.table("historico_roteiros").insert({
+                                                "codigo_produto": code,
+                                                "modo_trabalho": "Manual NW",
+                                                "roteiro_gerado": roteiro_texto,
+                                                "ficha_extraida": ficha[:5000],
+                                                "modelo_llm": resultado["model_id"],
+                                                "tokens_entrada": resultado["tokens_in"],
+                                                "tokens_saida": resultado["tokens_out"],
+                                                "custo_estimado_brl": resultado["custo_brl"]
+                                            }).execute()
+                                    except Exception:
+                                        pass
 
-                            st.session_state['data_roteiro_global'] = data_roteiro_str
-                            st.session_state['mes_global'] = mes_selecionado
-                            if 'roteiros' not in st.session_state:
-                                st.session_state['roteiros'] = []
-                            # Prepend para o topo
-                            st.session_state['roteiros'] = roteiros + st.session_state.get('roteiros', [])
-                            st.session_state['roteiro_ativo_idx'] = 0
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Erro na geração: {e}")
+                                st.session_state['data_roteiro_global'] = data_roteiro_str
+                                st.session_state['mes_global'] = mes_selecionado
+                                if 'roteiros' not in st.session_state:
+                                    st.session_state['roteiros'] = []
+                                # Prepend para o topo
+                                st.session_state['roteiros'] = roteiros + st.session_state.get('roteiros', [])
+                                st.session_state['roteiro_ativo_idx'] = 0
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Erro na geração: {e}")
 
     # --- MESA DE TRABALHO (FULL WIDTH) ---
     st.markdown("<br>", unsafe_allow_html=True)
