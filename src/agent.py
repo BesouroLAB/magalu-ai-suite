@@ -12,9 +12,9 @@ PROJECT_ROOT = os.path.join(os.path.dirname(__file__), '..')
 
 # Tabela de preços por 1M tokens (USD)
 PRICING_USD_PER_1M = {
-    "gemini-2.5-flash": {"input": 0.15, "output": 0.60},
+    "gemini-2.5-flash": {"input": 0.00, "output": 0.00}, # Assumindo AI Studio Free Tier
     "gemini-2.5-pro":   {"input": 1.25, "output": 10.00},
-    "gemini-2.0-flash":  {"input": 0.10, "output": 0.40},
+    "gemini-2.0-flash":  {"input": 0.00, "output": 0.00},
     # Novos modelos (Z.ai, Kimi, etc. em modo free por enquanto)
     "gpt-4o-mini": {"input": 0.00, "output": 0.00},
     "x-ai/grok-4-1-fast": {"input": 0.00, "output": 0.00},
@@ -424,3 +424,56 @@ class RoteiristaAgent:
             "tokens_out": tokens_out,
             "custo_brl": custo_brl
         }
+
+    def chat_with_context(self, user_query, chat_history=[], supabase_context=None):
+        """
+        Gera uma resposta conversacional baseada no histórico de chat e,
+        opcionalmente, injeta dados recentes do Supabase (RAG-lite) no prompt.
+        """
+        system_base = (
+            "Você é a Lu, a assistente virtual inteligente e especialista em IA da Magalu. "
+            "Você ajuda a equipe interna com dúvidas gerais, analisa métricas dos roteiros gerados e dá dicas sobre a ferramenta. "
+            "Tenha um tom acolhedor ('estilo magalu'), direto ao ponto, e use emojis ocasionalmente.\n\n"
+        )
+        
+        if supabase_context:
+            system_base += f"--- CONTEXTO ATUAL DO BANCO DE DADOS ---\n{supabase_context}\n---------------------------------------\n"
+
+        try:
+            if self.provider == "gemini":
+                # Para o Gemini (SDK v1), montaremos a interface como um string prompt 
+                # contendo o system prompt + histórico + pergunta
+                full_prompt = system_base + "\n\n--- HISTÓRICO RECENTE ---\n"
+                for msg in chat_history[-6:]: 
+                    r = msg.get('role', 'user').upper()
+                    c = msg.get('content', '')
+                    full_prompt += f"{r}: {c}\n"
+                full_prompt += f"\nUSUÁRIO: {user_query}\nLU:"
+                
+                response = self.client_gemini.models.generate_content(
+                    model=self.model_id,
+                    contents=full_prompt,
+                    config={"temperature": 0.5}
+                )
+                return response.text
+                
+            elif self.provider in ["openai", "puter", "openrouter", "zai", "kimi"]:
+                messages = [{"role": "system", "content": system_base}]
+                for msg in chat_history[-6:]:
+                    r = "assistant" if msg.get("role") == "Lu" else "user"
+                    messages.append({"role": r, "content": msg["content"]})
+                    
+                messages.append({"role": "user", "content": user_query})
+                
+                response = self.client_openai.chat.completions.create(
+                    model=self.model_id,
+                    messages=messages,
+                    temperature=0.7
+                )
+                return response.choices[0].message.content
+                
+            else:
+                return "Provedor LLM não reconhecido para Chat."
+                
+        except Exception as e:
+            return f"Desculpe, tive um problema técnico ao conectar com a IA ({self.model_id}): {e}"
