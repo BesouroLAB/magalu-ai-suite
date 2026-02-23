@@ -604,7 +604,7 @@ if page == "Criar Roteiros":
             ficha_str = ficha_raw.get('text', str(ficha_raw)) if isinstance(ficha_raw, dict) else str(ficha_raw)
             linhas_ficha = ficha_str.split('\n')
             nome_curto = linhas_ficha[0][:20] + "..." if linhas_ficha and len(linhas_ficha[0]) > 20 else (linhas_ficha[0] if linhas_ficha else f"Item {i+1}")
-            opcoes_tags.append(f"📦 {codigo} {nome_curto}")
+            opcoes_tags.append(f"{i+1:02d} - 📦 {codigo} {nome_curto}")
             
         st.markdown("### 🗂️ Selecione o Roteiro para Edição")
         try:
@@ -905,6 +905,10 @@ elif page == "Histórico":
                         df_hist['codigo_produto'].str.contains(search, case=False, na=False) | 
                         df_hist['roteiro_gerado'].str.contains(search, case=False, na=False)
                     ]
+                
+                # Define o index da tabela para começar do 01, 02...
+                df_hist.reset_index(drop=True, inplace=True)
+                df_hist.index = [f"{i+1:02d}" for i in range(len(df_hist))]
 
                 st.dataframe(
                     df_hist[['criado_em', 'codigo_produto', 'modo_trabalho', 'roteiro_gerado']], 
