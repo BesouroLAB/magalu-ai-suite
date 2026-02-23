@@ -466,13 +466,32 @@ with st.sidebar:
         """, unsafe_allow_html=True)
     
     # --- MENU DE NAVEGAÇÃO ---
-    page = st.radio(
+    if 'page' not in st.session_state:
+        st.session_state['page'] = "Criar Roteiros"
+
+    # Sincroniza o rádio com o session_state
+    main_pages = ["Criar Roteiros", "Histórico", "Treinar IA", "Dashboard"]
+    current_idx = main_pages.index(st.session_state['page']) if st.session_state['page'] in main_pages else 0
+
+    selected_page = st.radio(
         "Módulo do Sistema:", 
-        ["Criar Roteiros", "Guia de Modelos", "Histórico", "Treinar IA", "Dashboard"],
+        main_pages,
+        index=current_idx,
         label_visibility="collapsed"
     )
     
-    st.markdown("<br><br><br>", unsafe_allow_html=True)
+    # Se o usuário clicar no rádio, atualiza o state
+    if selected_page != st.session_state['page'] and selected_page in main_pages:
+        st.session_state['page'] = selected_page
+        st.rerun()
+    
+    # --- RODAPÉ: GUIA E CONFIGURAÇÕES ---
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
+    if st.button("📖 Guia de Modelos", use_container_width=True):
+        st.session_state['page'] = "Guia de Modelos"
+        st.rerun()
+
     st.divider()
     
     # --- CONFIGURAÇÕES API (SEMPRE EDITÁVEL) ---
@@ -521,6 +540,8 @@ with st.sidebar:
                     f.write(f"\nSUPABASE_KEY={supa_key_input}")
                 st.success("Salvo! F5.")
                 st.stop()
+
+    page = st.session_state['page']
 
 
 
