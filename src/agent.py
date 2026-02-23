@@ -12,9 +12,9 @@ PROJECT_ROOT = os.path.join(os.path.dirname(__file__), '..')
 
 # Tabela de preços por 1M tokens (USD)
 PRICING_USD_PER_1M = {
-    "gemini-2.5-flash": {"input": 0.00, "output": 0.00}, # Assumindo AI Studio Free Tier
-    "gemini-2.5-pro":   {"input": 1.25, "output": 10.00},
-    "gemini-2.0-flash":  {"input": 0.00, "output": 0.00},
+    "gemini-2.5-flash": {"input": 0.70, "output": 2.10},
+    "gemini-2.5-pro":   {"input": 3.50, "output": 10.50},
+    "gemini-1.5-flash":  {"input": 0.35, "output": 1.05},
     # Novos modelos (Z.ai, Kimi, etc. em modo free por enquanto)
     "gpt-4o-mini": {"input": 0.00, "output": 0.00},
     "x-ai/grok-4-1-fast": {"input": 0.00, "output": 0.00},
@@ -23,7 +23,7 @@ PRICING_USD_PER_1M = {
     "glm-4-flash": {"input": 0.00, "output": 0.00},
     "deepseek/deepseek-chat-v3-0324:free": {"input": 0.00, "output": 0.00},
     "deepseek/deepseek-r1:free": {"input": 0.00, "output": 0.00},
-    "google/gemini-2.5-flash-preview": {"input": 0.15, "output": 0.60},
+    "google/gemini-2.5-flash-preview": {"input": 0.00, "output": 0.00},
     "google/gemma-2-9b-it:free": {"input": 0.00, "output": 0.00},
     "mistralai/mistral-7b-instruct:free": {"input": 0.00, "output": 0.00},
     "microsoft/phi-3-mini-128k-instruct:free": {"input": 0.00, "output": 0.00},
@@ -34,15 +34,14 @@ PRICING_USD_PER_1M = {
 USD_TO_BRL = 5.80
 
 MODELOS_DISPONIVEIS = {
-    "⚡ Gemini 2.5 Flash — Grátis": "gemini-2.5-flash",
-    "🏆 Gemini 2.5 Pro — ~R$0,06/roteiro": "gemini-2.5-pro",
-    "💰 Gemini 2.0 Flash — Grátis": "gemini-2.0-flash",
+    "⚡ Gemini 2.5 Flash — Padrão": "gemini-2.5-flash",
+    "🏆 Gemini 2.5 Pro — Robusto": "gemini-2.5-pro",
+    "💰 Gemini 1.5 Flash — Econômico": "gemini-1.5-flash",
     "🤖 GPT-4o Mini — Grátis": "openai/gpt-4o-mini",
     "🔥 Grok 4.1 Fast — Grátis (Puter)": "puter/x-ai/grok-4-1-fast",
     "🔥 Grok 2 — Grátis (Puter)": "puter/x-ai/grok-2",
     "🐋 DeepSeek V3 — Grátis (OpenRouter)": "openrouter/deepseek/deepseek-chat-v3-0324:free",
     "🧠 DeepSeek R1 — Grátis (OpenRouter)": "openrouter/deepseek/deepseek-r1:free",
-    "⚡ Gemini 2.5 Flash — Créditos (OpenRouter)": "openrouter/google/gemini-2.5-flash-preview",
     "💎 Gemma 2 9B — Grátis (OpenRouter)": "openrouter/google/gemma-2-9b-it:free",
     "🌪️ Mistral 7B — Grátis (OpenRouter)": "openrouter/mistralai/mistral-7b-instruct:free",
     "🔬 Phi-3 Mini — Grátis (OpenRouter)": "openrouter/microsoft/phi-3-mini-128k-instruct:free",
@@ -56,7 +55,7 @@ MODELOS_DISPONIVEIS = {
 MODELOS_DESCRICAO = {
     "gemini-2.5-flash": "O mais rápido do Google. Perfeito para processar grandes lotes de SKUs sem gargalo.",
     "gemini-2.5-pro": "O cérebro definitivo. Recomendado para roteiros que exigem lógica complexa ou análise profunda.",
-    "gemini-2.0-flash": "Nova geração do Google. Equilíbrio entre a inteligência do Pro e a velocidade do Flash.",
+    "gemini-1.5-flash": "Mais econômico e rápido para tarefas que não exigem a complexidade do Pro.",
     "openai/gpt-4o-mini": "O modelo inteligente e compacto da OpenAI. Excelente para escrita natural e fluida.",
     "puter/x-ai/grok-4-1-fast": "A IA da xAI focada em sarcasmo controlado e ganchos de redes sociais altamente criativos.",
     "puter/x-ai/grok-2": "Modelo robusto da xAI para roteiros com personalidade forte e diretrizes rígidas.",
