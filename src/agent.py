@@ -34,8 +34,8 @@ PRICING_USD_PER_1M = {
 USD_TO_BRL = 5.80
 
 MODELOS_DISPONIVEIS = {
-    "⚡ Gemini 2.5 Flash — Padrão": "gemini-2.5-flash",
-    "🏆 Gemini 2.5 Pro — Robusto": "gemini-2.5-pro",
+    "⚡ Gemini 2.5 Flash — ~R$0,03/roteiro": "gemini-2.5-flash",
+    "🏆 Gemini 2.5 Pro — ~R$0,06/roteiro": "gemini-2.5-pro",
     "💰 Gemini 1.5 Flash — Econômico": "gemini-1.5-flash",
     "🤖 GPT-4o Mini — Grátis": "openai/gpt-4o-mini",
     "🔥 Grok 4.1 Fast — Grátis (Puter)": "puter/x-ai/grok-4-1-fast",

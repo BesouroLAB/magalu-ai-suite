@@ -946,7 +946,7 @@ if page == "Criar Roteiros":
     
     col_hist_nav, col_main_work = st.columns([0.8, 3.5]) # Layout 2 Colunas
     
-    with col_main_work:
+    with col_hist_nav:
         st.markdown("##### 📅 Roteiros Recentes")
         st.caption("Acesse roteiros anteriores para revisão ou re-exportação.")
         
@@ -1795,6 +1795,15 @@ elif page == "Dashboard":
                     </div>
                 </div>
             """, unsafe_allow_html=True)
+            
+            with st.popover("ℹ️ Entenda a Métrica de Aprovação", use_container_width=False):
+                st.markdown("#### 🎯 Como a IA calcula sua performance?")
+                st.markdown("A **Taxa de Aprovação** reflete a porcentagem de sucesso da IA baseada estritamente nos roteiros que receberam o seu feedback manual pós-geração.")
+                st.markdown("**Considerado Aprovado (Positivo):**")
+                st.markdown("- ✅ **Ajuste Fino:** O roteiro veio ótimo, mudou só uma ou outra palavra.\n- ⚠️ **Edição Moderada:** Precisou de alguns ajustes na frase, mas a base e estrutura foram aproveitadas.")
+                st.markdown("**Considerado Reprovado (Negativo):**")
+                st.markdown("- ❌ **Reescrita Pesada:** O roteiro alucinou ou fugiu tanto do tom que a edição foi completa.")
+                st.info("💡 **Dica:** Roteiros gerados que você apenas copiou e não deu o clique de feedback não contam nesta métrica. A IA foca apenas em onde houve calibração ativa de qualidade.")
             
             st.divider()
             
