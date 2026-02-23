@@ -177,14 +177,20 @@ class RoteiristaAgent:
     def gerar_memoria_calibracao(self, ia_text, breno_text):
         """Analisa a diferença entre o texto da IA e o aprovado, e extrai a 'lição'."""
         prompt = (
-            "Você é um copywriter sênior analisando a diferença entre o rascunho de um redator júnior (você mesmo no passado) "
-            "e a versão final aprovada pelo Diretor de Criação (Breno).\n\n"
-            "TEXTO ORIGINAL (JÚNIOR/IA):\n"
+            "Você é um analista de texto comparando DUAS versões de um roteiro de vídeo.\n\n"
+            "VERSÃO A (Gerada pela IA):\n"
             f"{ia_text}\n\n"
-            "TEXTO APROVADO (DIRETOR/BRENO):\n"
+            "VERSÃO B (Aprovada pelo Breno):\n"
             f"{breno_text}\n\n"
-            "Sua tarefa: Escreva UMA ÚNICA frase afirmativa (máximo 150 caracteres) resumindo o que o júnior errou e qual foi a correção de tom/estilo aplicada pelo Breno. "
-            "Fale na terceira pessoa. Exemplo: 'O redator usou termos muito técnicos, o Breno corrigiu simplificando a linguagem para o dia a dia.' Vá direto ao ponto."
+            "Sua tarefa: Faça uma análise TÉCNICA e ESPECÍFICA das diferenças entre A e B.\n"
+            "Identifique EXATAMENTE:\n"
+            "- O que foi CORTADO da versão A\n"
+            "- O que foi SUBSTITUÍDO e pelo quê\n"
+            "- O que foi ADICIONADO na versão B\n"
+            "- Qual PADRÃO de escrita o Breno aplicou (ex: encurtou frases, trocou termo técnico por coloquial, reorganizou a ordem das cenas, etc.)\n\n"
+            "Responda em NO MÁXIMO 2 frases objetivas (máximo 200 caracteres). "
+            "Use o formato: 'Breno cortou [X] e trocou por [Y]. Padrão: [razão técnica].'\n"
+            "NÃO use metáforas. NÃO mencione 'júnior' ou 'sênior'. Seja direto e técnico."
         )
         try:
             from google import genai
