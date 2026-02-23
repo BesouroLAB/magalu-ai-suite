@@ -2,13 +2,15 @@ import streamlit as st
 import os
 import sys
 import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
 from datetime import datetime
 import pytz
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from src.agent import RoteiristaAgent
+from src.agent import RoteiristaAgent, MODELOS_DISPONIVEIS
 from src.scraper import scrape_with_gemini, parse_codes
 from src.exporter import export_roteiro_docx, format_for_display, export_all_roteiros_zip
 from src.jsonld_generator import export_jsonld_string, wrap_in_script_tag
@@ -17,6 +19,8 @@ load_dotenv()
 
 # --- CONFIGURAÇÃO GERAL ---
 st.set_page_config(page_title="Magalu AI Suite", page_icon="🛍️", layout="wide", initial_sidebar_state="expanded")
+
+CUSTO_LEGADO_BRL = 5.16  # Valor acumulado antes do tracking automático
 
 DARK_MODE_CSS = """
 <style>
@@ -32,8 +36,8 @@ DARK_MODE_CSS = """
     .stApp > header { background-color: transparent; }
     .stApp { background-color: var(--bg-main) !important; color: var(--text-primary) !important; }
 
-    h1 { font-size: 1.8rem !important; font-weight: 700 !important; color: #ffffff !important; letter-spacing: 0.5px; margin-bottom: 0.5rem !important; }
-    h2 { font-size: 1.4rem !important; font-weight: 600 !important; color: #e0e6f0 !important; margin-bottom: 0.4rem !important; }
+    h1 { font-size: 2.4rem !important; font-weight: 800 !important; color: #ffffff !important; letter-spacing: -0.5px; margin-bottom: 0.8rem !important; }
+    h2 { font-size: 1.8rem !important; font-weight: 700 !important; color: #e0e6f0 !important; margin-bottom: 0.6rem !important; }
     h3 { font-size: 1.15rem !important; font-weight: 600 !important; color: #b0bdd0 !important; margin-bottom: 0.3rem !important; }
     h4 { font-size: 1.0rem !important; font-weight: 500 !important; color: var(--mglu-blue) !important; margin-bottom: 0.2rem !important; }
     p, span, div, label { color: var(--text-primary) !important; font-family: 'Inter', sans-serif; font-size: 0.92rem !important; }
@@ -232,7 +236,11 @@ def salvar_feedback(sp_client, cat_id, ficha, roteiro_ia, roteiro_final, avaliac
         }
         res = sp_client.table("feedback_roteiros").insert(data).execute()
         if hasattr(res, 'data') and len(res.data) > 0:
-            msg = "✅ Salvo como Aprovado!" if avaliacao == 1 else "✅ Salvo como Reprovado!" if avaliacao == -1 else "✅ Edição Salva!"
+            if avaliacao == 2: msg = "✅ Salvo como Ajuste Fino (Esforço Mínimo)"
+            elif avaliacao == 1: msg = "✅ Salvo como Edição Moderada (Esforço Médio)"
+            elif avaliacao == -1: msg = "✅ Salvo como Reescrita Pesada (Esforço Alto)"
+            else: msg = "✅ Edição Salva!"
+            
             st.success(msg)
             return True
         else:
@@ -327,6 +335,27 @@ def salvar_estrutura(sp_client, tipo, texto):
         st.error(f"❌ Erro: {e}")
         return False
 
+def salvar_nuance(sp_client, frase, analise, exemplo):
+    if not sp_client:
+        st.error("Supabase não conectado.")
+        return False
+    try:
+        data = {
+            "frase_ia": frase,
+            "analise_critica": analise,
+            "exemplo_ouro": exemplo
+        }
+        res = sp_client.table("treinamento_nuances").insert(data).execute()
+        if hasattr(res, 'data') and len(res.data) > 0:
+            st.success("🧠 Nuance de linguagem registrada para o treinamento!")
+            return True
+        else:
+            st.error("⚠️ Falha ao salvar no Supabase (verifique RLS).")
+            return False
+    except Exception as e:
+        st.error(f"❌ Erro: {e}")
+        return False
+
 
 with st.sidebar:
     # --- Verificação de Status (antes de renderizar) ---
@@ -335,12 +364,6 @@ with st.sidebar:
     if supabase_client:
         st.session_state['supabase_client'] = supabase_client
     
-    gemini_status = "Ativo" if api_key_env else "Inativo"
-    supa_status = "Ativo" if supabase_client else "Inativo"
-    
-    status_color_gem = "#10b981" if api_key_env else "#4b5563"
-    status_color_supa = "#10b981" if supabase_client else "#4b5563"
-
     # --- LOGO & BRANDING ---
     LOGO_URL = "https://hvlnltccuekptytwgfrl.supabase.co/storage/v1/object/sign/media/logo_ml_ai_suite.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xMzdkZWExZi0yODU5LTQ1NTAtYWY3ZS0xZTdlY2M1NjE4ZGUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJtZWRpYS9sb2dvX21sX2FpX3N1aXRlLnBuZyIsImlhdCI6MTc3MTgxNDM3NywiZXhwIjoxODAzMzUwMzc3fQ.TNDhROj8HLpGqwkC71zA2sv_gWRxPNUleJkM2NPvloI"
     try:
@@ -352,14 +375,39 @@ with st.sidebar:
             <span style="color: white; font-weight: 300; font-size: 36px; letter-spacing: 1px;">AI Suite</span>
         </div>
         """, unsafe_allow_html=True)
-        
+    
+    # --- STATUS INDICATORS (VIBRANT GREEN TAGS) ---
+    status_color_gem = "#00ff88" if api_key_env else "#4b5563"
+    status_label_gem = "ON" if api_key_env else "OFF"
+    status_bg_gem = "rgba(0, 255, 136, 0.15)" if api_key_env else "rgba(75, 85, 99, 0.15)"
+    
+    status_color_supa = "#00ff88" if supabase_client else "#4b5563"
+    status_label_supa = "ON" if supabase_client else "OFF"
+    status_bg_supa = "rgba(0, 255, 136, 0.15)" if api_key_env else "rgba(75, 85, 99, 0.15)"
+
     st.markdown(f"""
-        <div style='font-size: 11px; color: #8b92a5; margin-bottom: 25px; margin-top: 5px;'>
-            V2.0 &nbsp;&nbsp;|&nbsp;&nbsp; 
-            <span style='color: {status_color_gem}'>● Gemini</span> &nbsp; 
-            <span style='color: {status_color_supa}'>● Supabase</span>
+        <div style='font-size: 9px; color: #8b92a5; margin-bottom: 25px; margin-top: 5px; display: flex; align-items: center; gap: 8px;'>
+            <span style='font-weight: 700; letter-spacing: 0.5px;'>V2.5</span>
+            <span style='color: #2A3241;'>|</span>
+            <div style='display: flex; align-items: center; gap: 4px;'>
+                <span style='color: {status_color_gem}; font-weight: 600; font-size: 9px;'>Gemini</span>
+                <span style='background: {status_bg_gem}; color: {status_color_gem}; padding: 0.5px 4px; border-radius: 3px; font-size: 7px; font-weight: 900; border: 1px solid {status_color_gem}33;'>{status_label_gem}</span>
+            </div>
+            <div style='display: flex; align-items: center; gap: 4px;'>
+                <span style='color: {status_color_supa}; font-weight: 600; font-size: 9px;'>Supabase</span>
+                <span style='background: {status_bg_supa}; color: {status_color_supa}; padding: 0.5px 4px; border-radius: 3px; font-size: 7px; font-weight: 900; border: 1px solid {status_color_supa}33;'>{status_label_supa}</span>
+            </div>
         </div>
     """, unsafe_allow_html=True)
+    
+    # --- SELETOR DE MODELO LLM ---
+    modelo_label = st.selectbox(
+        "🧠 Modelo de IA:",
+        list(MODELOS_DISPONIVEIS.keys()),
+        index=0
+    )
+    modelo_id_selecionado = MODELOS_DISPONIVEIS[modelo_label]
+    st.session_state['modelo_llm'] = modelo_id_selecionado
     
     # --- MENU DE NAVEGAÇÃO ---
     page = st.radio(
@@ -372,6 +420,9 @@ with st.sidebar:
     st.divider()
     
     # --- CONFIGURAÇÕES API (SEMPRE EDITÁVEL) ---
+    gemini_status = "Ativo" if api_key_env else "Inativo"
+    supa_status = "Ativo" if supabase_client else "Inativo"
+    
     with st.expander("⚙️ Configurações", expanded=False):
         st.caption("Editar Chaves e Conexão")
         
@@ -429,39 +480,70 @@ if page == "Criar Roteiros":
 
         if not modo_entrada:
             # --- MODO CÓDIGO DE PRODUTO (PADRÃO) ---
-            with st.container():
-                st.markdown("### 1. Escopo de Trabalho")
-                
-                # Seletor de Modo de Trabalho
-                modos_trabalho = {
-                    "NW (NewWeb)": "Descrição completa, Ficha e Foto (Padrão)",
-                    "SOCIAL (Reels/TikTok)": "Em breve: Foco em ganchos virais e retenção",
-                    "3D (NewWeb 3D)": "Em breve: Foco técnico em shaders e texturas 360",
-                    "Review (NwReview)": "Em breve: Foco em prós e contras pro apresentador"
-                }
-                
-                modo_selecionado = st.radio(
+            st.markdown("### 1. Escopo de Trabalho")
+            
+            # Seletor de Modo de Trabalho (Tag-Style com st.pills)
+            modos_trabalho = {
+                "📄 NW (NewWeb)": "NW (NewWeb)",
+                "📱 SOCIAL (Reels)": "SOCIAL (Reels/TikTok)",
+                "🎮 3D (NewWeb 3D)": "3D (NewWeb 3D)",
+                "🎙️ Review": "Review (NwReview)"
+            }
+            modos_descricao = {
+                "📄 NW (NewWeb)": "Descrição completa, Ficha e Foto (Padrão)",
+                "📱 SOCIAL (Reels)": "Em breve: Ganchos virais e retenção",
+                "🎮 3D (NewWeb 3D)": "Em breve: Shaders e texturas 360",
+                "🎙️ Review": "Em breve: Prós e contras pro apresentador"
+            }
+            
+            try:
+                modo_pill = st.pills(
                     "Selecione o Formato do Roteiro:",
                     list(modos_trabalho.keys()),
-                    captions=list(modos_trabalho.values()),
+                    default="📄 NW (NewWeb)"
+                )
+            except AttributeError:
+                modo_pill = st.radio(
+                    "Selecione o Formato:",
+                    list(modos_trabalho.keys()),
                     index=0,
                     horizontal=True
                 )
-
-                st.markdown("<br>", unsafe_allow_html=True)
-
-                st.markdown("<p style='font-size: 14px; color: #8b92a5'>Digite os códigos dos produtos Magalu (um por linha ou separados por vírgula). Máximo de 15 por vez.</p>", unsafe_allow_html=True)
-                
-                codigos_raw = st.text_area(
-                    "Códigos dos Produtos",
-                    height=100,
-                    placeholder="Ex:\n240304700\n240305700",
-                    key="codigos_input"
-                )
-                st.caption("Pressione *Ctrl+Enter* para enviar ou use o botão abaixo. (Máximo: 15 códigos por lote).")
             
-            st.caption("💡 O código fica na URL do produto: magazineluiza.com.br/.../p/**240304700**/...")
+            if modo_pill:
+                modo_selecionado = modos_trabalho[modo_pill]
+                st.caption(f"ℹ️ {modos_descricao[modo_pill]}")
+            else:
+                modo_selecionado = "NW (NewWeb)"
+                st.caption("ℹ️ Descrição completa, Ficha e Foto (Padrão)")
+
+            st.markdown("<br>", unsafe_allow_html=True)
             
+            # Seletor de Mês
+            st.markdown("### 2. Mês de Lançamento")
+            st.markdown("<p style='font-size: 14px; color: #8b92a5'>Necessário para o cabeçalho oficial do roteiro.</p>", unsafe_allow_html=True)
+            
+            mes_selecionado = st.selectbox(
+                "Mês de Lançamento para o Roteiro",
+                ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"],
+                index=2, # Default para MAR
+                label_visibility="collapsed"
+            )
+
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("### 3. Códigos dos Produtos")
+
+            st.markdown("<p style='font-size: 14px; color: #8b92a5'>Digite os códigos Magalu, um por linha. Máximo de 15 por vez.</p>", unsafe_allow_html=True)
+            
+            codigos_raw = st.text_area(
+                "Códigos dos Produtos",
+                height=180,
+                placeholder="240304700\n240305700\n240306800",
+                key="codigos_input",
+                label_visibility="collapsed"
+            )
+            st.caption("💡 O código fica na URL: magazineluiza.com.br/.../p/**240304700**/...")
+
             st.markdown("<br>", unsafe_allow_html=True)
             
             # Regra de Bloqueio para Modos Futuros
@@ -476,6 +558,7 @@ if page == "Criar Roteiros":
                     st.stop()
 
                 codigos = parse_codes(codigos_raw) if codigos_raw else []
+                modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
                 
                 if not codigos:
                     st.warning("⚠️ Digite pelo menos um código de produto.")
@@ -485,7 +568,10 @@ if page == "Criar Roteiros":
                     st.warning("⚠️ Forneça uma chave da API do Gemini no painel.")
                 else:
                     try:
-                        agent = RoteiristaAgent(supabase_client=st.session_state.get('supabase_client'))
+                        agent = RoteiristaAgent(
+                            supabase_client=st.session_state.get('supabase_client'),
+                            model_id=modelo_id
+                        )
                         roteiros = []
                         
                         progress = st.progress(0, text="Iniciando extração...")
@@ -506,16 +592,23 @@ if page == "Criar Roteiros":
                                 text=f"✍️ [{code}] Analisando contexto e escrevendo roteiro... ({i+1}/{len(codigos)})"
                             )
                             
-                            # 2. Gera o roteiro com os dados extraídos
-                            roteiro = agent.gerar_roteiro(ficha_extraida, modo_trabalho=modo_selecionado)
+                            
+                            # 2. Gera o roteiro com os dados extraídos (retorna dict)
+                            resultado = agent.gerar_roteiro(ficha_extraida, modo_trabalho=modo_selecionado, mes=mes_selecionado)
+                            roteiro_texto = resultado["roteiro"]
+                            
                             roteiros.append({
                                 "ficha": ficha_extraida,
-                                "roteiro_original": roteiro,
+                                "roteiro_original": roteiro_texto,
                                 "categoria_id": cat_selecionada_id,
-                                "codigo": code
+                                "codigo": code,
+                                "model_id": resultado["model_id"],
+                                "tokens_in": resultado["tokens_in"],
+                                "tokens_out": resultado["tokens_out"],
+                                "custo_brl": resultado["custo_brl"]
                             })
                             
-                            # Auto-log no histórico (silencioso)
+                            # Auto-log no histórico (silencioso) com tracking de custo
                             try:
                                 sp_hist = st.session_state.get('supabase_client')
                                 if sp_hist:
@@ -523,8 +616,12 @@ if page == "Criar Roteiros":
                                     sp_hist.table("historico_roteiros").insert({
                                         "codigo_produto": code,
                                         "modo_trabalho": modo_selecionado,
-                                        "roteiro_gerado": roteiro,
-                                        "ficha_extraida": ficha_text[:5000]
+                                        "roteiro_gerado": roteiro_texto,
+                                        "ficha_extraida": ficha_text[:5000],
+                                        "modelo_llm": resultado["model_id"],
+                                        "tokens_entrada": resultado["tokens_in"],
+                                        "tokens_saida": resultado["tokens_out"],
+                                        "custo_estimado_brl": resultado["custo_brl"]
                                     }).execute()
                             except Exception:
                                 pass  # Não bloqueia a geração se o log falhar
@@ -571,27 +668,43 @@ if page == "Criar Roteiros":
 
             st.markdown("<br>", unsafe_allow_html=True)
             
+            # Seletor de Mês (Fallback Modo Manual)
+            st.markdown("### Selecione o Mês de Lançamento")
+            mes_selecionado = st.selectbox(
+                "Mês de Lançamento para o Roteiro",
+                ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"],
+                index=2 # Default para MAR
+            )
+            
             if st.button("🚀 Gerar Roteiros Mágicos", use_container_width=True, type="primary", key="btn_manual"):
                 fichas = [f.strip() for f in fichas_informadas if f.strip()]
                 
                 if not fichas:
                     st.warning("⚠️ Cole pelo menos uma ficha técnica antes de gerar.")
-                elif not api_key:
+                elif not api_key_env:
                     st.warning("⚠️ Forneça uma chave da API do Gemini no painel.")
                 else:
+                    modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
                     with st.spinner(f"Processando {len(fichas)} roteiro(s)..."):
                         try:
-                            agent = RoteiristaAgent(supabase_client=st.session_state.get('supabase_client'))
+                            agent = RoteiristaAgent(
+                                supabase_client=st.session_state.get('supabase_client'),
+                                model_id=modelo_id
+                            )
                             roteiros = []
                             for ficha in fichas:
-                                roteiro = agent.gerar_roteiro(ficha)
+                                resultado = agent.gerar_roteiro(ficha, modo_trabalho="NW (NewWeb)", mes=mes_selecionado)
                                 roteiros.append({
                                     "ficha": ficha,
-                                    "roteiro_original": roteiro,
-                                    "categoria_id": cat_selecionada_id
+                                    "roteiro_original": resultado["roteiro"],
+                                    "categoria_id": cat_selecionada_id,
+                                    "model_id": resultado["model_id"],
+                                    "tokens_in": resultado["tokens_in"],
+                                    "tokens_out": resultado["tokens_out"],
+                                    "custo_brl": resultado["custo_brl"]
                                 })
                             st.session_state['roteiros'] = roteiros
-                            st.rerun() # Força o rerun para fechar o expander
+                            st.rerun()
                         except Exception as e:
                             st.error(f"Erro na geração: {e}")
 
@@ -698,23 +811,23 @@ if page == "Criar Roteiros":
                 )
                 
             with col_act2:
-                # Ações Rápidas (Treinamento Pesado foi pro Hub)
+                # Ações Rápidas (Nova Dinâmica de Feedback de Edição)
                 c1, c2, c3, c4 = st.columns(4)
                 
                 with c1:
-                    if st.button("📋 Copiar Texto", key=f"copy_{idx}", use_container_width=True):
-                        st.code(edited_val, language="markdown")
+                    if st.button("🎯 Ajuste Fino", key=f"fino_{idx}", use_container_width=True):
+                        salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, 2)
                         
                 with c2:
-                    if st.button("👍 Bom", key=f"bom_{idx}", use_container_width=True):
+                    if st.button("🛠️ Edição Moderada", key=f"moderad_{idx}", use_container_width=True):
                         salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, 1)
 
                 with c3:
-                    if st.button("👎 Ruim", key=f"ruim_{idx}", use_container_width=True):
+                    if st.button("🔄 Reescrita Pesada", key=f"pesada_{idx}", use_container_width=True):
                         salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, -1)
                 
                 with c4:
-                    if st.button("🏆 Ouro", key=f"ouro_{idx}", use_container_width=True, type="primary"):
+                    if st.button("🏆 Enviar Ouro", key=f"ouro_{idx}", use_container_width=True, type="primary"):
                         salvar_ouro(sp_cli, cat_id_roteiro, titulo_curto, edited_val)
 
         if st.button("🗑️ Limpar Mesa de Trabalho", use_container_width=True, type="secondary"):
@@ -750,23 +863,48 @@ elif page == "Treinar IA":
             res_fon = sp_client.table("treinamento_fonetica").select("*").execute()
             res_ouro = sp_client.table("roteiros_ouro").select("*").execute()
             res_cats = sp_client.table("categorias").select("*").execute()
+            res_nuan = sp_client.table("treinamento_nuances").select("*").execute()
             
             df_fb = pd.DataFrame(res_fb.data if hasattr(res_fb, 'data') else [])
             df_est = pd.DataFrame(res_est.data if hasattr(res_est, 'data') else [])
             df_fon = pd.DataFrame(res_fon.data if hasattr(res_fon, 'data') else [])
             df_ouro = pd.DataFrame(res_ouro.data if hasattr(res_ouro, 'data') else [])
             df_cats = pd.DataFrame(res_cats.data if hasattr(res_cats, 'data') else [])
+            df_nuan = pd.DataFrame(res_nuan.data if hasattr(res_nuan, 'data') else [])
             
             # --- CONVERSÃO DE FUSO HORÁRIO GLOBAL (UTC -> SÃO PAULO) ---
-            for df in [df_fb, df_est, df_fon, df_ouro, df_cats]:
+            for df in [df_fb, df_est, df_fon, df_ouro, df_cats, df_nuan]:
                 if not df.empty and 'criado_em' in df.columns:
                     df['criado_em'] = df['criado_em'].apply(convert_to_sp_time)
                     
         except Exception as e:
             st.error(f"Erro ao carregar dados do hub: {e}")
-            df_fb = df_est = df_fon = df_ouro = df_cats = pd.DataFrame()
+            df_fb = df_est = df_fon = df_ouro = df_cats = df_nuan = pd.DataFrame()
 
-        tab_fb, tab_est, tab_fon, tab_ouro, tab_cat = st.tabs(["⚖️ Calibração", "💬 Estruturas", "🗣️ Fonética", "🏆 Roteiros Ouro", "📂 Categorias"])
+        tab_nuan, tab_fb, tab_est, tab_fon, tab_ouro, tab_cat = st.tabs(["🧠 Nuances", "⚖️ Calibração", "💬 Estruturas", "🗣️ Fonética", "🏆 Roteiros Ouro", "📂 Categorias"])
+        
+        with tab_nuan:
+            st.markdown("### 🧠 Treinamento de Nuances e Construção")
+            st.caption("Ajude a IA a entender as sutilezas da língua portuguesa e a evitar construções artificiais.")
+            
+            with st.form("form_nuance", clear_on_submit=True):
+                n_frase = st.text_area("Frase gerada pela IA (O que evitar):", placeholder="Ex: 'Este produto possui uma característica de cor azul que é muito legal.'")
+                n_analise = st.text_area("Análise Crítica (Por que é ruim?):", placeholder="Ex: 'Construção redundante e pobre. O uso de 'possui' com 'característica de' soa burocrático. 'Muito legal' é genérico.'")
+                n_exemplo = st.text_area("Exemplo Ouro (Como seria o ideal?):", placeholder="Ex: 'Com um tom azul vibrante, ele se destaca pelo design moderno.'")
+                
+                if st.form_submit_button("📥 Registrar Nuance", type="primary", use_container_width=True):
+                    if n_frase.strip() and n_analise.strip():
+                        salvar_nuance(sp_client, n_frase, n_analise, n_exemplo)
+                        st.rerun()
+                    else:
+                        st.warning("Preencha pelo menos a frase da IA e a análise crítica.")
+            
+            st.divider()
+            if not df_nuan.empty:
+                st.markdown("#### 📋 Nuances Registradas")
+                st.dataframe(df_nuan[['criado_em', 'frase_ia', 'analise_critica', 'exemplo_ouro']].sort_values(by='criado_em', ascending=False), use_container_width=True)
+            else:
+                st.info("Nenhuma nuance registrada ainda.")
         
         with tab_cat:
             st.markdown("### 📂 Gestão de Categorias e Tom de Voz")
@@ -987,7 +1125,7 @@ elif page == "Treinar IA":
 # --- PÁGINA 1.5: HISTÓRICO ---
 elif page == "Histórico":
     st.subheader("🕒 Histórico de Roteiros")
-    st.markdown("Confira todos os roteiros gerados automaticamente pelo sistema. Tudo o que você cria fica salvo aqui para consulta rápida.")
+    st.markdown("Confira todos os roteiros gerados automaticamente pelo sistema com rastreamento de custo por geração.")
     
     if 'supabase_client' not in st.session_state:
         st.warning("Conecte o Supabase no painel lateral para visualizar o histórico.")
@@ -1005,13 +1143,42 @@ elif page == "Histórico":
                 
                 total_registros = len(df_hist)
                 
+                # --- MÉTRICAS DE CUSTO ---
+                custo_total = CUSTO_LEGADO_BRL
+                custo_medio = 0.0
+                modelo_mais_usado = "-"
+                
+                if 'custo_estimado_brl' in df_hist.columns:
+                    custo_total += df_hist['custo_estimado_brl'].sum() or 0.0
+                    custo_medio = custo_total / total_registros if total_registros > 0 else 0.0
+                    
+                if 'modelo_llm' in df_hist.columns:
+                    try:
+                        modelo_mais_usado = df_hist['modelo_llm'].mode().iloc[0] if not df_hist['modelo_llm'].dropna().empty else "-"
+                    except Exception:
+                        modelo_mais_usado = "-"
+                
+                col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+                col_m1.metric("📝 Roteiros Gerados", total_registros)
+                col_m2.metric("💰 Custo Total", f"R$ {custo_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'))
+                col_m3.metric("📋 Custo Médio/Roteiro", f"R$ {custo_medio:,.4f}".replace(',', 'X').replace('.', ',').replace('X', '.'))
+                col_m4.metric("🧠 Modelo Mais Usado", modelo_mais_usado)
+                
+                st.divider()
+                
                 # --- BARRA DE FILTROS ---
-                col_search, col_modo = st.columns([3, 1])
+                col_search, col_modo, col_modelo = st.columns([3, 1, 1])
                 with col_search:
                     search = st.text_input("🔍 Filtrar por código ou palavra-chave:", placeholder="Ex: 240304700, Geladeira", label_visibility="collapsed")
                 with col_modo:
                     modos_unicos = ["Todos"] + sorted(df_hist['modo_trabalho'].dropna().unique().tolist()) if 'modo_trabalho' in df_hist.columns else ["Todos"]
                     modo_filtro = st.selectbox("Modo", modos_unicos, label_visibility="collapsed")
+                with col_modelo:
+                    if 'modelo_llm' in df_hist.columns:
+                        modelos_unicos = ["Todos"] + sorted(df_hist['modelo_llm'].dropna().unique().tolist())
+                    else:
+                        modelos_unicos = ["Todos"]
+                    modelo_filtro = st.selectbox("Modelo", modelos_unicos, label_visibility="collapsed")
                 
                 # Filtro por texto (múltiplos termos com OR)
                 if search:
@@ -1030,18 +1197,31 @@ elif page == "Histórico":
                 if modo_filtro != "Todos" and 'modo_trabalho' in df_hist.columns:
                     df_hist = df_hist[df_hist['modo_trabalho'] == modo_filtro]
                 
-                # Métricas de resultado
-                filtrados = len(df_hist)
-                col_m1, col_m2 = st.columns(2)
-                col_m1.metric("Total de Roteiros", total_registros)
-                col_m2.metric("Exibindo", filtrados, delta=f"{filtrados - total_registros}" if filtrados < total_registros else None)
+                # Filtro por Modelo LLM
+                if modelo_filtro != "Todos" and 'modelo_llm' in df_hist.columns:
+                    df_hist = df_hist[df_hist['modelo_llm'] == modelo_filtro]
+                
+                # Formata custo para exibição
+                if 'custo_estimado_brl' in df_hist.columns:
+                    df_hist['custo_brl'] = df_hist['custo_estimado_brl'].apply(
+                        lambda x: f"R$ {x:,.4f}".replace(',', 'X').replace('.', ',').replace('X', '.') if pd.notna(x) and x > 0 else "-"
+                    )
+                else:
+                    df_hist['custo_brl'] = "-"
                 
                 # Define o index da tabela para começar do 01, 02...
                 df_hist.reset_index(drop=True, inplace=True)
                 df_hist.index = [f"{i+1:02d}" for i in range(len(df_hist))]
+                
+                # Colunas a exibir
+                cols_display = ['criado_em', 'codigo_produto', 'modo_trabalho']
+                if 'modelo_llm' in df_hist.columns:
+                    cols_display.append('modelo_llm')
+                cols_display.append('custo_brl')
+                cols_display.append('roteiro_gerado')
 
                 st.dataframe(
-                    df_hist[['criado_em', 'codigo_produto', 'modo_trabalho', 'roteiro_gerado']], 
+                    df_hist[cols_display], 
                     use_container_width=True,
                     height=600
                 )
@@ -1067,7 +1247,8 @@ elif page == "Dashboard":
             res_fon = sp_client.table("treinamento_fonetica").select("*").execute()
             res_cats = sp_client.table("categorias").select("*").execute()
             res_est = sp_client.table("treinamento_estruturas").select("*").execute()
-            res_hist = sp_client.table("historico_roteiros").select("criado_em, modo_trabalho").execute()
+            res_hist = sp_client.table("historico_roteiros").select("criado_em, codigo_produto, modo_trabalho, modelo_llm, custo_estimado_brl").execute()
+            res_nuan = sp_client.table("treinamento_nuances").select("*").execute()
             
             fb_data = res_fb.data if hasattr(res_fb, 'data') else []
             ouro_data = res_ouro.data if hasattr(res_ouro, 'data') else []
@@ -1075,6 +1256,7 @@ elif page == "Dashboard":
             fon_data = res_fon.data if hasattr(res_fon, 'data') else []
             est_data = res_est.data if hasattr(res_est, 'data') else []
             hist_data = res_hist.data if hasattr(res_hist, 'data') else []
+            nuan_data = res_nuan.data if hasattr(res_nuan, 'data') else []
             cats_dict = {c['id']: c['nome'] for c in res_cats.data} if hasattr(res_cats, 'data') else {}
             
             df_fb = pd.DataFrame(fb_data)
@@ -1083,86 +1265,303 @@ elif page == "Dashboard":
             df_fon = pd.DataFrame(fon_data)
             df_est = pd.DataFrame(est_data)
             df_hist_dash = pd.DataFrame(hist_data)
+            df_nuan = pd.DataFrame(nuan_data)
             
             # --- CONVERSÃO DE FUSO HORÁRIO GLOBAL (UTC -> SÃO PAULO) ---
-            for df in [df_fb, df_ouro, df_pers, df_fon, df_est]:
+            for df in [df_fb, df_ouro, df_pers, df_fon, df_est, df_nuan]:
                 if not df.empty and 'criado_em' in df.columns:
                     df['criado_em'] = df['criado_em'].apply(convert_to_sp_time)
             
             if not df_fb.empty: df_fb['categoria'] = df_fb['categoria_id'].map(cats_dict)
             if not df_ouro.empty: df_ouro['categoria'] = df_ouro['categoria_id'].map(cats_dict)
             
-            total_avaliados = len(df_fb)
-            positivos = len(df_fb[df_fb['avaliacao'] == 1]) if not df_fb.empty and 'avaliacao' in df_fb.columns else 0
-            negativos = len(df_fb[df_fb['avaliacao'] == -1]) if not df_fb.empty and 'avaliacao' in df_fb.columns else 0
             total_ouro = len(df_ouro)
             total_historico = len(df_hist_dash)
             
-            # === SEÇÃO 1: MÉTRICAS RESUMO ===
-            col1, col2, col3, col4, col5 = st.columns(5)
-            col1.metric("📝 Roteiros Gerados", total_historico)
-            col2.metric("⚖️ Calibrações", total_avaliados)
-            col3.metric("👍 Positivas", positivos)
-            col4.metric("👎 Negativas", negativos)
-            col5.metric("🏆 Roteiros Ouro", total_ouro)
+            # --- SEÇÃO DE FILTROS GLOBAIS ---
+            with st.container():
+                col_f1, col_f2 = st.columns([1, 2])
+                with col_f1:
+                    hoje = datetime.now()
+                    periodo = st.date_input(
+                        "📅 Período de Análise:",
+                        value=(hoje.replace(day=1), hoje),
+                        format="DD/MM/YYYY"
+                    )
+                with col_f2:
+                    search_dash = st.text_input("🔍 Busca Global (Código/Termo):", placeholder="Filtrar tabelas e métricas...")
+
+            # Aplicar Filtro de Data
+            if len(periodo) == 2:
+                start_date, end_date = pd.to_datetime(periodo[0]), pd.to_datetime(periodo[1])
+                # Ajuste para cobrir o dia inteiro da data final
+                end_date = end_date.replace(hour=23, minute=59, second=59)
+                
+                df_fb = df_fb[(pd.to_datetime(df_fb['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_fb['criado_em']).dt.tz_localize(None) <= end_date)] if not df_fb.empty else df_fb
+                df_ouro = df_ouro[(pd.to_datetime(df_ouro['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_ouro['criado_em']).dt.tz_localize(None) <= end_date)] if not df_ouro.empty else df_ouro
+                df_pers = df_pers[(pd.to_datetime(df_pers['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_pers['criado_em']).dt.tz_localize(None) <= end_date)] if not df_pers.empty else df_pers
+                df_fon = df_fon[(pd.to_datetime(df_fon['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_fon['criado_em']).dt.tz_localize(None) <= end_date)] if not df_fon.empty else df_fon
+                df_est = df_est[(pd.to_datetime(df_est['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_est['criado_em']).dt.tz_localize(None) <= end_date)] if not df_est.empty else df_est
+                df_hist_dash = df_hist_dash[(pd.to_datetime(df_hist_dash['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_hist_dash['criado_em']).dt.tz_localize(None) <= end_date)] if not df_hist_dash.empty else df_hist_dash
+                df_nuan = df_nuan[(pd.to_datetime(df_nuan['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_nuan['criado_em']).dt.tz_localize(None) <= end_date)] if not df_nuan.empty else df_nuan
+
+            # Aplicar Filtro de Busca
+            if search_dash:
+                def filter_search(df, term):
+                    if df.empty: return df
+                    mask = df.astype(str).apply(lambda row: row.str.contains(term, case=False).any(), axis=1)
+                    return df[mask]
+
+                df_fb = filter_search(df_fb, search_dash)
+                df_ouro = filter_search(df_ouro, search_dash)
+                df_pers = filter_search(df_pers, search_dash)
+                df_fon = filter_search(df_fon, search_dash)
+                df_est = filter_search(df_est, search_dash)
+                df_hist_dash = filter_search(df_hist_dash, search_dash)
+                df_nuan = filter_search(df_nuan, search_dash)
+
+            # Recalcular métricas após filtros
+            total_avaliados = len(df_fb)
+            # Para a taxa de aprovação: Ajuste Fino (2) e Edição Moderada (1) contam positivamente.
+            aprovados = len(df_fb[df_fb['avaliacao'].isin([1, 2])]) if not df_fb.empty and 'avaliacao' in df_fb.columns else 0
+            taxa_aprovacao = (aprovados / total_avaliados * 100) if total_avaliados > 0 else 0
+            
+            total_ouro = len(df_ouro)
+            total_historico = len(df_hist_dash)
+            
+            # === SEÇÃO 1: MÉTRICAS PREMIUM (HTML/CSS) ===
+            custo_total_dash = CUSTO_LEGADO_BRL
+            if not df_hist_dash.empty and 'custo_estimado_brl' in df_hist_dash.columns:
+                custo_total_dash += df_hist_dash['custo_estimado_brl'].sum() or 0.0
+            
+            taxa_aprovacao = (positivos / total_avaliados * 100) if total_avaliados > 0 else 0
+            
+
+            # === SEÇÃO 1: MÉTRICAS PREMIUM (HTML/CSS) ===
+            custo_total_dash = CUSTO_LEGADO_BRL
+            if not df_hist_dash.empty and 'custo_estimado_brl' in df_hist_dash.columns:
+                custo_total_dash += df_hist_dash['custo_estimado_brl'].sum() or 0.0
+            
+            st.markdown(f"""
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                    <div style="background: rgba(0, 134, 255, 0.05); border: 1px solid rgba(0, 134, 255, 0.2); border-radius: 12px; padding: 20px; text-align: center;">
+                        <p style="color: #8b92a5; font-size: 14px; margin: 0; font-weight: 500;">📝 Roteiros Gerados</p>
+                        <h2 style="color: #0086ff; margin: 10px 0 0 0; font-size: 32px; font-weight: 800;">{total_historico}</h2>
+                    </div>
+                    <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 20px; text-align: center;">
+                        <p style="color: #8b92a5; font-size: 14px; margin: 0; font-weight: 500;">💰 Custo Total</p>
+                        <h2 style="color: #10b981; margin: 10px 0 0 0; font-size: 32px; font-weight: 800;">R$ {custo_total_dash:.2f}</h2>
+                    </div>
+                    <div style="background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 12px; padding: 20px; text-align: center;">
+                        <p style="color: #8b92a5; font-size: 14px; margin: 0; font-weight: 500;">🏆 Roteiros Ouro</p>
+                        <h2 style="color: #f59e0b; margin: 10px 0 0 0; font-size: 32px; font-weight: 800;">{total_ouro}</h2>
+                    </div>
+                    <div style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 12px; padding: 20px; text-align: center;">
+                        <p style="color: #8b92a5; font-size: 14px; margin: 0; font-weight: 500;">🎯 Taxa Aprovação</p>
+                        <h2 style="color: #6366f1; margin: 10px 0 0 0; font-size: 32px; font-weight: 800;">{taxa_aprovacao:.1f}%</h2>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
             
             st.divider()
             
-            # === SEÇÃO 2: GRÁFICOS VISUAIS ===
-            col_chart1, col_chart2 = st.columns(2)
+            # === SEÇÃO 2: PERFORMANCE E SAÚDE ===
+            col_gauge, col_chart_kb = st.columns([1, 2])
             
-            with col_chart1:
-                st.markdown("#### 📈 Produção de Roteiros por Dia")
+            with col_gauge:
+                st.markdown("#### 🎯 Performance da IA")
+                fig_gauge = go.Figure(go.Indicator(
+                    mode = "gauge+number",
+                    value = taxa_aprovacao,
+                    domain = {'x': [0, 1], 'y': [0, 1]},
+                    title = {'text': "Aprovação (%)", 'font': {'size': 18}},
+                    gauge = {
+                        'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "white"},
+                        'bar': {'color': "#0086ff"},
+                        'bgcolor': "rgba(0,0,0,0)",
+                        'borderwidth': 2,
+                        'bordercolor': "rgba(255,255,255,0.1)",
+                        'steps': [
+                            {'range': [0, 50], 'color': 'rgba(239, 68, 68, 0.1)'},
+                            {'range': [50, 80], 'color': 'rgba(245, 158, 11, 0.1)'},
+                            {'range': [80, 100], 'color': 'rgba(16, 185, 129, 0.1)'}
+                        ],
+                        'threshold': {
+                            'line': {'color': "white", 'width': 3},
+                            'thickness': 0.75,
+                            'value': taxa_aprovacao
+                        }
+                    }
+                ))
+                fig_gauge.update_layout(
+                    template="plotly_dark",
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    height=280,
+                    margin=dict(l=30, r=30, t=50, b=20)
+                )
+                st.plotly_chart(fig_gauge, use_container_width=True)
+
+            with col_chart_kb:
+                st.markdown("#### 🧠 Saúde da Base de Conhecimento")
+                kb_data = {
+                    "Componente": ["Fonéticas", "Estruturas", "Calibrações", "Roteiros Ouro", "Persona", "Nuances"],
+                    "Registros": [len(df_fon), len(df_est), total_avaliados, total_ouro, len(df_pers), len(df_nuan)]
+                }
+                df_kb = pd.DataFrame(kb_data)
+                fig_kb = px.bar(df_kb, x='Registros', y='Componente', orientation='h', 
+                               color='Registros', color_continuous_scale='Blues')
+                fig_kb.update_layout(
+                    template="plotly_dark",
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    showlegend=False,
+                    height=300,
+                    margin=dict(l=20, r=20, t=30, b=20),
+                    xaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.05)'),
+                    yaxis=dict(showgrid=False)
+                )
+                st.plotly_chart(fig_kb, use_container_width=True)
+            
+            st.divider()
+
+            # === SEÇÃO 3: PRODUÇÃO E ANÁLISE ===
+            col_prod, col_modo, col_aval = st.columns(3)
+            
+            with col_prod:
+                st.markdown("#### 📈 Evolução de Produção")
                 if not df_hist_dash.empty and 'criado_em' in df_hist_dash.columns:
                     df_timeline = df_hist_dash.copy()
                     df_timeline['data'] = pd.to_datetime(df_timeline['criado_em']).dt.date
-                    chart_data = df_timeline.groupby('data').size().reset_index(name='roteiros')
-                    chart_data = chart_data.set_index('data')
-                    st.bar_chart(chart_data, color="#0086ff")
+                    chart_data = df_timeline.groupby('data').size().reset_index(name='Quantidade')
+                    
+                    fig_prod = px.line(chart_data, x='data', y='Quantidade', 
+                                     render_mode='svg', markers=True)
+                    fig_prod.update_traces(line_color='#0086ff', line_width=4, 
+                                         marker=dict(size=10, line=dict(width=2, color='white')))
+                    fig_prod.update_layout(
+                        template="plotly_dark",
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        height=350,
+                        margin=dict(l=20, r=20, t=30, b=20),
+                        xaxis=dict(showgrid=False, title=None),
+                        yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.05)', title=None)
+                    )
+                    st.plotly_chart(fig_prod, use_container_width=True)
                 else:
                     st.info("Sem dados de produção ainda.")
             
-            with col_chart2:
-                st.markdown("#### 🧠 Saúde da Base de Conhecimento")
-                kb_data = {
-                    "Componente": ["Fonéticas", "Estruturas (Hooks/CTAs)", "Calibrações", "Roteiros Ouro", "Persona"],
-                    "Registros": [len(df_fon), len(df_est), total_avaliados, total_ouro, len(df_pers)]
-                }
-                df_kb = pd.DataFrame(kb_data).set_index("Componente")
-                st.bar_chart(df_kb, color="#10b981")
-            
-            st.divider()
-            
-            # === SEÇÃO 3: DISTRIBUIÇÃO POR MODO ===
-            col_modo, col_aval = st.columns(2)
-            
             with col_modo:
-                st.markdown("#### 🎯 Distribuição por Modo de Trabalho")
+                st.markdown("#### 🎯 Mix de Modos de Trabalho")
                 if not df_hist_dash.empty and 'modo_trabalho' in df_hist_dash.columns:
                     modo_counts = df_hist_dash['modo_trabalho'].value_counts().reset_index()
                     modo_counts.columns = ['Modo', 'Quantidade']
-                    modo_counts = modo_counts.set_index('Modo')
-                    st.bar_chart(modo_counts, color="#6366f1")
+                    fig_modo = px.pie(modo_counts, values='Quantidade', names='Modo', hole=0.5,
+                                    color_discrete_sequence=px.colors.qualitative.Bold)
+                    fig_modo.update_traces(textposition='inside', textinfo='percent+label')
+                    fig_modo.update_layout(
+                        template="plotly_dark",
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        height=350,
+                        margin=dict(l=20, r=20, t=30, b=20),
+                        showlegend=False
+                    )
+                    st.plotly_chart(fig_modo, use_container_width=True)
                 else:
                     st.info("Sem dados de modos.")
             
             with col_aval:
-                st.markdown("#### ⚖️ Distribuição de Avaliações")
+                st.markdown("#### ⚖️ Sentimento das Calibrações")
                 if not df_fb.empty and 'avaliacao' in df_fb.columns:
-                    aval_map = {-1: "Ruim", 0: "Regular", 1: "Bom", 2: "Ótimo"}
+                    # Atualizado para as novas métricas de intensidade
+                    aval_map = {-1: "Reescrita Pesada", 0: "Legado/Regular", 1: "Edição Moderada", 2: "Ajuste Fino"}
                     df_fb['avaliacao_label'] = df_fb['avaliacao'].map(aval_map).fillna("Outro")
                     aval_counts = df_fb['avaliacao_label'].value_counts().reset_index()
                     aval_counts.columns = ['Avaliação', 'Quantidade']
-                    aval_counts = aval_counts.set_index('Avaliação')
-                    st.bar_chart(aval_counts, color="#f59e0b")
+                    
+                    # Cores específicas para as novas métricas
+                    color_map = {
+                        "Ajuste Fino": "#10b981",       # Verde (Sucesso total)
+                        "Edição Moderada": "#f59e0b",   # Amarelo/Laranja (Atenção/Trabalho médio)
+                        "Reescrita Pesada": "#ef4444",  # Vermelho (Trabalho pesado/Falha)
+                        "Legado/Regular": "#6b7280"     # Cinza para avaliações antigas
+                    }
+                    
+                    fig_aval = px.bar(aval_counts, x='Avaliação', y='Quantidade', color='Avaliação',
+                                    color_discrete_map=color_map)
+                    fig_aval.update_layout(
+                        template="plotly_dark",
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        showlegend=False,
+                        margin=dict(l=20, r=20, t=30, b=20)
+                    )
+                    st.plotly_chart(fig_aval, use_container_width=True)
                 else:
                     st.info("Sem avaliações registradas.")
+
+            st.divider()
+
+            # === SEÇÃO 4: ANÁLISE DE CUSTOS POR MODELO ===
+            st.markdown("#### 💰 Investimento por Modelo (BRL)")
+            if not df_hist_dash.empty and 'modelo_llm' in df_hist_dash.columns and 'custo_estimado_brl' in df_hist_dash.columns:
+                df_cost = df_hist_dash.groupby('modelo_llm')['custo_estimado_brl'].sum().reset_index()
+                df_cost.columns = ['Modelo', 'Custo Total (R$)']
+                
+                fig_cost = px.pie(df_cost, values='Custo Total (R$)', names='Modelo', hole=0.6,
+                                color_discrete_sequence=px.colors.sequential.Bluyl)
+                fig_cost.update_traces(textinfo='percent+label')
+                fig_cost.update_layout(
+                    template="plotly_dark",
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    margin=dict(l=20, r=20, t=30, b=20),
+                    showlegend=False
+                )
+                
+                col_c1, col_c2 = st.columns([2, 1])
+                with col_c1:
+                    st.plotly_chart(fig_cost, use_container_width=True)
+                with col_c2:
+                    st.markdown("<br><br>", unsafe_allow_html=True)
+                    for _, row in df_cost.iterrows():
+                        st.write(f"**{row['Modelo']}:** R$ {row['Custo Total (R$)']:.4f}")
+            else:
+                st.info("Sem dados de custo para analisar.")
             
             st.divider()
             
             # === SEÇÃO 4: TABELAS DETALHADAS ===
             st.markdown("### 📋 Dados Detalhados")
-            tab_ouro, tab_feed, tab_pers, tab_fon = st.tabs(["🏆 Roteiros Ouro", "⚖️ Feedbacks", "💃 Persona", "🗣️ Fonética"])
+            tab_hist, tab_ouro, tab_feed, tab_nuan, tab_pers, tab_fon = st.tabs(["💵 Histórico In-Depth", "🏆 Roteiros Ouro", "⚖️ Feedbacks", "🧠 Nuances", "💃 Persona", "🗣️ Fonética"])
+            
+            with tab_hist:
+                if not df_hist_dash.empty:
+                    df_show_hist = df_hist_dash.copy()
+                    
+                    # Formatação de colunas
+                    if 'custo_estimado_brl' in df_show_hist.columns:
+                        df_show_hist['Custo Brl'] = df_show_hist['custo_estimado_brl'].apply(
+                            lambda x: f"R$ {x:,.4f}".replace(',', 'X').replace('.', ',').replace('X', '.') if pd.notna(x) and x > 0 else "-"
+                        )
+                    
+                    # Renomeando colunas para o usuário
+                    cols_to_show = {'criado_em': 'Data Geração', 'codigo_produto': 'Cód. Produto', 
+                                   'modo_trabalho': 'Modo', 'modelo_llm': 'Modelo', 'Custo Brl': 'Custo (R$)'}
+                    
+                    df_show_hist = df_show_hist.rename(columns=cols_to_show)
+                    
+                    # Ordenar e filtrar apenas as colunas mapeadas
+                    col_order = [cols_to_show[k] for k in cols_to_show if cols_to_show[k] in df_show_hist.columns]
+                    st.dataframe(df_show_hist[col_order].sort_values(by='Data Geração', ascending=False), use_container_width=True)
+                else:
+                    st.info("Nenhum histórico de produção registrado.")
+            
+            with tab_nuan:
+                if not df_nuan.empty:
+                    st.dataframe(df_nuan[['criado_em', 'frase_ia', 'analise_critica', 'exemplo_ouro']].sort_values(by='criado_em', ascending=False), use_container_width=True)
+                else:
+                    st.info("Nenhuma nuance de linguagem cadastrada.")
             
             with tab_ouro:
                 if not df_ouro.empty:

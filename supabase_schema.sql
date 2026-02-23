@@ -16,8 +16,14 @@ create table if not exists categorias (
 insert into categorias (nome, tom_de_voz) values 
 ('Móveis', 'Lar como Refúgio; Foco em segurança no transporte e facilidade de montagem.'),
 ('Eletrodomésticos', 'Saúde e Economia Doméstica; Foco em eficiência energética e praticidade.'),
+('Eletroportáteis', 'Praticidade e Estilo de Vida; Foco na facilidade de uso, design funcional e como o produto melhora o dia a dia.'),
 ('Celulares e Informática', 'Ferramenta de Trabalho/Status; Descomplicar termos técnicos e focar no desempenho.'),
 ('Saúde e Bem-estar', 'Vida Saudável Democratizada; Foco na prática e fácil integração à rotina.'),
+('Beleza e Perfumaria', 'Autocuidado e Autoestima; Foco nos resultados, sensações e bem-estar. Linguagem sofisticada e acolhedora.'),
+('Brinquedos', 'Mundo da Imaginação; Foco na segurança, desenvolvimento pedagógico e diversão em família. Linguagem lúdica.'),
+('TV e Vídeo', 'Cinema em Casa; Foco em imersão sonora e visual, tecnologias de tela e entretenimento familiar.'),
+('Esporte e Lazer', 'Vida em Movimento; Foco na performance, durabilidade e incentivo à prática de exercícios.'),
+('Automotivo', 'Segurança e Praticidade; Foco na confiança, manutenção e utilidade técnica acessível.'),
 ('Genérico', 'Otimismo prudente, didatismo amigável, padrão Lu do Magalu.')
 ON CONFLICT (nome) DO NOTHING;
 
@@ -78,8 +84,22 @@ create table if not exists historico_roteiros (
   modo_trabalho varchar(100) default 'NW (NewWeb)',
   roteiro_gerado text not null,
   ficha_extraida text,
-  status varchar(30) default 'gerado'
+  status varchar(30) default 'gerado',
+  modelo_llm varchar(50) default 'gemini-2.5-flash',
+  tokens_entrada int,
+  tokens_saida int,
+  custo_estimado_brl numeric(10,6)
 );
+
+-- Tabela 8: Treinamento de Nuances e Construção (Linguagem Viva)
+create table if not exists treinamento_nuances (
+  id uuid default gen_random_uuid() primary key,
+  criado_em timestamp with time zone default timezone('utc'::text, now()) not null,
+  frase_ia text not null,
+  analise_critica text not null,
+  exemplo_ouro text
+);
+
 
 -- ==========================================
 -- ATIVANDO ROW LEVEL SECURITY (RLS)
@@ -92,6 +112,8 @@ alter table treinamento_persona_lu enable row level security;
 alter table treinamento_fonetica enable row level security;
 alter table treinamento_estruturas enable row level security;
 alter table historico_roteiros enable row level security;
+alter table treinamento_nuances enable row level security;
+
 
 -- ==========================================
 -- POLÍTICAS DE ACESSO (PERMISSIO TOTAL PARA AUTENTICADOS)
@@ -135,6 +157,12 @@ begin
   if not exists (select 1 from pg_policies where policyname = 'Allow access' and tablename = 'historico_roteiros') then
     create policy "Allow access" on historico_roteiros for all using (true);
   end if;
+
+  -- Nuances
+  if not exists (select 1 from pg_policies where policyname = 'Allow access' and tablename = 'treinamento_nuances') then
+    create policy "Allow access" on treinamento_nuances for all using (true);
+  end if;
+
 end $$;
 
 -- ==========================================
@@ -152,5 +180,25 @@ BEGIN
   ) THEN
     ALTER TABLE roteiros_ouro ADD COLUMN codigo_produto varchar(50);
     RAISE NOTICE 'Coluna codigo_produto adicionada em roteiros_ouro.';
+  END IF;
+END $$;
+
+-- ==========================================
+-- MIGRATION V2.0 -> V2.5 (LLM Tracking)
+-- ==========================================
+-- Adiciona colunas de rastreamento de modelo e custo ao histórico.
+-- É seguro rodar múltiplas vezes (idempotente).
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'historico_roteiros' AND column_name = 'modelo_llm'
+  ) THEN
+    ALTER TABLE historico_roteiros ADD COLUMN modelo_llm varchar(50) DEFAULT 'gemini-2.5-flash';
+    ALTER TABLE historico_roteiros ADD COLUMN tokens_entrada int;
+    ALTER TABLE historico_roteiros ADD COLUMN tokens_saida int;
+    ALTER TABLE historico_roteiros ADD COLUMN custo_estimado_brl numeric(10,6);
+    RAISE NOTICE 'Colunas de tracking LLM adicionadas em historico_roteiros.';
   END IF;
 END $$;

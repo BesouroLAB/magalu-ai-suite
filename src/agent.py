@@ -9,14 +9,34 @@ load_dotenv()
 
 PROJECT_ROOT = os.path.join(os.path.dirname(__file__), '..')
 
+# Tabela de preços por 1M tokens (USD)
+PRICING_USD_PER_1M = {
+    "gemini-2.5-flash": {"input": 0.15, "output": 0.60},
+    "gemini-2.5-pro":   {"input": 1.25, "output": 10.00},
+    "gemini-2.0-flash":  {"input": 0.10, "output": 0.40},
+}
+USD_TO_BRL = 5.80
+
+MODELOS_DISPONIVEIS = {
+    "Gemini 2.5 Flash (Rápido)": "gemini-2.5-flash",
+    "Gemini 2.5 Pro (Qualidade)": "gemini-2.5-pro",
+    "Gemini 2.0 Flash (Econômico)": "gemini-2.0-flash",
+}
+
+def calcular_custo_brl(model_id, tokens_in, tokens_out):
+    """Calcula o custo estimado em BRL com base nos tokens consumidos."""
+    pricing = PRICING_USD_PER_1M.get(model_id, PRICING_USD_PER_1M["gemini-2.5-flash"])
+    custo_usd = (tokens_in / 1_000_000 * pricing["input"]) + (tokens_out / 1_000_000 * pricing["output"])
+    return round(custo_usd * USD_TO_BRL, 6)
+
 class RoteiristaAgent:
-    def __init__(self, supabase_client=None):
+    def __init__(self, supabase_client=None, model_id="gemini-2.5-flash"):
         api_key = os.environ.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise ValueError("GEMINI_API_KEY não encontrada!")
 
         self.client = genai.Client(api_key=api_key)
-        self.model_id = "gemini-2.5-flash"
+        self.model_id = model_id
         self.supabase = supabase_client
 
         # Carrega toda a base de conhecimento estática
@@ -95,7 +115,17 @@ class RoteiristaAgent:
                 for est in res_est.data:
                     sb_parts.append(f"- [{est['tipo_estrutura']}] {est['texto_ouro']}")
                     
-            # 5. Memória de Calibração (Lições Recentes do Antes x Depois)
+            # 5. Nuances de Linguagem (O que evitar e como melhorar)
+            res_nuan = self.supabase.table("treinamento_nuances").select("*").limit(5).order('criado_em', desc=True).execute()
+            if res_nuan.data:
+                sb_parts.append("\n**NUANCES E REFINAMENTO DE ESTILO (LIÇÕES DE REDAÇÃO):**")
+                for n in res_nuan.data:
+                    refinamento = f"- EVITE: '{n['frase_ia']}'\n  POR QUE: {n['analise_critica']}"
+                    if n.get('exemplo_ouro'):
+                        refinamento += f"\n  FORMA IDEAL: '{n['exemplo_ouro']}'"
+                    sb_parts.append(refinamento)
+
+            # 6. Memória de Calibração (Lições Recentes do Antes x Depois)
             res_fb = self.supabase.table("feedback_roteiros").select("comentarios").neq("comentarios", "null").limit(5).order('criado_em', desc=True).execute()
             if res_fb.data:
                 valid_mems = [f for f in res_fb.data if f.get('comentarios') and f['comentarios'].strip()]
@@ -175,7 +205,7 @@ class RoteiristaAgent:
             print(f"Erro na auto-avaliação: {e}")
             return "Erro ao gerar memória."
 
-    def gerar_roteiro(self, scraped_data, modo_trabalho="NW (NewWeb)"):
+    def gerar_roteiro(self, scraped_data, modo_trabalho="NW (NewWeb)", mes="MAR"):
         """Envia a requisição para o Gemini gerar o roteiro. Suporta Multimodal e Modos de Trabalho."""
         context = self._build_context()
 
@@ -189,6 +219,17 @@ class RoteiristaAgent:
             
         # Roteamento básico de Prompt baseado no Modo (Expansão Futura)
         diretriz_modo = f"Crie um roteiro focado no formato padrão NewWeb (descrição rica e completa)."
+        
+        # INJEÇÃO DAS TÁTICAS NW LU (Mês e Cena Obrigatória)
+        if "NW" in modo_trabalho:
+            diretriz_modo += (
+                f"\n\n🚨 REGRA ABSOLUTA DE FORMATAÇÃO E ESTRUTURA (NW LU):\n"
+                f"1. O TEXTO DEVE COMEÇAR COM O CABEÇALHO EXATAMENTE NO FORMATO:\n"
+                f"   NW LU {mes} (CÓDIGO_AQUI Se Souber) (NOME DO PRODUTO AQUI)\n"
+                f"2. A CENA 1 (Primeira cena do vídeo) DEVE OBRIGATORIAMENTE mostrar a 'Lu' em ação, interagindo com o produto ou apresentando-o.\n"
+                f"3. A partir da CENA 2, CORTE para cenas detalhadas apenas do produto (Sem a Lu no vídeo)."
+            )
+
         if "SOCIAL" in modo_trabalho:
             diretriz_modo = f"ATENÇÃO: Este formato é para SOCIAL (Reels/TikTok). O roteiro deve ser EXTREMAMENTE curto, dinâmico e focado em retenção nos primeiros 3 segundos."
         elif "3D" in modo_trabalho:
@@ -228,4 +269,20 @@ class RoteiristaAgent:
             model=self.model_id,
             contents=contents,
         )
-        return response.text
+
+        # Captura métricas de uso (tokens)
+        tokens_in = 0
+        tokens_out = 0
+        if hasattr(response, 'usage_metadata') and response.usage_metadata:
+            tokens_in = getattr(response.usage_metadata, 'prompt_token_count', 0) or 0
+            tokens_out = getattr(response.usage_metadata, 'candidates_token_count', 0) or 0
+
+        custo_brl = calcular_custo_brl(self.model_id, tokens_in, tokens_out)
+
+        return {
+            "roteiro": response.text,
+            "model_id": self.model_id,
+            "tokens_in": tokens_in,
+            "tokens_out": tokens_out,
+            "custo_brl": custo_brl
+        }
