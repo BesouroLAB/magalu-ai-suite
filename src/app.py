@@ -375,6 +375,8 @@ with st.sidebar:
     puter_key_env = os.environ.get("PUTER_API_KEY") or st.secrets.get("PUTER_API_KEY")
     openai_key_env = os.environ.get("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
     openrouter_key_env = os.environ.get("OPENROUTER_API_KEY") or st.secrets.get("OPENROUTER_API_KEY")
+    zai_key_env = os.environ.get("ZAI_API_KEY") or st.secrets.get("ZAI_API_KEY")
+    kimi_key_env = os.environ.get("KIMI_API_KEY") or st.secrets.get("KIMI_API_KEY")
     supabase_client = init_supabase()
     if supabase_client:
         st.session_state['supabase_client'] = supabase_client
@@ -391,34 +393,42 @@ with st.sidebar:
         </div>
         """, unsafe_allow_html=True)
     
-    # --- STATUS INDICATORS (VIBRANT TAGS) ---
-    def _si(active):
-        c = "#00ff88" if active else "#ff4b4b"
-        l = "ON" if active else "OFF"
-        b = "rgba(0, 255, 136, 0.12)" if active else "rgba(255, 75, 75, 0.12)"
-        return c, l, b
+    # --- STATUS INDICATORS (apenas LLM ativa + Supabase) ---
+    _modelo_atual = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
+    _prov = _modelo_atual.split('/')[0] if '/' in _modelo_atual else 'gemini'
+    _env_map = {
+        "gemini": api_key_env, 
+        "openai": openai_key_env, 
+        "puter": puter_key_env, 
+        "openrouter": openrouter_key_env, 
+        "zai": zai_key_env,
+        "kimi": kimi_key_env
+    }
+    _llm_active = bool(_env_map.get(_prov))
     
-    sc_gem, sl_gem, sb_gem = _si(api_key_env)
-    sc_oai, sl_oai, sb_oai = _si(openai_key_env)
-    sc_put, sl_put, sb_put = _si(puter_key_env)
-    sc_or, sl_or, sb_or = _si(openrouter_key_env)
-    sc_sup, sl_sup, sb_sup = _si(supabase_client)
-
-    def _tag(name, color, bg, label):
-        return f"""<div style='display: flex; align-items: center; gap: 4px;'>
-            <span style='color: {color}; font-weight: 400; font-size: 8px;'>{name}</span>
-            <span style='background: {bg}; color: {color}; padding: 0.2px 3px; border-radius: 2px; font-size: 6px; font-weight: 600; border: 1px solid {color}22;'>{label}</span>
-        </div>"""
+    _llm_names = {"gemini": "Gemini", "openai": "GPT", "puter": "Grok", "openrouter": "Router", "zai": "GLM", "kimi": "Kimi"}
+    _llm_name = _llm_names.get(_prov, "LLM")
+    
+    sc_llm = "#00ff88" if _llm_active else "#ff4b4b"
+    sl_llm = "ON" if _llm_active else "OFF"
+    sb_llm = "rgba(0, 255, 136, 0.12)" if _llm_active else "rgba(255, 75, 75, 0.12)"
+    
+    sc_sup = "#00ff88" if supabase_client else "#ff4b4b"
+    sl_sup = "ON" if supabase_client else "OFF"
+    sb_sup = "rgba(0, 255, 136, 0.12)" if supabase_client else "rgba(255, 75, 75, 0.12)"
 
     st.markdown(f"""
-        <div style='font-size: 8px; color: #8b92a5; margin-bottom: 25px; margin-top: 5px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;'>
+        <div style='font-size: 8px; color: #8b92a5; margin-bottom: 25px; margin-top: 5px; display: flex; align-items: center; gap: 8px;'>
             <span style='font-weight: 400; letter-spacing: 0.5px;'>V2.6</span>
             <span style='color: #2A3241;'>|</span>
-            {_tag('Gemini', sc_gem, sb_gem, sl_gem)}
-            {_tag('GPT', sc_oai, sb_oai, sl_oai)}
-            {_tag('Grok', sc_put, sb_put, sl_put)}
-            {_tag('Router', sc_or, sb_or, sl_or)}
-            {_tag('Supa', sc_sup, sb_sup, sl_sup)}
+            <div style='display: flex; align-items: center; gap: 4px;'>
+                <span style='color: {sc_llm}; font-weight: 400; font-size: 8px;'>{_llm_name}</span>
+                <span style='background: {sb_llm}; color: {sc_llm}; padding: 0.2px 3px; border-radius: 2px; font-size: 6px; font-weight: 600; border: 1px solid {sc_llm}22;'>{sl_llm}</span>
+            </div>
+            <div style='display: flex; align-items: center; gap: 4px;'>
+                <span style='color: {sc_sup}; font-weight: 400; font-size: 8px;'>Supabase</span>
+                <span style='background: {sb_sup}; color: {sc_sup}; padding: 0.2px 3px; border-radius: 2px; font-size: 6px; font-weight: 600; border: 1px solid {sc_sup}22;'>{sl_sup}</span>
+            </div>
         </div>
     """, unsafe_allow_html=True)
     
@@ -448,32 +458,27 @@ with st.sidebar:
     with st.expander("⚙️ Configurações", expanded=False):
         st.caption("Editar Chaves e Conexão")
         
-        # Gemini Key
-        gemini_placeholder = "••••••••" + api_key_env[-4:] if api_key_env and len(api_key_env) > 4 else ""
-        if "GEMINI_API_KEY" in os.environ:
-            st.sidebar.success("✅ API do Gemini (Carregada do .env)")
-            api_key_env = os.environ.get("GEMINI_API_KEY")
-        else:
-            api_key_input = st.sidebar.text_input("Gemini API Key:", type="password", key="gemini_key_in")
-            if api_key_input:
-                with open('.env', 'a', encoding='utf-8') as f:
-                    f.write(f"\nGEMINI_API_KEY={api_key_input}")
-                os.environ["GEMINI_API_KEY"] = api_key_input
-                st.sidebar.success("✅ Chave Gemini Adicionada!")
-                st.stop()
-            
-        # Puter API Key Input
-        if "PUTER_API_KEY" in os.environ:
-            st.sidebar.success("✅ API do Puter (Carregada do .env)")
-            puter_key_env = os.environ.get("PUTER_API_KEY")
-        else:
-            puter_key_input = st.sidebar.text_input("Puter Auth Token (Grok):", type="password", key="puter_key_in")
-            if puter_key_input:
-                with open('.env', 'a', encoding='utf-8') as f:
-                    f.write(f"\nPUTER_API_KEY={puter_key_input}")
-                os.environ["PUTER_API_KEY"] = puter_key_input
-                st.sidebar.success("✅ Token Puter Adicionado!")
-                st.stop()
+        # LLM Key Management
+        keys_to_manage = [
+            ("Gemini", "GEMINI_API_KEY", api_key_env),
+            ("Puter (Grok)", "PUTER_API_KEY", puter_key_env),
+            ("OpenAI (GPT)", "OPENAI_API_KEY", openai_key_env),
+            ("OpenRouter", "OPENROUTER_API_KEY", openrouter_key_env),
+            ("Z.ai (GLM)", "ZAI_API_KEY", zai_key_env),
+            ("Kimi (Moonshot)", "KIMI_API_KEY", kimi_key_env)
+        ]
+        
+        for name, env_var, current_val in keys_to_manage:
+            if env_var in os.environ and os.environ.get(env_var):
+                st.success(f"✅ {name} (Configurado)")
+            else:
+                new_key = st.text_input(f"Adicionar chave {name}:", type="password", key=f"key_in_{env_var}")
+                if new_key:
+                    with open('.env', 'a', encoding='utf-8') as f:
+                        f.write(f"\n{env_var}={new_key}")
+                    os.environ[env_var] = new_key
+                    st.success(f"✅ {name} Adicionada!")
+                    st.rerun()
 
         st.markdown("---")
         

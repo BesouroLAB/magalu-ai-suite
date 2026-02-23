@@ -15,20 +15,30 @@ PRICING_USD_PER_1M = {
     "gemini-2.5-flash": {"input": 0.15, "output": 0.60},
     "gemini-2.5-pro":   {"input": 1.25, "output": 10.00},
     "gemini-2.0-flash":  {"input": 0.10, "output": 0.40},
+    # Novos modelos (Z.ai, Kimi, etc. em modo free por enquanto)
+    "gpt-4o-mini": {"input": 0.00, "output": 0.00},
+    "grok-4-1-fast": {"input": 0.00, "output": 0.00},
+    "grok-2": {"input": 0.00, "output": 0.00},
+    "moonshot-v1-8k": {"input": 0.00, "output": 0.00},
+    "glm-4-flash": {"input": 0.00, "output": 0.00},
+    "deepseek-chat-v3-0324:free": {"input": 0.00, "output": 0.00},
+    "deepseek-r1:free": {"input": 0.00, "output": 0.00},
+    "gemini-2.5-flash-preview": {"input": 0.15, "output": 0.60},
 }
 USD_TO_BRL = 5.80
 
 MODELOS_DISPONIVEIS = {
-    "Gemini 2.5 Flash (Rápido)": "gemini-2.5-flash",
-    "Gemini 2.5 Pro (Qualidade)": "gemini-2.5-pro",
-    "Gemini 2.0 Flash (Econômico)": "gemini-2.0-flash",
-    "GPT-4o Mini (OpenAI Grátis)": "openai/gpt-4o-mini",
-    "Grok 4.1 Fast (Puter/xAI)": "puter/x-ai/grok-4-1-fast",
-    "Grok 2 (Puter/xAI)": "puter/x-ai/grok-2",
-    "DeepSeek Chat V3 (OpenRouter)": "openrouter/deepseek/deepseek-chat-v3-0324:free",
-    "DeepSeek R1 (OpenRouter)": "openrouter/deepseek/deepseek-r1:free",
-    "Gemini 2.5 Flash (OpenRouter)": "openrouter/google/gemini-2.5-flash-preview",
-    "GLM-4 Flash (Z.ai Grátis)": "zai/glm-4-flash",
+    "⚡ Gemini 2.5 Flash — Grátis": "gemini-2.5-flash",
+    "🏆 Gemini 2.5 Pro — ~R$0,06/roteiro": "gemini-2.5-pro",
+    "💰 Gemini 2.0 Flash — Grátis": "gemini-2.0-flash",
+    "🤖 GPT-4o Mini — Grátis": "openai/gpt-4o-mini",
+    "🔥 Grok 4.1 Fast — Grátis (Puter)": "puter/x-ai/grok-4-1-fast",
+    "🔥 Grok 2 — Grátis (Puter)": "puter/x-ai/grok-2",
+    "🐋 DeepSeek V3 — Grátis (OpenRouter)": "openrouter/deepseek/deepseek-chat-v3-0324:free",
+    "🧠 DeepSeek R1 — Grátis (OpenRouter)": "openrouter/deepseek/deepseek-r1:free",
+    "⚡ Gemini 2.5 Flash — Créditos (OpenRouter)": "openrouter/google/gemini-2.5-flash-preview",
+    "🇨🇳 GLM-4 Flash — Grátis (Z.ai)": "zai/glm-4-flash",
+    "🌙 Kimi v1 — Grátis (Moonshot)": "kimi/moonshot-v1-8k",
 }
 
 # Mapeamento de provider -> env var necessária
@@ -38,6 +48,7 @@ PROVIDER_KEY_MAP = {
     "puter": "PUTER_API_KEY",
     "openrouter": "OPENROUTER_API_KEY",
     "zai": "ZAI_API_KEY",
+    "kimi": "KIMI_API_KEY",
 }
 
 def calcular_custo_brl(model_id, tokens_in, tokens_out):
@@ -97,6 +108,16 @@ class RoteiristaAgent:
                 base_url="https://api.z.ai/api/paas/v4/"
             )
             self.model_id = self.model_id.replace("zai/", "")
+        elif self.model_id.startswith("kimi/"):
+            self.provider = "kimi"
+            kimi_key = os.environ.get("KIMI_API_KEY")
+            if not kimi_key:
+                raise ValueError("KIMI_API_KEY não encontrada!")
+            self.client_openai = OpenAI(
+                api_key=kimi_key,
+                base_url="https://api.moonshot.cn/v1"
+            )
+            self.model_id = self.model_id.replace("kimi/", "")
 
         # Carrega toda a base de conhecimento estática
         self.system_prompt = self._load_file(
