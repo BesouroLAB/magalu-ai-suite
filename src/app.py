@@ -32,9 +32,10 @@ DARK_MODE_CSS = """
     .stApp > header { background-color: transparent; }
     .stApp { background-color: var(--bg-main) !important; color: var(--text-primary) !important; }
 
-    h1 { font-size: 1.6rem !important; }
-    h2 { font-size: 1.3rem !important; }
-    h3 { font-size: 1.1rem !important; }
+    h1 { font-size: 1.8rem !important; font-weight: 700 !important; color: #ffffff !important; letter-spacing: 0.5px; margin-bottom: 0.5rem !important; }
+    h2 { font-size: 1.4rem !important; font-weight: 600 !important; color: #e0e6f0 !important; margin-bottom: 0.4rem !important; }
+    h3 { font-size: 1.15rem !important; font-weight: 600 !important; color: #b0bdd0 !important; margin-bottom: 0.3rem !important; }
+    h4 { font-size: 1.0rem !important; font-weight: 500 !important; color: var(--mglu-blue) !important; margin-bottom: 0.2rem !important; }
     p, span, div, label { color: var(--text-primary) !important; font-family: 'Inter', sans-serif; font-size: 0.92rem !important; }
     .stMarkdown, .stText { color: var(--text-muted) !important; font-size: 0.9rem !important; }
     
@@ -971,24 +972,38 @@ elif page == "Histórico":
                 if not df_hist.empty and 'criado_em' in df_hist.columns:
                     df_hist['criado_em'] = df_hist['criado_em'].apply(convert_to_sp_time)
                 
-                # Barra de busca avançada
-                search = st.text_input("🔍 Filtrar Histórico (Insira códigos ou palavras-chave separados por vírgula ou espaço):", placeholder="Ex: 240304700, 235289100, Geladeira")
+                total_registros = len(df_hist)
+                
+                # --- BARRA DE FILTROS ---
+                col_search, col_modo = st.columns([3, 1])
+                with col_search:
+                    search = st.text_input("🔍 Filtrar por código ou palavra-chave:", placeholder="Ex: 240304700, Geladeira", label_visibility="collapsed")
+                with col_modo:
+                    modos_unicos = ["Todos"] + sorted(df_hist['modo_trabalho'].dropna().unique().tolist()) if 'modo_trabalho' in df_hist.columns else ["Todos"]
+                    modo_filtro = st.selectbox("Modo", modos_unicos, label_visibility="collapsed")
+                
+                # Filtro por texto (múltiplos termos com OR)
                 if search:
                     import re
-                    # Divide a busca por vírgulas ou espaços e remove vazios
                     termos = [t.strip() for t in re.split(r'[,\s]+', search) if t.strip()]
-                    
                     if termos:
-                        # Cria uma máscara que é verdadeira se QUALQUER UM dos termos estiver na linha (OR lógico)
                         mask = pd.Series(False, index=df_hist.index)
                         for termo in termos:
-                            mask_termo = (
+                            mask = mask | (
                                 df_hist['codigo_produto'].str.contains(termo, case=False, na=False) |
                                 df_hist['roteiro_gerado'].str.contains(termo, case=False, na=False)
                             )
-                            mask = mask | mask_termo
-                            
                         df_hist = df_hist[mask]
+                
+                # Filtro por Modo de Trabalho
+                if modo_filtro != "Todos" and 'modo_trabalho' in df_hist.columns:
+                    df_hist = df_hist[df_hist['modo_trabalho'] == modo_filtro]
+                
+                # Métricas de resultado
+                filtrados = len(df_hist)
+                col_m1, col_m2 = st.columns(2)
+                col_m1.metric("Total de Roteiros", total_registros)
+                col_m2.metric("Exibindo", filtrados, delta=f"{filtrados - total_registros}" if filtrados < total_registros else None)
                 
                 # Define o index da tabela para começar do 01, 02...
                 df_hist.reset_index(drop=True, inplace=True)
