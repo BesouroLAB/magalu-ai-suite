@@ -286,7 +286,7 @@ def salvar_calibracao_ouro(sp_client, cat_id, roteiro_ia, roteiro_final, percent
         }
         res = sp_client.table("nw_roteiros_ouro").insert(data).execute()
         if hasattr(res, 'data') and len(res.data) > 0:
-            msg = f"🏆 Calibração salva como Roteiro Ouro! (Aproveitamento: {percentual}% | Cat ID: {cat_id})"
+            msg = f"🏆 Calibragem salva como Roteiro Ouro! (Aproveitamento: {percentual}% | Cat ID: {cat_id})"
             st.success(msg)
             return True
         else:
@@ -1111,7 +1111,7 @@ if page == "Criar Roteiros":
                 c_fb, c_ouro = st.columns(2)
                 
                 with c_fb:
-                    if st.button("🚀 Enviar Calibração para a IA", key=f"fino_{idx}", use_container_width=True, type="primary"):
+                    if st.button("🚀 Enviar Calibragem para a IA", key=f"fino_{idx}", use_container_width=True, type="primary"):
                         if sp_cli:
                             with st.spinner("A IA está analisando suas correções para calibrar o estilo... 🤔"):
                                 try:
@@ -1140,7 +1140,7 @@ if page == "Criar Roteiros":
             """
             <div style='display: flex; height: 300px; align-items: center; justify-content: center; border: 2px dashed #2A3241; border-radius: 8px; color: #8b92a5; text-align: center; padding: 20px'>
             Cole os códigos no Inseridor (Command Center) acima e clique em Gerar.<br><br>
-            Os roteiros aparecerão aqui prontos para calibração, treino da IA ou envio para Ouro!
+            Os roteiros aparecerão aqui prontos para calibragem, treino da IA ou envio para Ouro!
             </div>
             """, 
             unsafe_allow_html=True
@@ -1272,7 +1272,7 @@ elif page == "Treinar IA":
                             else:
                                 st.error("Erro: GEMINI_API_KEY ausente.")
                         except Exception as e:
-                            st.error(f"Erro ao salvar calibração: {e}")
+                            st.error(f"Erro ao salvar calibragem: {e}")
                     else:
                         st.warning("Preencha ambos os campos (IA e Humano).")
             
@@ -1287,7 +1287,7 @@ elif page == "Treinar IA":
                 df_view.rename(columns={'aprendizado': 'Memória da IA (Lição Aprendida)', 'nota_percentual': 'Score %'}, inplace=True)
                 st.dataframe(df_view, use_container_width=True)
             else:
-                st.info("Nenhuma calibração ouro registrada ainda.")
+                st.info("Nenhuma calibragem ouro registrada ainda.")
                 
         with tab_est:
             st.markdown("### 💬 Aberturas e Fechamentos (""Hooks & CTAs"")")
@@ -1780,7 +1780,7 @@ elif page == "Dashboard":
             with st.popover("ℹ️ Entenda a Métrica de Aprovação", use_container_width=False):
                 st.markdown("#### 🎯 Qualidade Medida via Calibragem")
                 st.markdown("A **Taxa de Aprovação** não é mais uma nota subjetiva dada por botões. Ela é a **média do aproveitamento real** dos roteiros gerados.")
-                st.markdown("Toda vez que você edita um roteiro e clica em `🚀 Enviar Calibração para a IA`, uma **IA especializada** atua como QA (Quality Assurance). Ela compara o rascunho original com a sua edição final e calcula qual o percentual (%) das ideias geradas que foi mantido por você.")
+                st.markdown("Toda vez que você edita um roteiro e clica em `🚀 Enviar Calibragem para a IA`, uma **IA especializada** atua como QA (Quality Assurance). Ela compara o rascunho original com a sua edição final e calcula qual o percentual (%) das ideias geradas que foi mantido por você.")
                 st.info("💡 **Exemplo:** Se a IA nota que 90% das ideias do rascunho foram mantidas, a nota de aprovação daquele roteiro é 90%. O Dashboard exibe a média histórica de todas essas calibrações.")
             
             st.divider()

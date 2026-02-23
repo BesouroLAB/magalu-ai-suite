@@ -155,7 +155,7 @@ class RoteiristaAgent:
         self.phonetics = self._load_json(
             os.path.join(PROJECT_ROOT, "kb", "phonetics.json"), {}
         )
-        # Ouro e Calibração agora são 100% dinâmicos via Supabase
+        # Ouro e Calibragem agora são 100% dinâmicos via Supabase
         self.few_shot_examples = [] 
         
         # Carrega documentos de contexto (.md) da KB
@@ -234,7 +234,7 @@ class RoteiristaAgent:
                         refinamento += f"\n  FORMA IDEAL: '{n['exemplo_ouro']}'"
                     sb_parts.append(refinamento)
 
-            # 6. Memória de Calibração (Lições Recentes da Calibragem)
+            # 6. Memória de Calibragem (Lições Recentes da Calibragem)
             res_fb = self.supabase.table("nw_roteiros_ouro").select("aprendizado").neq("aprendizado", "null").order('criado_em', desc=True).limit(8).execute()
             if res_fb.data:
                 valid_mems = [f for f in res_fb.data if f.get('aprendizado') and f['aprendizado'].strip()]
@@ -436,19 +436,23 @@ class RoteiristaAgent:
         cat_str = "\n".join([f"- ID {c['id']}: {c['nome']}" for c in categories_list]) if categories_list else "Genérico (ID 1)"
 
         sys_prompt = (
-            "Você é um Especialista em Redação Publicitária e Quality Assurance (QA).\n"
-            "Sua tarefa é:\n"
-            "1. Comparar um Roteiro Original (IA) com o Roteiro Final (Humano) e extrair o percentual de aproveitamento.\n"
-            "2. Identificar a categoria mais adequada para este produto dentro da lista abaixo.\n"
-            "3. Extrair o código do produto (se presente no texto).\n\n"
+            "Você é um Editor Sênior de Redação Publicitária e Especialista em Qualidade Magalu.\n"
+            "Sua tarefa é realizar uma ANALISE TÉCNICA E CIRÚRGICA da calibragem:\n\n"
+            "1. COMPARE o Roteiro Original (IA) com o Roteiro Final (Aprovado pelo Humano).\n"
+            "2. CALCULE o percentual (%) de aproveitamento real.\n"
+            "3. APRENDIZADO DETALHADO (CRÍTICO): No campo 'aprendizado', você deve descrever EXATAMENTE as mudanças feitas. "
+            "Seja específico: cite o que foi cortado, o que foi substituído, o que foi invertido e quais termos foram preferidos. "
+            "Exemplo de tom: 'Cortou a introdução genérica; substituiu [potente] por [incrivelmente rápido]; inverteu a ordem da ficha técnica destacando a bateria; removeu clichês de venda agressiva'.\n"
+            "4. EXTRAIA O CÓDIGO DO PRODUTO (SKU): Procure no texto por sequências numéricas (geralmente 9 dígitos) ou o código fornecido.\n"
+            "5. CATEGORIZE: Escolha a melhor categoria da lista abaixo.\n\n"
             "LISTA DE CATEGORIAS DISPONÍVEIS:\n"
             f"{cat_str}\n\n"
             "Retorne APENAS um JSON válido:\n"
             "{\n"
             "  \"percentual\": <inteiro 0-100>,\n"
-            "  \"aprendizado\": \"<frase curta>\",\n"
-            "  \"categoria_id\": <id numérico da melhor categoria da lista>,\n"
-            "  \"codigo_produto\": \"<código encontrado ou o original enviado>\"\n"
+            "  \"aprendizado\": \"<análise técnica detalhada das mudanças>\",\n"
+            "  \"categoria_id\": <id numérico da melhor categoria>,\n"
+            "  \"codigo_produto\": \"<código encontrado no texto ou o original>\"\n"
             "}"
         )
 
