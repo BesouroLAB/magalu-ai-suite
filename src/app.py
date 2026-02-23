@@ -18,12 +18,11 @@ st.set_page_config(page_title="Magalu AI Suite", page_icon="🛍️", layout="wi
 
 DARK_MODE_CSS = """
 <style>
-    /* Tema Escuro estilo Dashboard Premium */
+    /* Tema Escuro Magalu Premium */
     :root {
-        --bg-main: #0B0E14;
-        --bg-card: #151A23;
-        --mglu-blue: #0086ff;
-        --mglu-purple: #8142FF;
+        --bg-main: #00122e; /* Azul Escuro Fundo */
+        --bg-card: #001f4d; /* Azul Escuro Cards */
+        --mglu-blue: #0086ff; /* Azul Magalu Principal */
         --text-primary: #f0f0f0;
         --text-muted: #8b92a5;
     }
@@ -37,7 +36,7 @@ DARK_MODE_CSS = """
     .stTextArea > div > div > textarea, .stTextInput > div > div > input, .stSelectbox > div > div > div {
         background-color: var(--bg-card) !important;
         color: var(--text-primary) !important;
-        border: 1px solid #2A3241 !important;
+        border: 1px solid #003380 !important;
         border-radius: 8px;
     }
     .stTextArea > div > div > textarea:focus, .stTextInput > div > div > input:focus {
@@ -53,12 +52,12 @@ DARK_MODE_CSS = """
     
     /* Botões Primários */
     button[kind="primary"] {
-        background-color: var(--mglu-purple) !important;
+        background-color: var(--mglu-blue) !important;
         color: white !important;
         border: none !important;
     }
     button[kind="primary"]:hover {
-        background-color: #6a35d6 !important;
+        background-color: #0066cc !important;
         transform: scale(1.02) !important;
     }
     
@@ -121,9 +120,10 @@ def check_login():
             
             if submitted:
                 # Credenciais (podem ser movidas para st.secrets depois)
-                valid_user = os.environ.get("APP_USER", "admin")
-                valid_pwd = os.environ.get("APP_PASSWORD", "admin")
-                if user == valid_user and pwd == valid_pwd:
+                valid_user = os.environ.get("APP_USER", "admin").strip()
+                valid_pwd = os.environ.get("APP_PASSWORD", "admin").strip()
+                
+                if user.strip() == valid_user and pwd.strip() == valid_pwd:
                     st.session_state['authenticated'] = True
                     st.rerun()
                 else:
