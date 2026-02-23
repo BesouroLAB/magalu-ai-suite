@@ -53,7 +53,25 @@ MODELOS_DISPONIVEIS = {
     "🎭 Claude 3.5 Sonnet — Grátis (Puter)": "puter/claude-3-5-sonnet",
 }
 
-# Mapeamento de provider -> env var necessária
+MODELOS_DESCRICAO = {
+    "gemini-2.5-flash": "O mais rápido do Google. Perfeito para processar grandes lotes de SKUs sem gargalo.",
+    "gemini-2.5-pro": "O cérebro definitivo. Recomendado para roteiros que exigem lógica complexa ou análise profunda.",
+    "gemini-2.0-flash": "Nova geração do Google. Equilíbrio entre a inteligência do Pro e a velocidade do Flash.",
+    "openai/gpt-4o-mini": "O modelo inteligente e compacto da OpenAI. Excelente para escrita natural e fluida.",
+    "puter/x-ai/grok-4-1-fast": "A IA da xAI focada em sarcasmo controlado e ganchos de redes sociais altamente criativos.",
+    "puter/x-ai/grok-2": "Modelo robusto da xAI para roteiros com personalidade forte e diretrizes rígidas.",
+    "openrouter/deepseek/deepseek-chat-v3-0324:free": "Referência em custo-benefício. IA chinesa de ponta, ótima para descrições técnicas.",
+    "openrouter/deepseek/deepseek-r1:free": "Modelo voltado para raciocínio (Reasoning). Ótimo para 'pensar' antes de escrever.",
+    "openrouter/google/gemini-2.5-flash-preview": "Versão prévia do Flash via OpenRouter. Ótima redundância para falhas na API principal.",
+    "openrouter/google/gemma-2-9b-it:free": "Modelo 'open' do Google. Leve, rápido e surpreendentemente capaz em português.",
+    "openrouter/mistralai/mistral-7b-instruct:free": "IA francesa eficiente. Direta ao ponto, ideal para textos curtos e informativos.",
+    "openrouter/microsoft/phi-3-mini-128k-instruct:free": "A pequena joia da Microsoft. Foco em lógica pura e eficiência de dados.",
+    "openrouter/qwen/qwen-2-7b-instruct:free": "IA de elite do Alibaba. Excelente compreensão de contexto e vocabulário extenso.",
+    "zai/glm-4-flash": "A 'joia da coroa' da Z.ai. Rápida e focada em extração fiel de fichas técnicas.",
+    "kimi/moonshot-v1-8k": "Modelo de alto desempenho da Moonshot AI, voltado para precisão e coerência.",
+    "puter/meta-llama/llama-3.1-70b-instruct": "O gigante da Meta. Inteligência de nível GPT-4o em formato aberto e versátil.",
+    "puter/claude-3-5-sonnet": "Mestre da escrita humana. O modelo preferido para roteiros com tom de voz sofisticado.",
+}
 PROVIDER_KEY_MAP = {
     "gemini": "GEMINI_API_KEY",
     "openai": "OPENAI_API_KEY",

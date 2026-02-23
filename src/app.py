@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from src.agent import RoteiristaAgent, MODELOS_DISPONIVEIS
+from src.agent import RoteiristaAgent, MODELOS_DISPONIVEIS, MODELOS_DESCRICAO
 from src.scraper import scrape_with_gemini, parse_codes
 from src.exporter import export_roteiro_docx, format_for_display, export_all_roteiros_zip
 from src.jsonld_generator import export_jsonld_string, wrap_in_script_tag
@@ -419,7 +419,7 @@ with st.sidebar:
 
     st.markdown(f"""
         <div style='font-size: 8px; color: #8b92a5; margin-bottom: 25px; margin-top: 5px; display: flex; align-items: center; gap: 8px;'>
-            <span style='font-weight: 400; letter-spacing: 0.5px;'>V2.6</span>
+            <span style='font-weight: 400; letter-spacing: 0.5px;'>V2.7</span>
             <span style='color: #2A3241;'>|</span>
             <div style='display: flex; align-items: center; gap: 4px;'>
                 <span style='color: {sc_llm}; font-weight: 400; font-size: 8px;'>{_llm_name}</span>
@@ -441,10 +441,19 @@ with st.sidebar:
     modelo_id_selecionado = MODELOS_DISPONIVEIS[modelo_label]
     st.session_state['modelo_llm'] = modelo_id_selecionado
     
+    # Info rápida sobre o modelo
+    _desc = MODELOS_DESCRICAO.get(modelo_id_selecionado, "")
+    if _desc:
+        st.markdown(f"""
+            <div style='background: rgba(0, 134, 255, 0.05); padding: 8px; border-radius: 6px; border-left: 3px solid #0086ff; margin-bottom: 20px;'>
+                <p style='font-size: 10px; color: #8b92a5; margin: 0; line-height: 1.4;'>{_desc}</p>
+            </div>
+        """, unsafe_allow_html=True)
+    
     # --- MENU DE NAVEGAÇÃO ---
     page = st.radio(
         "Módulo do Sistema:", 
-        ["Criar Roteiros", "Histórico", "Treinar IA", "Dashboard"],
+        ["Criar Roteiros", "Guia de Modelos", "Histórico", "Treinar IA", "Dashboard"],
         label_visibility="collapsed"
     )
     
@@ -1343,6 +1352,58 @@ elif page == "Treinar IA":
                         st.code(jsonld_product, language="json")
             else:
                 st.info("Nenhum roteiro ouro cadastrado ainda.")
+
+# --- PÁGINA: GUIA DE MODELOS ---
+elif page == "Guia de Modelos":
+    st.subheader("🧪 Laboratório de LLMs: Descubra o Poder de cada IA")
+    st.markdown("""
+        Bem-vindo ao guia oficial de inteligência da **Magalu AI Suite**. Aqui você encontra os detalhes técnicos 
+        e o perfil de 'personalidade' de cada modelo integrado para escolher o melhor para o seu lote.
+    """)
+    
+    st.divider()
+    
+    # Categorizando modelos por provedor
+    categorias = {
+        "Google (Nativo)": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"],
+        "OpenAI": ["openai/gpt-4o-mini"],
+        "Puter (Grok & Elite)": ["puter/x-ai/grok-4-1-fast", "puter/x-ai/grok-2", "puter/meta-llama/llama-3.1-70b-instruct", "puter/claude-3-5-sonnet"],
+        "OpenRouter (Especializados)": [
+            "openrouter/deepseek/deepseek-chat-v3-0324:free", 
+            "openrouter/deepseek/deepseek-r1:free",
+            "openrouter/google/gemma-2-9b-it:free",
+            "openrouter/mistralai/mistral-7b-instruct:free",
+            "openrouter/microsoft/phi-3-mini-128k-instruct:free",
+            "openrouter/qwen/qwen-2-7b-instruct:free"
+        ],
+        "Outros (Z.ai & Moonshot)": ["zai/glm-4-flash", "kimi/moonshot-v1-8k"]
+    }
+    
+    # Invertemos o MODELOS_DISPONIVEIS para facilitar a busca pelo nome amigável
+    NOME_AMIGAVEL = {v: k for k, v in MODELOS_DISPONIVEIS.items()}
+    
+    for cat_name, models in categorias.items():
+        st.markdown(f"#### {cat_name}")
+        cols = st.columns(2)
+        for i, mid in enumerate(models):
+            with cols[i % 2]:
+                display_name = NOME_AMIGAVEL.get(mid, mid)
+                # Extraindo o preço da label se houver
+                preco_tag = "Grátis" if "Grátis" in display_name else "Pago/Créditos"
+                
+                st.markdown(f"""
+                <div style='background: #1e2530; padding: 20px; border-radius: 12px; border: 1px solid #2d3848; height: 180px; margin-bottom: 20px; position: relative;'>
+                    <div style='display: flex; justify-content: space-between; align-items: flex-start;'>
+                        <span style='color: #0086ff; font-weight: 700; font-size: 14px;'>{display_name.split(' — ')[0]}</span>
+                        <span style='background: {"rgba(0, 255, 136, 0.1)" if preco_tag == "Grátis" else "rgba(255, 75, 75, 0.1)"}; 
+                                     color: {"#00ff88" if preco_tag == "Grátis" else "#ff4b4b"}; 
+                                     padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;'>{preco_tag}</span>
+                    </div>
+                    <p style='color: #8b92a5; font-size: 12px; margin-top: 15px; line-height: 1.5;'>{MODELOS_DESCRICAO.get(mid, "Sem descrição disponível.")}</p>
+                    <div style='position: absolute; bottom: 15px; left: 20px; font-size: 9px; color: #4a5568;'>ID: {mid}</div>
+                </div>
+                """, unsafe_allow_html=True)
+        st.write("")
 
 # --- PÁGINA 1.5: HISTÓRICO ---
 elif page == "Histórico":
