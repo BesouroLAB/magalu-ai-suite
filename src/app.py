@@ -744,7 +744,7 @@ elif page == "Treinar IA":
                 c_tom = st.text_area("Tom de Voz / Diretrizes", placeholder="Ex: Linguagem alegre, empolgada, focada em praticidade do dia a dia...")
                 if st.form_submit_button("➕ Cadastrar Nova Categoria", type="primary"):
                     if c_nome.strip() and c_tom.strip():
-                        sp_client.table("categorias").insert({"nome": c_nome, "tom_voz_diretrizes": c_tom}).execute()
+                        sp_client.table("categorias").insert({"nome": c_nome, "tom_de_voz": c_tom}).execute()
                         st.success(f"Categoria '{c_nome}' criada com sucesso!")
                         st.rerun()
                     else:
@@ -752,7 +752,10 @@ elif page == "Treinar IA":
             
             st.divider()
             if not df_cats.empty:
-                st.dataframe(df_cats[['id', 'nome', 'tom_voz_diretrizes', 'criado_em']], use_container_width=True)
+                cols_to_show = ['id', 'nome', 'tom_de_voz']
+                if 'criado_em' in df_cats.columns:
+                    cols_to_show.append('criado_em')
+                st.dataframe(df_cats[cols_to_show], use_container_width=True)
             else:
                 st.info("Nenhuma categoria encontrada.")
         
