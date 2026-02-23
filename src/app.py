@@ -1181,7 +1181,7 @@ elif page == "Treinar IA":
             st.error(f"Erro ao carregar dados do hub: {e}")
             df_est = df_fon = df_ouro = df_cats = df_nuan = pd.DataFrame()
 
-        tab_nuan, tab_fb, tab_est, tab_fon, tab_ouro, tab_cat = st.tabs(["🧠 Nuances", "⚖️ Calibração", "💬 Estruturas", "🗣️ Fonética", "🏆 Roteiros Ouro", "📂 Categorias"])
+        tab_nuan, tab_fb, tab_est, tab_fon, tab_ouro, tab_cat = st.tabs(["🧠 Nuances", "⚖️ Calibragem", "💬 Estruturas", "🗣️ Fonética", "🏆 Roteiros Ouro", "📂 Categorias"])
         
         with tab_nuan:
             st.markdown("### 🧠 Treinamento de Nuances e Construção")
@@ -1231,7 +1231,7 @@ elif page == "Treinar IA":
                 st.info("Nenhuma categoria encontrada.")
         
         with tab_fb:
-            st.markdown("### ⚖️ Calibração: IA vs Aprovado")
+            st.markdown("### ⚖️ Calibragem: IA vs Aprovado")
             st.caption("Compare o que a IA gerou com o que o Breno aprovou. O botão pedirá para a Calibragem calcular a porcentagem de aprovação.")
             
             # --- FORMULÁRIO DE ENTRADA ---
@@ -1277,7 +1277,7 @@ elif page == "Treinar IA":
                         st.warning("Preencha ambos os campos (IA e Humano).")
             
             st.divider()
-            st.markdown("#### 📋 Histórico de Calibrações Ouro")
+            st.markdown("#### 📋 Histórico de Calibragens Ouro")
             if not df_ouro.empty and 'nota_percentual' in df_ouro.columns:
                 cols_view = ['criado_em', 'titulo_produto']
                 if 'nota_percentual' in df_ouro.columns: cols_view.append('nota_percentual')
