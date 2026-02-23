@@ -801,6 +801,15 @@ if page == "Criar Roteiros":
                     df_recent = pd.DataFrame(res_recent.data)
                     df_recent['data_simples'] = pd.to_datetime(df_recent['criado_em']).dt.date
                     
+                    # Filtro de Busca Digitada
+                    search_q = st.text_input("🔍 Buscar no histórico:", placeholder="Nome ou SKU...", label_visibility="collapsed", key="hist_search")
+                    if search_q:
+                        # Filtra por Código ou pelo conteúdo do Roteiro (que contém o nome do produto no topo)
+                        df_recent = df_recent[
+                            df_recent['codigo_produto'].str.contains(search_q, case=False, na=False) |
+                            df_recent['roteiro_gerado'].str.contains(search_q, case=False, na=False)
+                        ]
+                    
                     datas_unicas = df_recent['data_simples'].unique()
                     
                     for dia in datas_unicas:
@@ -932,13 +941,20 @@ if page == "Criar Roteiros":
                         selected_date=st.session_state.get('data_roteiro_global')
                     )
                     st.download_button(
-                        label="📥 Baixar DOCX Deste Roteiro",
+                        label="📥 Baixar DOCX",
                         data=docx_edited_bytes,
                         file_name=docx_edited_fn,
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                         key=f"export_edit_{idx}",
                         use_container_width=True,
                         type="secondary"
+                    )
+                    
+                    st.copy_button(
+                        label="📋 Copiar Roteiro",
+                        text=edited_val,
+                        use_container_width=True,
+                        help="Copia o conteúdo final do roteiro para a área de transferência."
                     )
                     
                 with col_act2:
