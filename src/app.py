@@ -305,8 +305,8 @@ with st.sidebar:
     gemini_status = "Ativo" if api_key_env else "Inativo"
     supa_status = "Ativo" if supabase_client else "Inativo"
     
-    status_color_gem = "#0086ff" if api_key_env else "#4b5563"
-    status_color_supa = "#0086ff" if supabase_client else "#4b5563"
+    status_color_gem = "#10b981" if api_key_env else "#4b5563"
+    status_color_supa = "#10b981" if supabase_client else "#4b5563"
 
     # --- LOGO & BRANDING ---
     logo_path = os.path.join(os.path.dirname(__file__), "..", "assets", "logo.png")
