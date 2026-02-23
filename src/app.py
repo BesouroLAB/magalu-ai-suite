@@ -463,35 +463,44 @@ with st.sidebar:
     _desc = MODELOS_DESCRICAO.get(modelo_id_selecionado, "")
     if _desc:
         st.markdown(f"""
-            <div style='background: rgba(0, 134, 255, 0.05); padding: 8px; border-radius: 6px; border-left: 3px solid #0086ff; margin-bottom: 20px;'>
-                <p style='font-size: 10px; color: #8b92a5; margin: 0; line-height: 1.4;'>{_desc}</p>
+            <div style='background: rgba(0, 134, 255, 0.05); padding: 5px 8px; border-radius: 4px; border-left: 3px solid #0086ff; margin-bottom: 20px;'>
+                <p style='font-size: 9px; color: #8b92a5; margin: 0; line-height: 1.3;'>{_desc}</p>
             </div>
         """, unsafe_allow_html=True)
     
+    # CSS Sidebar Navigation (Alinhamento de botão à esquerda)
+    st.markdown("""
+    <style>
+        [data-testid="stSidebar"] div.stButton > button {
+            justify-content: flex-start !important;
+            padding-left: 15px !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
     # --- MENU DE NAVEGAÇÃO ---
     if 'page' not in st.session_state:
         st.session_state['page'] = "Criar Roteiros"
 
-    # Sincroniza o rádio com o session_state
-    main_pages = ["Criar Roteiros", "Histórico", "Treinar IA", "Dashboard"]
-    current_idx = main_pages.index(st.session_state['page']) if st.session_state['page'] in main_pages else 0
-
-    selected_page = st.radio(
-        "Módulo do Sistema:", 
-        main_pages,
-        index=current_idx,
-        label_visibility="collapsed"
-    )
+    nav_items = {
+        "Criar Roteiros": "✍️ Criar Roteiros",
+        "Histórico": "🕒 Histórico",
+        "Treinar IA": "🧠 Treinar IA",
+        "Dashboard": "📊 Dashboard"
+    }
     
-    # Se o usuário clicar no rádio, atualiza o state
-    if selected_page != st.session_state['page'] and selected_page in main_pages:
-        st.session_state['page'] = selected_page
-        st.rerun()
+    for page_key, page_label in nav_items.items():
+        is_active = st.session_state['page'] == page_key
+        # Primary se estiver ativo (azul forte), Secondary (fundo limpo com a regra CSS) caso contrário
+        if st.button(page_label, use_container_width=True, type="primary" if is_active else "secondary"):
+            st.session_state['page'] = page_key
+            st.rerun()
     
     # --- RODAPÉ: GUIA E CONFIGURAÇÕES ---
     st.markdown("<br><br>", unsafe_allow_html=True)
     
-    if st.button("📖 Guia de Modelos", use_container_width=True):
+    is_guia_active = st.session_state['page'] == "Guia de Modelos"
+    if st.button("📖 Guia de Modelos", use_container_width=True, type="primary" if is_guia_active else "secondary"):
         st.session_state['page'] = "Guia de Modelos"
         st.rerun()
 
@@ -1429,14 +1438,14 @@ elif page == "Guia de Modelos":
                 display_name = NOME_AMIGAVEL.get(mid, mid)
                 # Extraindo o preço da label se houver
                 preco_tag = "Grátis" if "Grátis" in display_name else "Pago/Créditos"
+                bg_color = "rgba(0, 255, 136, 0.1)" if preco_tag == "Grátis" else "rgba(255, 75, 75, 0.1)"
+                text_color = "#00ff88" if preco_tag == "Grátis" else "#ff4b4b"
                 
                 st.markdown(f"""
                 <div style='background: #1e2530; padding: 20px; border-radius: 12px; border: 1px solid #2d3848; height: 180px; margin-bottom: 20px; position: relative;'>
                     <div style='display: flex; justify-content: space-between; align-items: flex-start;'>
                         <span style='color: #0086ff; font-weight: 700; font-size: 14px;'>{display_name.split(' — ')[0]}</span>
-                        <span style='background: {"rgba(0, 255, 136, 0.1)" if preco_tag == "Grátis" else "rgba(255, 75, 75, 0.1)"}; 
-                                     color: {"#00ff88" if preco_tag == "Grátis" else "#ff4b4b"}; 
-                                     padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;'>{preco_tag}</span>
+                        <span style='background: {bg_color}; color: {text_color}; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;'>{preco_tag}</span>
                     </div>
                     <p style='color: #8b92a5; font-size: 12px; margin-top: 15px; line-height: 1.5;'>{MODELOS_DESCRICAO.get(mid, "Sem descrição disponível.")}</p>
                     <div style='position: absolute; bottom: 15px; left: 20px; font-size: 9px; color: #4a5568;'>ID: {mid}</div>
