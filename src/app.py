@@ -99,6 +99,12 @@ DARK_MODE_CSS = """
         border-right: 1px solid #0a1b33;
     }
     
+    /* Transparência progressiva na logo (fade suave na borda inferior) */
+    [data-testid="stSidebar"] [data-testid="stImage"] img {
+        -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+        mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+    }
+    
     .block-container { padding-top: 2rem; }
 </style>
 """
