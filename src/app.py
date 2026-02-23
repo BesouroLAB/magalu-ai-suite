@@ -388,19 +388,8 @@ if page == "Criar Roteiros":
     expander_input = st.expander("📝 Command Center (Entradas de Dados)", expanded=True if 'roteiros' not in st.session_state else False)
     
     with expander_input:
-        # Categoria (Busca dinâmica do banco)
-        categorias = {"Móveis e Colchões": 1} # Fallback
-        try:
-            sp_client = st.session_state.get('supabase_client')
-            if sp_client:
-                res_cats = sp_client.table("categorias").select("*").execute()
-                if hasattr(res_cats, 'data') and res_cats.data:
-                    categorias = {c['nome']: c['id'] for c in res_cats.data}
-        except Exception:
-            pass
-            
-        cat_nome_selecionada = st.selectbox("Departamento / Categoria", list(categorias.keys()))
-        cat_selecionada_id = categorias[cat_nome_selecionada]
+        # Categoria padrão
+        cat_selecionada_id = 1
 
         # Modo de entrada: Código do Produto ou Ficha Manual
         modo_entrada = st.toggle("Modo Manual (colar ficha técnica)", value=False)
@@ -485,7 +474,7 @@ if page == "Criar Roteiros":
                             )
                             
                             # 2. Gera o roteiro com os dados extraídos
-                            roteiro = agent.gerar_roteiro(ficha_extraida, modo_trabalho=modo_selecionado, categoria_id=cat_selecionada_id)
+                            roteiro = agent.gerar_roteiro(ficha_extraida, modo_trabalho=modo_selecionado)
                             roteiros.append({
                                 "ficha": ficha_extraida,
                                 "roteiro_original": roteiro,
