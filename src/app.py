@@ -24,7 +24,7 @@ def get_total_script_count(sp_client):
         return 0
     try:
         # Busca o total de registros no banco
-        res = sp_client.table("historico_roteiros").select("id", count="exact").limit(1).execute()
+        res = sp_client.table("nw_historico_roteiros").select("id", count="exact").limit(1).execute()
         return res.count if hasattr(res, 'count') and res.count is not None else 0
     except Exception:
         return 0
@@ -270,26 +270,23 @@ def convert_to_sp_time(utc_datetime_str):
     except Exception:
         return utc_datetime_str
 
-def salvar_feedback(sp_client, cat_id, ficha, roteiro_ia, roteiro_final, avaliacao):
+def salvar_calibracao_ouro(sp_client, cat_id, roteiro_ia, roteiro_final, percentual, aprendizado, codigo_produto="", titulo_produto=""):
     if not sp_client:
         st.error("Supabase não conectado.")
         return False
     try:
         data = {
             "categoria_id": cat_id,
-            "ficha_tecnica": ficha,
+            "codigo_produto": codigo_produto,
+            "titulo_produto": titulo_produto if titulo_produto else f"Edição {codigo_produto}",
             "roteiro_original_ia": roteiro_ia,
-            "roteiro_final_humano": roteiro_final,
-            "avaliacao": avaliacao,
-            "comentarios": ""
+            "roteiro_perfeito": roteiro_final,
+            "nota_percentual": percentual,
+            "aprendizado": aprendizado
         }
-        res = sp_client.table("feedback_roteiros").insert(data).execute()
+        res = sp_client.table("nw_roteiros_ouro").insert(data).execute()
         if hasattr(res, 'data') and len(res.data) > 0:
-            if avaliacao == 2: msg = "✅ Salvo como Ajuste Fino (Esforço Mínimo)"
-            elif avaliacao == 1: msg = "✅ Salvo como Edição Moderada (Esforço Médio)"
-            elif avaliacao == -1: msg = "✅ Salvo como Reescrita Pesada (Esforço Alto)"
-            else: msg = "✅ Edição Salva!"
-            
+            msg = f"🏆 Calibração salva como Roteiro Ouro! (Aproveitamento: {percentual}% | Cat ID: {cat_id})"
             st.success(msg)
             return True
         else:
@@ -309,7 +306,7 @@ def salvar_ouro(sp_client, cat_id, titulo, roteiro_perfeito):
             "titulo_produto": titulo,
             "roteiro_perfeito": roteiro_perfeito
         }
-        res = sp_client.table("roteiros_ouro").insert(data).execute()
+        res = sp_client.table("nw_roteiros_ouro").insert(data).execute()
         if hasattr(res, 'data') and len(res.data) > 0:
             st.success("🏆 Salvo como Roteiro Ouro (Referência Premium)!")
             return True
@@ -332,7 +329,7 @@ def salvar_persona(sp_client, pilar, texto_ia, texto_humano, lexico, erro):
             "lexico_sugerido": lexico,
             "erro_cometido": erro
         }
-        res = sp_client.table("treinamento_persona_lu").insert(data).execute()
+        res = sp_client.table("nw_treinamento_persona_lu").insert(data).execute()
         if hasattr(res, 'data') and len(res.data) > 0:
             st.success("💃 Feedback de Persona enviado para a base!")
             return True
@@ -353,7 +350,7 @@ def salvar_fonetica(sp_client, termo_err, termo_cor, exemplo_rot):
             "termo_corrigido": termo_cor,
             "exemplo_no_roteiro": exemplo_rot
         }
-        res = sp_client.table("treinamento_fonetica").insert(data).execute()
+        res = sp_client.table("nw_treinamento_fonetica").insert(data).execute()
         if hasattr(res, 'data') and len(res.data) > 0:
             st.success("🗣️ Nova regra de Fonética cadastrada!")
             return True
@@ -373,7 +370,7 @@ def salvar_estrutura(sp_client, tipo, texto):
             "tipo_estrutura": tipo,
             "texto_ouro": texto
         }
-        res = sp_client.table("treinamento_estruturas").insert(data).execute()
+        res = sp_client.table("nw_treinamento_estruturas").insert(data).execute()
         if hasattr(res, 'data') and len(res.data) > 0:
             st.success(f"💬 {tipo} cadastrada com sucesso!")
             return True
@@ -394,7 +391,7 @@ def salvar_nuance(sp_client, frase, analise, exemplo):
             "analise_critica": analise,
             "exemplo_ouro": exemplo
         }
-        res = sp_client.table("treinamento_nuances").insert(data).execute()
+        res = sp_client.table("nw_treinamento_nuances").insert(data).execute()
         if hasattr(res, 'data') and len(res.data) > 0:
             st.success("🧠 Nuance de linguagem registrada para o treinamento!")
             return True
@@ -770,7 +767,7 @@ if page == "Criar Roteiros":
                                     sp_hist = st.session_state.get('supabase_client')
                                     if sp_hist:
                                         ficha_text = ficha_extraida.get('text', '') if isinstance(ficha_extraida, dict) else str(ficha_extraida)
-                                        sp_hist.table("historico_roteiros").insert({
+                                        sp_hist.table("nw_historico_roteiros").insert({
                                             "codigo_produto": code,
                                             "modo_trabalho": modo_selecionado,
                                             "roteiro_gerado": roteiro_texto,
@@ -912,7 +909,7 @@ if page == "Criar Roteiros":
                                     try:
                                         sp_hist = st.session_state.get('supabase_client')
                                         if sp_hist:
-                                            sp_hist.table("historico_roteiros").insert({
+                                            sp_hist.table("nw_historico_roteiros").insert({
                                                 "codigo_produto": code,
                                                 "modo_trabalho": "Manual NW",
                                                 "roteiro_gerado": roteiro_texto,
@@ -965,7 +962,7 @@ if page == "Criar Roteiros":
             sp_h = st.session_state['supabase_client']
             try:
                 # Busca roteiros recentes agrupados por dia
-                res_recent = sp_h.table("historico_roteiros").select("criado_em, codigo_produto, modo_trabalho, roteiro_gerado, ficha_extraida, modelo_llm, custo_estimado_brl").order('criado_em', desc=True).limit(50).execute()
+                res_recent = sp_h.table("nw_historico_roteiros").select("criado_em, codigo_produto, modo_trabalho, roteiro_gerado, ficha_extraida, modelo_llm, custo_estimado_brl").order('criado_em', desc=True).limit(50).execute()
                 
                 if res_recent.data:
                     df_recent = pd.DataFrame(res_recent.data)
@@ -1023,128 +1020,131 @@ if page == "Criar Roteiros":
 
     # --- CANVA DO ROTEIRO ATIVO (AGORA OCUPANDO TODA A LARGURA) ---
     if 'roteiros' in st.session_state and st.session_state['roteiros']:
-            # Botão para baixar todos os roteiros em um ZIP (Full Width)
-            zip_bytes, zip_filename = export_all_roteiros_zip(
-                st.session_state['roteiros'], 
-                selected_month=st.session_state.get('mes_global', 'FEV'),
-                selected_date=st.session_state.get('data_roteiro_global')
-            )
-            st.download_button(
-                label="📦 BAIXAR TODOS SESSÃO ATUAL (ZIP)",
-                data=zip_bytes,
-                file_name=zip_filename,
-                mime="application/zip",
-                use_container_width=True,
-                type="primary",
-                help="Baixa todos os roteiros recém gerados da sessão em um arquivo zipado."
-            )
-            
-            st.divider()
-
-            # Pega o índice ativo setado pelos botões na coluna esquerda
-            idx = st.session_state.get('roteiro_ativo_idx', 0)
-            
-            if idx < len(st.session_state['roteiros']):
-                item = st.session_state['roteiros'][idx]
-                ficha_raw = item.get('ficha', '')
-                ficha_str = ficha_raw.get('text', str(ficha_raw)) if isinstance(ficha_raw, dict) else str(ficha_raw)
-                linhas_ficha = ficha_str.split('\n')
-                titulo_curto = linhas_ficha[0][:60] if linhas_ficha and len(linhas_ficha[0]) > 2 else f"Produto {idx+1}"
-                cat_id_roteiro = item.get("categoria_id", cat_selecionada_id)
-                codigo_produto = item.get("codigo", "")
-                
-                custo = item.get('custo_brl', 0)
-                tag_custo = "⚡ Gratuito" if custo == 0 else f"💲 R$ {custo:.4f}"
-                tokens_text = "Sem Custo de Tokens" if custo == 0 else f"{item.get('tokens_in', 0)} / {item.get('tokens_out', 0)} tk"
-                
-                # Container estilizado para o roteiro ativo (Header Card)
-                st.markdown(f"""
-                <div style='background: #1e2530; padding: 20px; border-radius: 12px; border: 1px solid #0086ff; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: start;'>
-                    <div>
-                        <h4 style='margin: 0; color: #0086ff; font-weight: 700;'>✨ Edição: {codigo_produto}</h4>
-                        <p style='margin: 5px 0 0 0; font-size: 13px; color: #8b92a5;'>{titulo_curto}</p>
-                    </div>
-                    <div style='text-align: right;'>
-                        <span style='background: rgba(0, 134, 255, 0.1); color: #0086ff; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;'>{item.get('model_id', 'LLM')} | {tag_custo}</span>
-                        <div style='margin-top: 5px; font-size: 10px; color: #4a5568;'>{tokens_text}</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+        # Botão para baixar todos os roteiros em um ZIP (Full Width)
+        zip_bytes, zip_filename = export_all_roteiros_zip(
+            st.session_state['roteiros'], 
+            selected_month=st.session_state.get('mes_global', 'FEV'),
+            selected_date=st.session_state.get('data_roteiro_global')
+        )
+        st.download_button(
+            label="📦 BAIXAR TODOS SESSÃO ATUAL (ZIP)",
+            data=zip_bytes,
+            file_name=zip_filename,
+            mime="application/zip",
+            use_container_width=True,
+            type="primary",
+            help="Baixa todos os roteiros recém gerados da sessão em um arquivo zipado."
+        )
         
-                # O Canva do Roteiro Ativo
-                with st.container(border=True):
-                    
-                    # Apenas uma saída editável em tela cheia (sem redundâncias)
-                    st.caption("✏️ **Editor Final do Roteiro (Markdown)** - Esta é a versão final que será salva e exportada.")
-                    edited_val = st.text_area(
-                        "Editor",
-                        value=st.session_state.get(f"editor_{idx}", item['roteiro_original']),
-                        height=450,
-                        key=f"editor_{idx}",
-                        label_visibility="collapsed"
-                    )
-                sp_cli = st.session_state.get('supabase_client', None)
-                    
-                # Barra de Controle do Roteiro Específico
-                st.markdown("<br>", unsafe_allow_html=True)
-                
-                col_act1, col_act2 = st.columns([1, 2])
-                
-                with col_act1:
-                    docx_edited_bytes, docx_edited_fn = export_roteiro_docx(
-                        edited_val,
-                        code=codigo_produto,
-                        product_name=titulo_curto,
-                        selected_month=item.get('mes', st.session_state.get('mes_global', 'FEV')),
-                        selected_date=st.session_state.get('data_roteiro_global')
-                    )
-                    st.download_button(
-                        label="📥 Baixar DOCX",
-                        data=docx_edited_bytes,
-                        file_name=docx_edited_fn,
-                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        key=f"export_edit_{idx}",
-                        use_container_width=True,
-                        type="secondary"
-                    )
-                    st.caption("💡 Você pode copiar o roteiro diretamente do campo de texto acima.")
-                    
-                with col_act2:
-                    # Ações Rápidas (Nova Dinâmica de Feedback de Edição)
-                    c1, c2, c3, c4 = st.columns(4)
-                    
-                    with c1:
-                        if st.button("🎯 Ajuste Fino", key=f"fino_{idx}", use_container_width=True):
-                            salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, 2)
-                            
-                    with c2:
-                        if st.button("🛠️ Edição Moderada", key=f"moderad_{idx}", use_container_width=True):
-                            salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, 1)
-    
-                    with c3:
-                        if st.button("🔄 Reescrita Pesada", key=f"pesada_{idx}", use_container_width=True):
-                            salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, -1)
-                    
-                    with c4:
-                        if st.button("🏆 Enviar Ouro", key=f"ouro_{idx}", use_container_width=True, type="primary"):
-                            salvar_ouro(sp_cli, cat_id_roteiro, titulo_curto, edited_val)
-    
-            if st.button("🗑️ Limpar Mesa de Trabalho", use_container_width=True, type="secondary"):
-                if 'roteiros' in st.session_state:
-                    del st.session_state['roteiros']
-                if 'roteiro_ativo_idx' in st.session_state:
-                    del st.session_state['roteiro_ativo_idx']
-                st.rerun()
-        else:
-            st.markdown(
-                """
-                <div style='display: flex; height: 300px; align-items: center; justify-content: center; border: 2px dashed #2A3241; border-radius: 8px; color: #8b92a5; text-align: center; padding: 20px'>
-                Cole os códigos no Inseridor (Command Center) acima e clique em Gerar.<br><br>
-                Os roteiros aparecerão aqui prontos para calibração, treino da IA ou envio para Ouro!
+        st.divider()
+
+        # Pega o índice ativo setado pelos botões na coluna esquerda
+        idx = st.session_state.get('roteiro_ativo_idx', 0)
+        
+        if idx < len(st.session_state['roteiros']):
+            item = st.session_state['roteiros'][idx]
+            ficha_raw = item.get('ficha', '')
+            ficha_str = ficha_raw.get('text', str(ficha_raw)) if isinstance(ficha_raw, dict) else str(ficha_raw)
+            linhas_ficha = ficha_str.split('\n')
+            titulo_curto = linhas_ficha[0][:60] if linhas_ficha and len(linhas_ficha[0]) > 2 else f"Produto {idx+1}"
+            cat_id_roteiro = item.get("categoria_id", cat_selecionada_id)
+            codigo_produto = item.get("codigo", "")
+            
+            custo = item.get('custo_brl', 0)
+            tag_custo = "⚡ Gratuito" if custo == 0 else f"💲 R$ {custo:.4f}"
+            tokens_text = "Sem Custo de Tokens" if custo == 0 else f"{item.get('tokens_in', 0)} / {item.get('tokens_out', 0)} tk"
+            
+            # Container estilizado para o roteiro ativo (Header Card)
+            st.markdown(f"""
+            <div style='background: #1e2530; padding: 20px; border-radius: 12px; border: 1px solid #0086ff; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: start;'>
+                <div>
+                    <h4 style='margin: 0; color: #0086ff; font-weight: 700;'>✨ Edição: {codigo_produto}</h4>
+                    <p style='margin: 5px 0 0 0; font-size: 13px; color: #8b92a5;'>{titulo_curto}</p>
                 </div>
-                """, 
-                unsafe_allow_html=True
-            )
+                <div style='text-align: right;'>
+                    <span style='background: rgba(0, 134, 255, 0.1); color: #0086ff; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;'>{item.get('model_id', 'LLM')} | {tag_custo}</span>
+                    <div style='margin-top: 5px; font-size: 10px; color: #4a5568;'>{tokens_text}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+            # O Canva do Roteiro Ativo
+            with st.container(border=True):
+                
+                # Apenas uma saída editável em tela cheia (sem redundâncias)
+                st.caption("✏️ **Editor Final do Roteiro (Markdown)** - Esta é a versão final que será salva e exportada.")
+                edited_val = st.text_area(
+                    "Editor",
+                    value=st.session_state.get(f"editor_{idx}", item['roteiro_original']),
+                    height=450,
+                    key=f"editor_{idx}",
+                    label_visibility="collapsed"
+                )
+            sp_cli = st.session_state.get('supabase_client', None)
+                
+            # Barra de Controle do Roteiro Específico
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            col_act1, col_act2 = st.columns([1, 2])
+            
+            with col_act1:
+                docx_edited_bytes, docx_edited_fn = export_roteiro_docx(
+                    edited_val,
+                    code=codigo_produto,
+                    product_name=titulo_curto,
+                    selected_month=item.get('mes', st.session_state.get('mes_global', 'FEV')),
+                    selected_date=st.session_state.get('data_roteiro_global')
+                )
+                st.download_button(
+                    label="📥 Baixar DOCX",
+                    data=docx_edited_bytes,
+                    file_name=docx_edited_fn,
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    key=f"export_edit_{idx}",
+                    use_container_width=True,
+                    type="secondary"
+                )
+                st.caption("💡 Você pode copiar o roteiro diretamente do campo de texto acima.")
+                
+            with col_act2:
+                # Ações Rápidas (Nova Dinâmica de Feedback de Edição)
+                c_fb, c_ouro = st.columns(2)
+                
+                with c_fb:
+                    if st.button("🚀 Enviar Calibração para a IA", key=f"fino_{idx}", use_container_width=True, type="primary"):
+                        if sp_cli:
+                            with st.spinner("A IA está analisando suas correções e classificando a categoria... 🤔"):
+                                try:
+                                    res_c = sp_cli.table("nw_categorias").select("id, nome").execute()
+                                    lista_c = res_c.data if hasattr(res_c, 'data') else []
+                                except:
+                                    lista_c = []
+                                    
+                                calc = _temp_agent.analisar_calibracao(item['roteiro_original'], edited_val, lista_c, codigo_produto)
+                                salvar_calibracao_ouro(sp_cli, calc['categoria_id'], item['roteiro_original'], edited_val, calc['percentual'], calc['aprendizado'], calc['codigo_produto'], titulo_curto)
+                        else:
+                            st.error("Conecte o Supabase primeiro.")
+                
+                with c_ouro:
+                    if st.button("🏆 Enviar Ouro", key=f"ouro_{idx}", use_container_width=True, type="secondary"):
+                        salvar_ouro(sp_cli, cat_id_roteiro, titulo_curto, edited_val)
+
+        if st.button("🗑️ Limpar Mesa de Trabalho", use_container_width=True, type="secondary"):
+            if 'roteiros' in st.session_state:
+                del st.session_state['roteiros']
+            if 'roteiro_ativo_idx' in st.session_state:
+                del st.session_state['roteiro_ativo_idx']
+            st.rerun()
+    else:
+        st.markdown(
+            """
+            <div style='display: flex; height: 300px; align-items: center; justify-content: center; border: 2px dashed #2A3241; border-radius: 8px; color: #8b92a5; text-align: center; padding: 20px'>
+            Cole os códigos no Inseridor (Command Center) acima e clique em Gerar.<br><br>
+            Os roteiros aparecerão aqui prontos para calibração, treino da IA ou envio para Ouro!
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
 
 
 
@@ -1160,14 +1160,12 @@ elif page == "Treinar IA":
         
         # --- CARREGAMENTO GLOBAL DE DADOS PARA O HUB ---
         try:
-            res_fb = sp_client.table("feedback_roteiros").select("*").execute()
-            res_est = sp_client.table("treinamento_estruturas").select("*").execute()
-            res_fon = sp_client.table("treinamento_fonetica").select("*").execute()
-            res_ouro = sp_client.table("roteiros_ouro").select("*").execute()
-            res_cats = sp_client.table("categorias").select("*").execute()
-            res_nuan = sp_client.table("treinamento_nuances").select("*").execute()
+            res_est = sp_client.table("nw_treinamento_estruturas").select("*").execute()
+            res_fon = sp_client.table("nw_treinamento_fonetica").select("*").execute()
+            res_ouro = sp_client.table("nw_roteiros_ouro").select("*").execute()
+            res_cats = sp_client.table("nw_categorias").select("*").execute()
+            res_nuan = sp_client.table("nw_treinamento_nuances").select("*").execute()
             
-            df_fb = pd.DataFrame(res_fb.data if hasattr(res_fb, 'data') else [])
             df_est = pd.DataFrame(res_est.data if hasattr(res_est, 'data') else [])
             df_fon = pd.DataFrame(res_fon.data if hasattr(res_fon, 'data') else [])
             df_ouro = pd.DataFrame(res_ouro.data if hasattr(res_ouro, 'data') else [])
@@ -1175,13 +1173,13 @@ elif page == "Treinar IA":
             df_nuan = pd.DataFrame(res_nuan.data if hasattr(res_nuan, 'data') else [])
             
             # --- CONVERSÃO DE FUSO HORÁRIO GLOBAL (UTC -> SÃO PAULO) ---
-            for df in [df_fb, df_est, df_fon, df_ouro, df_cats, df_nuan]:
+            for df in [df_est, df_fon, df_ouro, df_cats, df_nuan]:
                 if not df.empty and 'criado_em' in df.columns:
                     df['criado_em'] = df['criado_em'].apply(convert_to_sp_time)
                     
         except Exception as e:
             st.error(f"Erro ao carregar dados do hub: {e}")
-            df_fb = df_est = df_fon = df_ouro = df_cats = df_nuan = pd.DataFrame()
+            df_est = df_fon = df_ouro = df_cats = df_nuan = pd.DataFrame()
 
         tab_nuan, tab_fb, tab_est, tab_fon, tab_ouro, tab_cat = st.tabs(["🧠 Nuances", "⚖️ Calibração", "💬 Estruturas", "🗣️ Fonética", "🏆 Roteiros Ouro", "📂 Categorias"])
         
@@ -1217,7 +1215,7 @@ elif page == "Treinar IA":
                 c_tom = st.text_area("Tom de Voz / Diretrizes", placeholder="Ex: Linguagem alegre, empolgada, focada em praticidade do dia a dia...")
                 if st.form_submit_button("➕ Cadastrar Nova Categoria", type="primary"):
                     if c_nome.strip() and c_tom.strip():
-                        sp_client.table("categorias").insert({"nome": c_nome, "tom_de_voz": c_tom}).execute()
+                        sp_client.table("nw_categorias").insert({"nome": c_nome, "tom_de_voz": c_tom}).execute()
                         st.success(f"Categoria '{c_nome}' criada com sucesso!")
                         st.rerun()
                     else:
@@ -1234,7 +1232,7 @@ elif page == "Treinar IA":
         
         with tab_fb:
             st.markdown("### ⚖️ Calibração: IA vs Aprovado")
-            st.caption("Compare o que a IA gerou com o que o Breno aprovou. Cada registro alimenta o aprendizado contínuo.")
+            st.caption("Compare o que a IA gerou com o que o Breno aprovou. O botão pedirá para a IA Juíza calcular a porcentagem de aprovação.")
             
             # --- FORMULÁRIO DE ENTRADA ---
             with st.form("form_calibracao", clear_on_submit=True):
@@ -1243,70 +1241,53 @@ elif page == "Treinar IA":
                     st.markdown("**🤖 ANTES (Roteiro da IA)**")
                     roteiro_ia_input = st.text_area("Cole aqui o roteiro original gerado pela IA:", height=200, key="calib_ia")
                 with col_breno:
-                    st.markdown("**✅ DEPOIS (Aprovado pelo Breno)**")
-                    roteiro_breno_input = st.text_area("Cole aqui a versão final aprovada pelo Breno:", height=200, key="calib_breno")
+                    st.markdown("**✅ DEPOIS (Aprovado pelo Humano)**")
+                    roteiro_breno_input = st.text_area("Cole aqui a versão final aprovada:", height=200, key="calib_breno")
                 
-                # Seletor de Categoria (necessário para o cérebro da IA)
-                cat_calib = st.selectbox("Categoria do Produto:", df_cats['nome'].tolist() if not df_cats.empty else ["Genérico"])
+                # A IA identificará a categoria automaticamente via analisar_calibracao
                 
-                avaliacao_input = st.select_slider("Avaliação geral do roteiro original da IA:", options=["Ruim", "Regular", "Bom", "Ótimo"], value="Bom")
-                
-                submitted = st.form_submit_button("⚖️ Registrar Comparação", type="primary", use_container_width=True)
+                submitted = st.form_submit_button("⚖️ Executar Juiz IA e Salvar em Ouro", type="primary", use_container_width=True)
                 if submitted:
                     if roteiro_ia_input.strip() and roteiro_breno_input.strip():
                         try:
-                            # 1. Gera a memória com a IA
-                            memoria = ""
-                            try:
-                                api_key_env = os.environ.get("GEMINI_API_KEY")
-                                if api_key_env:
-                                    ag = RoteiristaAgent(supabase_client=sp_client)
-                                    with st.spinner("🧠 IA auto-avaliando o erro..."):
-                                        memoria = ag.gerar_memoria_calibracao(roteiro_ia_input, roteiro_breno_input)
-                            except Exception as e:
-                                memoria = "Erro interno ao avaliar."
-
-                            # 2. Mapeia a avaliação string para int para o Supabase
-                            avaliacao_map = {
-                                "Ruim": -1,
-                                "Regular": 0,
-                                "Bom": 1,
-                                "Ótimo": 2
-                            }
-                            avaliacao_int = avaliacao_map.get(avaliacao_input, 0)
-                            
-                            # 3. Salva no banco
-                            selected_cat_id = 1
-                            if not df_cats.empty and cat_calib in df_cats['nome'].tolist():
-                                selected_cat_id = df_cats[df_cats['nome'] == cat_calib]['id'].values[0]
-
-                            data = {
-                                "categoria_id": int(selected_cat_id),
-                                "ficha_tecnica": "(Calibração Manual)", # Placeholder para evitar erro NOT NULL
-                                "roteiro_original_ia": roteiro_ia_input,
-                                "roteiro_final_humano": roteiro_breno_input,
-                                "avaliacao": avaliacao_int,
-                                "comentarios": memoria
-                            }
-                            sp_client.table("feedback_roteiros").insert(data).execute()
-                            st.success(f"✅ Comparação registrada! Memória gerada: '{memoria}'")
-                            
-                            # Rerun para atualizar a tabela
-                            st.rerun()
+                            api_key_env = os.environ.get("GEMINI_API_KEY")
+                            if api_key_env:
+                                ag = RoteiristaAgent(supabase_client=sp_client)
+                                with st.spinner("🧠 IA Juíza avaliando a calibração e identificando categoria..."):
+                                    cats_list_manual = df_cats[['id', 'nome']].to_dict('records') if not df_cats.empty else []
+                                    calc = ag.analisar_calibracao(roteiro_ia_input, roteiro_breno_input, cats_list_manual)
+                                    
+                                data = {
+                                    "categoria_id": calc['categoria_id'],
+                                    "roteiro_original_ia": roteiro_ia_input,
+                                    "roteiro_perfeito": roteiro_breno_input,
+                                    "nota_percentual": calc['percentual'],
+                                    "aprendizado": calc['aprendizado'],
+                                    "codigo_produto": calc['codigo_produto'],
+                                    "titulo_produto": f"Edição {calc['codigo_produto']}"
+                                }
+                                sp_client.table("nw_roteiros_ouro").insert(data).execute()
+                                st.success(f"🏆 Salvo como Roteiro Ouro! Categoria: {calc['categoria_id']} | Código: {calc['codigo_produto']} | Aproveitamento: {calc['percentual']}%")
+                                st.rerun()
+                            else:
+                                st.error("Erro: GEMINI_API_KEY ausente.")
                         except Exception as e:
-                            st.error(f"Erro ao salvar: {e}")
+                            st.error(f"Erro ao salvar calibração: {e}")
                     else:
-                        st.warning("Preencha ambos os campos (IA e Breno).")
+                        st.warning("Preencha ambos os campos (IA e Humano).")
             
             st.divider()
-            st.markdown("#### 📋 Histórico de Calibrações")
-            if not df_fb.empty:
-                # Mostra a coluna comentarios como "Memória da IA"
-                df_view = df_fb[['criado_em', 'avaliacao', 'comentarios']].copy()
-                df_view.rename(columns={'comentarios': 'Memória da IA (Lição Aprendida)'}, inplace=True)
+            st.markdown("#### 📋 Histórico de Calibrações Ouro")
+            if not df_ouro.empty and 'nota_percentual' in df_ouro.columns:
+                cols_view = ['criado_em', 'titulo_produto']
+                if 'nota_percentual' in df_ouro.columns: cols_view.append('nota_percentual')
+                if 'aprendizado' in df_ouro.columns: cols_view.append('aprendizado')
+                
+                df_view = df_ouro[cols_view].dropna(subset=['aprendizado']).copy()
+                df_view.rename(columns={'aprendizado': 'Memória da IA (Lição Aprendida)', 'nota_percentual': 'Score %'}, inplace=True)
                 st.dataframe(df_view, use_container_width=True)
             else:
-                st.info("Nenhum feedback registrado ainda.")
+                st.info("Nenhuma calibração ouro registrada ainda.")
                 
         with tab_est:
             st.markdown("### 💬 Aberturas e Fechamentos (""Hooks & CTAs"")")
@@ -1371,7 +1352,7 @@ elif page == "Treinar IA":
                         }
                         if t_sku.strip():
                             data_ouro["codigo_produto"] = t_sku.strip()
-                        sp_client.table("roteiros_ouro").insert(data_ouro).execute()
+                        sp_client.table("nw_roteiros_ouro").insert(data_ouro).execute()
                         st.success(f"Roteiro Ouro '{t_prod}' cadastrado!")
                         st.rerun()
                     else:
@@ -1393,7 +1374,7 @@ elif page == "Treinar IA":
                 # Busca nomes das categorias para o mapeamento
                 cats_dict_ouro = {}
                 try:
-                    res_cats_ouro = sp_client.table("categorias").select("id, nome").execute()
+                    res_cats_ouro = sp_client.table("nw_categorias").select("id, nome").execute()
                     if hasattr(res_cats_ouro, 'data') and res_cats_ouro.data:
                         cats_dict_ouro = {c['id']: c['nome'] for c in res_cats_ouro.data}
                 except Exception:
@@ -1564,7 +1545,7 @@ elif page == "Histórico":
         sp_client = st.session_state['supabase_client']
         try:
             with st.spinner("Carregando histórico..."):
-                res_hist = sp_client.table("historico_roteiros").select("*").order('criado_em', desc=True).execute()
+                res_hist = sp_client.table("nw_historico_roteiros").select("*").order('criado_em', desc=True).execute()
                 
             if res_hist.data:
                 df_hist = pd.DataFrame(res_hist.data)
@@ -1679,16 +1660,14 @@ elif page == "Dashboard":
         
         # Carrega dados do banco
         try:
-            res_fb = sp_client.table("feedback_roteiros").select("*").execute()
-            res_ouro = sp_client.table("roteiros_ouro").select("*").execute()
-            res_pers = sp_client.table("treinamento_persona_lu").select("*").execute()
-            res_fon = sp_client.table("treinamento_fonetica").select("*").execute()
-            res_cats = sp_client.table("categorias").select("*").execute()
-            res_est = sp_client.table("treinamento_estruturas").select("*").execute()
-            res_hist = sp_client.table("historico_roteiros").select("criado_em, codigo_produto, modo_trabalho, modelo_llm, custo_estimado_brl").execute()
-            res_nuan = sp_client.table("treinamento_nuances").select("*").execute()
+            res_ouro = sp_client.table("nw_roteiros_ouro").select("*").execute()
+            res_pers = sp_client.table("nw_treinamento_persona_lu").select("*").execute()
+            res_fon = sp_client.table("nw_treinamento_fonetica").select("*").execute()
+            res_cats = sp_client.table("nw_categorias").select("*").execute()
+            res_est = sp_client.table("nw_treinamento_estruturas").select("*").execute()
+            res_hist = sp_client.table("nw_historico_roteiros").select("criado_em, codigo_produto, modo_trabalho, modelo_llm, custo_estimado_brl").execute()
+            res_nuan = sp_client.table("nw_treinamento_nuances").select("*").execute()
             
-            fb_data = res_fb.data if hasattr(res_fb, 'data') else []
             ouro_data = res_ouro.data if hasattr(res_ouro, 'data') else []
             pers_data = res_pers.data if hasattr(res_pers, 'data') else []
             fon_data = res_fon.data if hasattr(res_fon, 'data') else []
@@ -1697,7 +1676,6 @@ elif page == "Dashboard":
             nuan_data = res_nuan.data if hasattr(res_nuan, 'data') else []
             cats_dict = {c['id']: c['nome'] for c in res_cats.data} if hasattr(res_cats, 'data') else {}
             
-            df_fb = pd.DataFrame(fb_data)
             df_ouro = pd.DataFrame(ouro_data)
             df_pers = pd.DataFrame(pers_data)
             df_fon = pd.DataFrame(fon_data)
@@ -1706,11 +1684,10 @@ elif page == "Dashboard":
             df_nuan = pd.DataFrame(nuan_data)
             
             # --- CONVERSÃO DE FUSO HORÁRIO GLOBAL (UTC -> SÃO PAULO) ---
-            for df in [df_fb, df_ouro, df_pers, df_fon, df_est, df_nuan]:
+            for df in [df_ouro, df_pers, df_fon, df_est, df_nuan]:
                 if not df.empty and 'criado_em' in df.columns:
                     df['criado_em'] = df['criado_em'].apply(convert_to_sp_time)
             
-            if not df_fb.empty: df_fb['categoria'] = df_fb['categoria_id'].map(cats_dict)
             if not df_ouro.empty: df_ouro['categoria'] = df_ouro['categoria_id'].map(cats_dict)
             
             total_ouro = len(df_ouro)
@@ -1735,7 +1712,6 @@ elif page == "Dashboard":
                 # Ajuste para cobrir o dia inteiro da data final
                 end_date = end_date.replace(hour=23, minute=59, second=59)
                 
-                df_fb = df_fb[(pd.to_datetime(df_fb['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_fb['criado_em']).dt.tz_localize(None) <= end_date)] if not df_fb.empty else df_fb
                 df_ouro = df_ouro[(pd.to_datetime(df_ouro['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_ouro['criado_em']).dt.tz_localize(None) <= end_date)] if not df_ouro.empty else df_ouro
                 df_pers = df_pers[(pd.to_datetime(df_pers['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_pers['criado_em']).dt.tz_localize(None) <= end_date)] if not df_pers.empty else df_pers
                 df_fon = df_fon[(pd.to_datetime(df_fon['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_fon['criado_em']).dt.tz_localize(None) <= end_date)] if not df_fon.empty else df_fon
@@ -1750,7 +1726,6 @@ elif page == "Dashboard":
                     mask = df.astype(str).apply(lambda row: row.str.contains(term, case=False).any(), axis=1)
                     return df[mask]
 
-                df_fb = filter_search(df_fb, search_dash)
                 df_ouro = filter_search(df_ouro, search_dash)
                 df_pers = filter_search(df_pers, search_dash)
                 df_fon = filter_search(df_fon, search_dash)
@@ -1759,10 +1734,11 @@ elif page == "Dashboard":
                 df_nuan = filter_search(df_nuan, search_dash)
 
             # Recalcular métricas após filtros
-            total_avaliados = len(df_fb)
-            # Para a taxa de aprovação: Ajuste Fino (2) e Edição Moderada (1) contam positivamente.
-            aprovados = len(df_fb[df_fb['avaliacao'].isin([1, 2])]) if not df_fb.empty and 'avaliacao' in df_fb.columns else 0
-            taxa_aprovacao = (aprovados / total_avaliados * 100) if total_avaliados > 0 else 0
+            if not df_ouro.empty and 'nota_percentual' in df_ouro.columns:
+                taxa_m = df_ouro['nota_percentual'].mean()
+                taxa_aprovacao = float(taxa_m) if pd.notna(taxa_m) else 0.0
+            else:
+                taxa_aprovacao = 0.0
             
             total_ouro = len(df_ouro)
             total_historico = len(df_hist_dash)
@@ -1794,13 +1770,10 @@ elif page == "Dashboard":
             """, unsafe_allow_html=True)
             
             with st.popover("ℹ️ Entenda a Métrica de Aprovação", use_container_width=False):
-                st.markdown("#### 🎯 Como a IA calcula sua performance?")
-                st.markdown("A **Taxa de Aprovação** reflete a porcentagem de sucesso da IA baseada estritamente nos roteiros que receberam o seu feedback manual pós-geração.")
-                st.markdown("**Considerado Aprovado (Positivo):**")
-                st.markdown("- ✅ **Ajuste Fino:** O roteiro veio ótimo, mudou só uma ou outra palavra.\n- ⚠️ **Edição Moderada:** Precisou de alguns ajustes na frase, mas a base e estrutura foram aproveitadas.")
-                st.markdown("**Considerado Reprovado (Negativo):**")
-                st.markdown("- ❌ **Reescrita Pesada:** O roteiro alucinou ou fugiu tanto do tom que a edição foi completa.")
-                st.info("💡 **Dica:** Roteiros gerados que você apenas copiou e não deu o clique de feedback não contam nesta métrica. A IA foca apenas em onde houve calibração ativa de qualidade.")
+                st.markdown("#### 🎯 Qualidade Medida por IA Juíza")
+                st.markdown("A **Taxa de Aprovação** não é mais uma nota subjetiva dada por botões. Ela é a **média do aproveitamento real** dos roteiros gerados.")
+                st.markdown("Toda vez que você edita um roteiro e clica em `🚀 Enviar Calibração para a IA`, uma **IA especializada** atua como QA (Quality Assurance). Ela compara o rascunho original com a sua edição final e calcula qual o percentual (%) das ideias geradas que foi mantido por você.")
+                st.info("💡 **Exemplo:** Se a IA nota que 90% das ideias do rascunho foram mantidas, a nota de aprovação daquele roteiro é 90%. O Dashboard exibe a média histórica de todas essas calibrações.")
             
             st.divider()
             
@@ -2069,7 +2042,7 @@ elif page == "Assistente Lu":
                         # Buscamos as estatísticas rápidas
                         hoje = datetime.now().date().isoformat()
                         # Consulta os ultimos roteiros da semana
-                        d_recent = sp.table("historico_roteiros").select("criado_em, codigo_produto, custo_estimado_brl, modelo_llm").order('criado_em', desc=True).limit(200).execute()
+                        d_recent = sp.table("nw_historico_roteiros").select("criado_em, codigo_produto, custo_estimado_brl, modelo_llm").order('criado_em', desc=True).limit(200).execute()
                         if d_recent.data:
                             df = pd.DataFrame(d_recent.data)
                             df['data'] = pd.to_datetime(df['criado_em']).dt.date

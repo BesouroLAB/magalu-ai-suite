@@ -6,14 +6,14 @@
 --   + Migration script ao final do arquivo
 
 -- Tabela 1: Categorias (Organiza o Cérebro da IA)
-create table if not exists categorias (
+create table if not exists nw_categorias (
   id serial primary key,
   nome text unique not null,
   tom_de_voz text
 );
 
 -- Popular categorias baseadas no Guia de Contexto Brasileiro (KB Magalu):
-insert into categorias (nome, tom_de_voz) values 
+insert into nw_categorias (nome, tom_de_voz) values 
 ('Móveis', 'Lar como Refúgio; Foco em segurança no transporte e facilidade de montagem.'),
 ('Eletrodomésticos', 'Saúde e Economia Doméstica; Foco em eficiência energética e praticidade.'),
 ('Eletroportáteis', 'Praticidade e Estilo de Vida; Foco na facilidade de uso, design funcional e como o produto melhora o dia a dia.'),
@@ -27,29 +27,21 @@ insert into categorias (nome, tom_de_voz) values
 ('Genérico', 'Otimismo prudente, didatismo amigável, padrão Lu do Magalu.')
 ON CONFLICT (nome) DO NOTHING;
 
--- Tabela 2: Aprendizado Contínuo (Feedback Diário e Ajustes)
-create table if not exists feedback_roteiros (
+-- Tabela 2: Roteiros Ouro (O 'Few-Shot' Premium + JSON-LD Ready + Memória de Calibração)
+create table if not exists nw_roteiros_ouro (
   id uuid default gen_random_uuid() primary key,
   criado_em timestamp with time zone default timezone('utc'::text, now()) not null,
-  categoria_id int references categorias(id),
-  roteiro_original_ia text not null,
-  roteiro_final_humano text not null,
-  avaliacao varchar(50), -- Ruim, Regular, Bom, Ótimo
-  comentarios text
-);
-
--- Tabela 3: Roteiros Ouro (O 'Few-Shot' Premium + JSON-LD Ready)
-create table if not exists roteiros_ouro (
-  id uuid default gen_random_uuid() primary key,
-  criado_em timestamp with time zone default timezone('utc'::text, now()) not null,
-  categoria_id int references categorias(id),
+  categoria_id int references nw_categorias(id),
   codigo_produto varchar(50),  -- SKU Magalu (ex: 240304700) para JSON-LD
   titulo_produto text not null,
-  roteiro_perfeito text not null
+  roteiro_original_ia text, -- Qual era a versão da IA antes da edição
+  roteiro_perfeito text not null,
+  nota_percentual integer, -- % de similaridade aprovada (0 a 100)
+  aprendizado text -- Lição extraída pela IA (o que o humano mudou e por que)
 );
 
 -- Tabela 4: Treinamento de Persona (A Alma da Lu)
-create table if not exists treinamento_persona_lu (
+create table if not exists nw_treinamento_persona_lu (
   id uuid default gen_random_uuid() primary key,
   criado_em timestamp with time zone default timezone('utc'::text, now()) not null,
   pilar_persona varchar(50) not null,
@@ -60,7 +52,7 @@ create table if not exists treinamento_persona_lu (
 );
 
 -- Tabela 5: Treinamento de Fonética (Regras de Áudio)
-create table if not exists treinamento_fonetica (
+create table if not exists nw_treinamento_fonetica (
   id uuid default gen_random_uuid() primary key,
   criado_em timestamp with time zone default timezone('utc'::text, now()) not null,
   termo_errado text not null,
@@ -69,7 +61,7 @@ create table if not exists treinamento_fonetica (
 );
 
 -- Tabela 6: Treinamento de Estruturas (Hooks & CTAs)
-create table if not exists treinamento_estruturas (
+create table if not exists nw_treinamento_estruturas (
   id uuid default gen_random_uuid() primary key,
   criado_em timestamp with time zone default timezone('utc'::text, now()) not null,
   tipo_estrutura varchar(50) not null check (tipo_estrutura in ('Abertura (Gancho)', 'Fechamento (CTA)')),
@@ -77,7 +69,7 @@ create table if not exists treinamento_estruturas (
 );
 
 -- Tabela 7: Histórico de Roteiros Gerados (Log Automático)
-create table if not exists historico_roteiros (
+create table if not exists nw_historico_roteiros (
   id uuid default gen_random_uuid() primary key,
   criado_em timestamp with time zone default timezone('utc'::text, now()) not null,
   codigo_produto varchar(50),
@@ -92,7 +84,7 @@ create table if not exists historico_roteiros (
 );
 
 -- Tabela 8: Treinamento de Nuances e Construção (Linguagem Viva)
-create table if not exists treinamento_nuances (
+create table if not exists nw_treinamento_nuances (
   id uuid default gen_random_uuid() primary key,
   criado_em timestamp with time zone default timezone('utc'::text, now()) not null,
   frase_ia text not null,
@@ -105,14 +97,14 @@ create table if not exists treinamento_nuances (
 -- ATIVANDO ROW LEVEL SECURITY (RLS)
 -- ==========================================
 
-alter table categorias enable row level security;
+alter table nw_categorias enable row level security;
 alter table feedback_roteiros enable row level security;
-alter table roteiros_ouro enable row level security;
-alter table treinamento_persona_lu enable row level security;
-alter table treinamento_fonetica enable row level security;
-alter table treinamento_estruturas enable row level security;
-alter table historico_roteiros enable row level security;
-alter table treinamento_nuances enable row level security;
+alter table nw_roteiros_ouro enable row level security;
+alter table nw_treinamento_persona_lu enable row level security;
+alter table nw_treinamento_fonetica enable row level security;
+alter table nw_treinamento_estruturas enable row level security;
+alter table nw_historico_roteiros enable row level security;
+alter table nw_treinamento_nuances enable row level security;
 
 
 -- ==========================================

@@ -148,16 +148,16 @@ class RoteiristaAgent:
             )
             self.model_id = self.model_id.replace("kimi/", "")
 
-        # Carrega toda a base de conhecimento estática
+        # Carrega toda a base de conhecimento estática (Apenas prompts e fonética base)
         self.system_prompt = self._load_file(
             os.path.join(PROJECT_ROOT, ".agents", "system_prompt.txt"), ""
         )
         self.phonetics = self._load_json(
             os.path.join(PROJECT_ROOT, "kb", "phonetics.json"), {}
         )
-        self.few_shot_examples = self._load_json(
-            os.path.join(PROJECT_ROOT, "kb", "few_shot_breno.json"), []
-        )
+        # Ouro e Calibração agora são 100% dinâmicos via Supabase
+        self.few_shot_examples = [] 
+        
         # Carrega documentos de contexto (.md) da KB
         self.context_docs = self._load_all_md_from_kb()
 
@@ -196,36 +196,36 @@ class RoteiristaAgent:
             return ""
         
         try:
-            # 1. Roteiros Ouro (Exemplos Master)
-            res_ouro = self.supabase.table("roteiros_ouro").select("*").limit(3).execute()
+            # 1. Roteiros Ouro (O "Norte" da Redação - Exemplos de Elite)
+            res_ouro = self.supabase.table("nw_roteiros_ouro").select("*").order('criado_em', desc=True).limit(5).execute()
             if res_ouro.data:
-                sb_parts.append("\n**REFERÊNCIAS DE ELITE (ROTEIROS OURO SÃO O ALVO):**")
+                sb_parts.append("\n**REFERÊNCIAS DE ELITE (ESTE É O PADRÃO OURO A SER SEGUIDO):**")
                 for r in res_ouro.data:
-                    sb_parts.append(f"- Produto: {r['titulo_produto']}\n  Roteiro Perfeito: {r['roteiro_perfeito']}")
+                    sb_parts.append(f"- Produto: {r['titulo_produto']}\n  Roteiro Perfeito (Target): {r['roteiro_perfeito']}")
 
             # 2. Ajustes de Persona
-            res_pers = self.supabase.table("treinamento_persona_lu").select("*").limit(5).execute()
+            res_pers = self.supabase.table("nw_treinamento_persona_lu").select("*").limit(5).execute()
             if res_pers.data:
                 sb_parts.append("\n**AJUSTES DE PERSONA (LIÇÕES APRENDIDAS):**")
                 for p in res_pers.data:
                     sb_parts.append(f"- Pilar: {p['pilar_persona']}\n  Erro Anterior: {p['erro_cometido']}\n  Correção Master: {p['texto_corrigido_humano']}")
 
             # 3. Novas Regras Fonéticas
-            res_fon = self.supabase.table("treinamento_fonetica").select("*").execute()
+            res_fon = self.supabase.table("nw_treinamento_fonetica").select("*").execute()
             if res_fon.data:
                 sb_parts.append("\n**NOVAS REGRAS DE FONÉTICA (OBRIGATÓRIO):**")
                 for f in res_fon.data:
                     sb_parts.append(f"- {f['termo_errado']} -> ({f['termo_corrigido']})")
                     
             # 4. Estruturas Aprovadas (Aberturas e Fechamentos/CTAs)
-            res_est = self.supabase.table("treinamento_estruturas").select("*").execute()
+            res_est = self.supabase.table("nw_treinamento_estruturas").select("*").execute()
             if res_est.data:
                 sb_parts.append("\n**ESTRUTURAS APROVADAS PARA INSPIRAÇÃO (HOOKS E CTAs):**")
                 for est in res_est.data:
                     sb_parts.append(f"- [{est['tipo_estrutura']}] {est['texto_ouro']}")
                     
             # 5. Nuances de Linguagem (O que evitar e como melhorar)
-            res_nuan = self.supabase.table("treinamento_nuances").select("*").limit(5).order('criado_em', desc=True).execute()
+            res_nuan = self.supabase.table("nw_treinamento_nuances").select("*").limit(5).order('criado_em', desc=True).execute()
             if res_nuan.data:
                 sb_parts.append("\n**NUANCES E REFINAMENTO DE ESTILO (LIÇÕES DE REDAÇÃO):**")
                 for n in res_nuan.data:
@@ -234,14 +234,14 @@ class RoteiristaAgent:
                         refinamento += f"\n  FORMA IDEAL: '{n['exemplo_ouro']}'"
                     sb_parts.append(refinamento)
 
-            # 6. Memória de Calibração (Lições Recentes do Antes x Depois)
-            res_fb = self.supabase.table("feedback_roteiros").select("comentarios").neq("comentarios", "null").limit(5).order('criado_em', desc=True).execute()
+            # 6. Memória de Calibração (Lições Recentes do Juiz de IA)
+            res_fb = self.supabase.table("nw_roteiros_ouro").select("aprendizado").neq("aprendizado", "null").order('criado_em', desc=True).limit(8).execute()
             if res_fb.data:
-                valid_mems = [f for f in res_fb.data if f.get('comentarios') and f['comentarios'].strip()]
+                valid_mems = [f for f in res_fb.data if f.get('aprendizado') and f['aprendizado'].strip()]
                 if valid_mems:
-                    sb_parts.append("\n**MEMÓRIA RECENTE DE CORREÇÕES (NÃO REPITA ESTES ERROS):**")
+                    sb_parts.append("\n**LIÇÕES RECENTES DA IA JUÍZA (NÃO REPITA ESTES ERROS):**")
                     for fb in valid_mems:
-                        sb_parts.append(f"- O Breno corrigiu recentemente: {fb['comentarios']}")
+                        sb_parts.append(f"- {fb['aprendizado']}")
         except Exception as e:
             print(f"Erro ao buscar contexto no Supabase: {e}")
             
@@ -424,6 +424,60 @@ class RoteiristaAgent:
             "tokens_out": tokens_out,
             "custo_brl": custo_brl
         }
+
+    def analisar_calibracao(self, original, final, categories_list=[], codigo_original=""):
+        """
+        Atua como um juiz de qualidade usando o modelo Gemini 1.5 Flash (Gratuito).
+        Além de analisar o aproveitamento, identifica a categoria correta baseada no conteúdo.
+        """
+        # Formata a lista de categorias para o prompt
+        cat_str = "\n".join([f"- ID {c['id']}: {c['nome']}" for c in categories_list]) if categories_list else "Genérico (ID 1)"
+
+        sys_prompt = (
+            "Você é um Especialista em Redação Publicitária e Quality Assurance (QA).\n"
+            "Sua tarefa é:\n"
+            "1. Comparar um Roteiro Original (IA) com o Roteiro Final (Humano) e extrair o percentual de aproveitamento.\n"
+            "2. Identificar a categoria mais adequada para este produto dentro da lista abaixo.\n"
+            "3. Extrair o código do produto (se presente no texto).\n\n"
+            "LISTA DE CATEGORIAS DISPONÍVEIS:\n"
+            f"{cat_str}\n\n"
+            "Retorne APENAS um JSON válido:\n"
+            "{\n"
+            "  \"percentual\": <inteiro 0-100>,\n"
+            "  \"aprendizado\": \"<frase curta>\",\n"
+            "  \"categoria_id\": <id numérico da melhor categoria da lista>,\n"
+            "  \"codigo_produto\": \"<código encontrado ou o original enviado>\"\n"
+            "}"
+        )
+
+        user_prompt = f"--- CÓDIGO SUGERIDO ---\n{codigo_original}\n\n--- ROTEIRO ORIGINAL (IA) ---\n{original}\n\n--- ROTEIRO FINAL (HUMANO) ---\n{final}"
+
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            return {"percentual": 50, "aprendizado": "Erro: API Key ausente.", "categoria_id": 1, "codigo_produto": codigo_original}
+            
+        try:
+            client = genai.Client(api_key=api_key)
+            response = client.models.generate_content(
+                model='gemini-1.5-flash',
+                contents=user_prompt,
+                config=GenerateContentConfig(
+                    system_instruction=sys_prompt,
+                    response_mime_type="application/json",
+                    temperature=0.1
+                ),
+            )
+            
+            import json
+            res = json.loads(response.text)
+            return {
+                "percentual": int(res.get("percentual", 50)),
+                "aprendizado": res.get("aprendizado", "Análise realizada."),
+                "categoria_id": int(res.get("categoria_id", 1)),
+                "codigo_produto": res.get("codigo_produto", codigo_original)
+            }
+        except Exception as e:
+            return {"percentual": 50, "aprendizado": f"Erro: {str(e)}", "categoria_id": 1, "codigo_produto": codigo_original}
 
     def chat_with_context(self, user_query, chat_history=[], supabase_context=None):
         """
