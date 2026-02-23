@@ -171,7 +171,7 @@ def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "
         # Gera cabeçalho padrão
         header_date = selected_date if selected_date else datetime.now().strftime('%d/%m/%y')
         _add_header_line(doc, "Cliente: Magalu")
-        _add_header_line(doc, f"Roteirista: Tiago Fernandes -- Data: {header_date}")
+        _add_header_line(doc, f"Roteirista: Tiago Fernandes - Data: {header_date}")
         _add_header_line(doc, f"Produto: NW LU {selected_month} {code} {product_name}")
         _add_separator(doc)
         _add_empty_line(doc)

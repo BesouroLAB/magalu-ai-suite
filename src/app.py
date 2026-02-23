@@ -612,7 +612,18 @@ if page == "Criar Roteiros":
                             
                             
                             # 2. Gera o roteiro com os dados extraídos (retorna dict)
-                            resultado = agent.gerar_roteiro(ficha_extraida, modo_trabalho=modo_selecionado, mes=mes_selecionado, data_roteiro=data_roteiro_str)
+                            # Extrai nome do produto (primeira linha da ficha)
+                            txt_ficha = ficha_extraida.get('text', str(ficha_extraida)) if isinstance(ficha_extraida, dict) else str(ficha_extraida)
+                            nome_p = txt_ficha.split('\n')[0].strip() if txt_ficha else "Produto"
+                            
+                            resultado = agent.gerar_roteiro(
+                                ficha_extraida, 
+                                modo_trabalho=modo_selecionado, 
+                                mes=mes_selecionado, 
+                                data_roteiro=data_roteiro_str,
+                                codigo=code,
+                                nome_produto=nome_p
+                            )
                             roteiro_texto = resultado["roteiro"]
                             
                             # Atribuímos o número sequencial histórico (o último é o número mais alto)
@@ -735,7 +746,17 @@ if page == "Criar Roteiros":
                             for i, item_man in enumerate(fichas_validas):
                                 ficha = item_man["ficha"]
                                 code = item_man["sku"]
-                                resultado = agent.gerar_roteiro(ficha, modo_trabalho="NW (NewWeb)", mes=mes_selecionado, data_roteiro=data_roteiro_str)
+                                # Extrai nome do produto da ficha manual (primeira linha)
+                                nome_p_man = ficha.split('\n')[0].strip() if ficha else "Produto"
+                                
+                                resultado = agent.gerar_roteiro(
+                                    ficha, 
+                                    modo_trabalho="NW (NewWeb)", 
+                                    mes=mes_selecionado, 
+                                    data_roteiro=data_roteiro_str,
+                                    codigo=code,
+                                    nome_produto=nome_p_man
+                                )
                                 roteiro_texto = resultado["roteiro"]
                                 
                                 # Atribuímos o número sequencial histórico
