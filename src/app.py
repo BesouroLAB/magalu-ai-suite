@@ -68,12 +68,12 @@ DARK_MODE_CSS = """
     
     /* Botões Secundários */
     button[kind="secondary"] {
-        background-color: #2A3241 !important;
+        background-color: #001f4d !important;
         color: var(--text-primary) !important;
-        border: 1px solid #3d4659 !important;
+        border: 1px solid #003380 !important;
     }
     button[kind="secondary"]:hover {
-        background-color: #3d4659 !important;
+        background-color: #003380 !important;
         border-color: var(--mglu-blue) !important;
     }
     
@@ -82,17 +82,17 @@ DARK_MODE_CSS = """
         border-radius: 8px;
         font-weight: bold;
         color: var(--mglu-blue) !important;
-        border: 1px solid #2A3241;
+        border: 1px solid #0a1b33;
     }
     .streamlit-expanderContent {
         background-color: transparent !important;
-        border: 1px solid #2A3241;
+        border: 1px solid #0a1b33;
         border-top: none;
     }
     
     [data-testid="stSidebar"] {
         background-color: var(--bg-card) !important;
-        border-right: 1px solid #2A3241;
+        border-right: 1px solid #0a1b33;
     }
     
     .block-container { padding-top: 2rem; }
@@ -267,18 +267,31 @@ with st.sidebar:
     if supabase_client:
         st.session_state['supabase_client'] = supabase_client
     
-    gemini_status = "🟢 Gemini" if api_key_env else "🔴 Gemini"
-    supa_status = "🟢 Supabase" if supabase_client else "🔴 Supabase"
+    gemini_status = "Ativo" if api_key_env else "Inativo"
+    supa_status = "Ativo" if supabase_client else "Inativo"
+    
+    status_color_gem = "#0086ff" if api_key_env else "#4b5563"
+    status_color_supa = "#0086ff" if supabase_client else "#4b5563"
 
     # --- LOGO & BRANDING ---
+    logo_path = os.path.join(os.path.dirname(__file__), "..", "assets", "logo.png")
+    if os.path.exists(logo_path):
+        st.image(logo_path, use_container_width=True)
+    else:
+        st.markdown(f"""
+        <div style="display: flex; flex-direction: column; width: 220px; line-height: 1.1; margin-bottom: 4px;">
+            <span style="color: #0086ff; font-weight: 800; font-size: 18px; letter-spacing: 3px;">MAGALU</span>
+            <span style="color: white; font-weight: 300; font-size: 36px; letter-spacing: 1px;">AI Suite</span>
+        </div>
+        """, unsafe_allow_html=True)
+        
     st.markdown(f"""
-    <div style="display: flex; flex-direction: column; width: 220px; line-height: 1.1; margin-bottom: 4px;">
-        <span style="color: #0086ff; font-weight: 800; font-size: 18px; letter-spacing: 3px;">MAGALU</span>
-        <span style="color: white; font-weight: 300; font-size: 36px; letter-spacing: 1px;">AI Suite</span>
-    </div>
+        <div style='font-size: 11px; color: #8b92a5; margin-bottom: 25px; margin-top: 5px;'>
+            V1.5 &nbsp;&nbsp;|&nbsp;&nbsp; 
+            <span style='color: {status_color_gem}'>● Gemini</span> &nbsp; 
+            <span style='color: {status_color_supa}'>● Supabase</span>
+        </div>
     """, unsafe_allow_html=True)
-    st.caption(f"V1.5 &nbsp;&nbsp; {gemini_status} &nbsp; {supa_status}")
-    st.markdown("")
     
     # --- MENU DE NAVEGAÇÃO ---
     page = st.radio(
@@ -756,11 +769,19 @@ elif page == "Treinar IA":
                 st.info("Nenhuma estrutura cadastrada ainda.")
                 
         with tab_fon:
-            st.markdown("🗣️ **Treinar Fonética**")
-            t_err = st.text_input("Como a IA escreveu:", placeholder="Ex: 5G", key="hub_te")
-            t_cor = st.text_input("Como a locução final deve ser (aprovada):", placeholder="Ex: cinco gê", key="hub_tc")
-            if st.button("🔊 Enviar Regra Fonética", key="hub_btn_fon", use_container_width=True, type="primary"):
-                salvar_fonetica(sp_client, t_err, t_cor, "")
+            st.markdown("### 🗣️ Treinar Fonética")
+            st.caption("Ensine a IA a escrever termos técnicos da forma que devem ser lidos ou ignore termos que não precisam de fonética.")
+            
+            t_err = st.text_input("Como a IA escreveu:", placeholder="Ex: cinco gê", key="hub_te")
+            t_cor = st.text_input("Como deveria ser pelo humano:", placeholder="Ex: 5G", key="hub_tc")
+            
+            st.markdown("<p style='font-size: 0.85rem; color: #8b92a5; margin-top: -10px;'><b>Obs.:</b> 5G é um termo comum que não precisa de fonética, assim como USB ou HDMI</p>", unsafe_allow_html=True)
+            
+            if st.button("📥 Registrar Regra de Pronúncia", key="hub_btn_fon", use_container_width=True, type="primary"):
+                if t_err.strip() and t_cor.strip():
+                    salvar_fonetica(sp_client, t_err, t_cor, "Regra de fonética/exceção")
+                else:
+                    st.warning("Preencha ambos os campos.")
             
             st.divider()
             if not df_fon.empty:
