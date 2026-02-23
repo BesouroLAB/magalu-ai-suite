@@ -433,14 +433,29 @@ with st.sidebar:
     """, unsafe_allow_html=True)
     
     # --- SELETOR DE MODELO LLM ---
+    # Usamos uma chave para detectar mudança
     modelo_label = st.selectbox(
         "🧠 Modelo de IA:",
         list(MODELOS_DISPONIVEIS.keys()),
-        index=0
+        index=0,
+        key="model_selector"
     )
     modelo_id_selecionado = MODELOS_DISPONIVEIS[modelo_label]
-    st.session_state['modelo_llm'] = modelo_id_selecionado
     
+    # Se mudou o modelo, mostramos o loading e validamos
+    if st.session_state.get('last_model') != modelo_id_selecionado:
+        with st.spinner(f"Ativando {modelo_label.split(' — ')[0]}..."):
+            try:
+                # Teste rápido de inicialização (apenas verifica se a chave existe e o client sobe)
+                _temp_agent = RoteiristaAgent(model_id=modelo_id_selecionado)
+                st.session_state['modelo_llm'] = modelo_id_selecionado
+                st.session_state['last_model'] = modelo_id_selecionado
+                st.toast(f"✅ {modelo_label.split(' — ')[0]} Ativado!", icon="🚀")
+            except Exception as e:
+                st.error(f"Erro ao ativar modelo: {e}")
+                st.session_state['modelo_llm'] = "gemini-2.5-flash" # Fallback
+        st.rerun()
+
     # Info rápida sobre o modelo
     _desc = MODELOS_DESCRICAO.get(modelo_id_selecionado, "")
     if _desc:
