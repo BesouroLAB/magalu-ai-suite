@@ -461,7 +461,7 @@ class RoteiristaAgent:
         try:
             client = genai.Client(api_key=api_key)
             response = client.models.generate_content(
-                model='gemini-1.5-flash',
+                model='gemini-2.0-flash',
                 contents=user_prompt,
                 config=GenerateContentConfig(
                     system_instruction=sys_prompt,

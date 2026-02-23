@@ -1748,6 +1748,14 @@ elif page == "Dashboard":
             if not df_hist_dash.empty and 'custo_estimado_brl' in df_hist_dash.columns:
                 custo_total_dash += df_hist_dash['custo_estimado_brl'].sum() or 0.0
             
+            # Cálculo de Cor Dinâmica para o Score (0=Vermelho, 100=Verde)
+            def get_score_color(val):
+                if val >= 80: return "#10b981" # Verde
+                if val >= 50: return "#f59e0b" # Laranja/Amarelo
+                return "#ef4444" # Vermelho
+            
+            score_color = get_score_color(taxa_aprovacao)
+
             st.markdown(f"""
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
                     <div class="metric-card-premium">
@@ -1764,7 +1772,7 @@ elif page == "Dashboard":
                     </div>
                     <div class="metric-card-premium">
                         <div class="metric-label">🎯 Taxa Aprovação</div>
-                        <div class="metric-value" style="color: #6366f1 !important;">{taxa_aprovacao:.1f}%</div>
+                        <div class="metric-value" style="color: {score_color} !important;">{taxa_aprovacao:.1f}%</div>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
