@@ -585,7 +585,9 @@ if page == "Criar Roteiros":
         opcoes_tags = []
         for i, item in enumerate(st.session_state['roteiros']):
             codigo = item.get("codigo", "")
-            linhas_ficha = item['ficha'].split('\n')
+            ficha_raw = item.get('ficha', '')
+            ficha_str = ficha_raw.get('text', str(ficha_raw)) if isinstance(ficha_raw, dict) else str(ficha_raw)
+            linhas_ficha = ficha_str.split('\n')
             nome_curto = linhas_ficha[0][:20] + "..." if linhas_ficha and len(linhas_ficha[0]) > 20 else (linhas_ficha[0] if linhas_ficha else f"Item {i+1}")
             opcoes_tags.append(f"📦 {codigo} {nome_curto}")
             
