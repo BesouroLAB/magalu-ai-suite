@@ -99,10 +99,14 @@ DARK_MODE_CSS = """
         border-right: 1px solid #0a1b33;
     }
     
-    /* Transparência progressiva na logo (fade suave na borda inferior) */
+    /* Transparência progressiva na logo (fade suave em todas as bordas) */
     [data-testid="stSidebar"] [data-testid="stImage"] img {
-        -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
-        mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 35%, transparent 100%),
+                            linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+        -webkit-mask-composite: source-in;
+        mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 35%, transparent 100%),
+                    linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+        mask-composite: intersect;
     }
     
     .block-container { padding-top: 2rem; }
