@@ -433,7 +433,7 @@ if page == "Criar Roteiros":
                     st.warning("⚠️ Digite pelo menos um código de produto.")
                 elif len(codigos) > 15:
                     st.warning("⚠️ Limite excedido: Por favor, insira no máximo 15 códigos por vez (Rate Limit da API).")
-                elif not api_key:
+                elif not api_key_env:
                     st.warning("⚠️ Forneça uma chave da API do Gemini no painel.")
                 else:
                     try:
