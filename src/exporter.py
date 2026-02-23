@@ -131,14 +131,14 @@ def _parse_roteiro(roteiro_text: str) -> list[dict]:
 
 
 def generate_filename(code: str, product_name: str, selected_month: str = "FEV") -> str:
-    """Gera nome do arquivo no padrão: NW FEV {code} {product_name}.docx"""
+    """Gera nome do arquivo no padrão: NW LU {selected_month} {code} {product_name}.docx"""
     # Limpa caracteres inválidos para nome de arquivo
     clean_name = re.sub(r'[<>:"/\\|?*]', '', product_name)
     clean_name = clean_name[:80]  # Limita tamanho
 
-    return f"NW {selected_month} {code} {clean_name}.docx"
+    return f"NW LU {selected_month} {code} {clean_name}.docx"
 
-def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "", selected_month: str = "FEV") -> tuple[bytes, str]:
+def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "", selected_month: str = "FEV", selected_date: str = None) -> tuple[bytes, str]:
     """
     Gera um documento Word (.docx) com a formatação de referência.
 
@@ -169,10 +169,10 @@ def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "
 
     if not has_header:
         # Gera cabeçalho padrão
-        now = datetime.now()
+        header_date = selected_date if selected_date else datetime.now().strftime('%d/%m/%y')
         _add_header_line(doc, "Cliente: Magalu")
-        _add_header_line(doc, f"Roteirista: Tiago Fernandes -- Data: {now.strftime('%d/%m/%y')}")
-        _add_header_line(doc, f"Produto: NW FEV {code} {product_name}")
+        _add_header_line(doc, f"Roteirista: Tiago Fernandes -- Data: {header_date}")
+        _add_header_line(doc, f"Produto: NW LU {selected_month} {code} {product_name}")
         _add_separator(doc)
         _add_empty_line(doc)
 
@@ -246,7 +246,7 @@ def format_for_display(roteiro_text: str) -> str:
 
     return "\n".join(formatted)
 
-def export_all_roteiros_zip(roteiros: list, selected_month: str = "FEV") -> tuple[bytes, str]:
+def export_all_roteiros_zip(roteiros: list, selected_month: str = "FEV", selected_date: str = None) -> tuple[bytes, str]:
     """
     Gera um arquivo ZIP contendo todos os roteiros em formato DOCX.
     
@@ -264,7 +264,8 @@ def export_all_roteiros_zip(roteiros: list, selected_month: str = "FEV") -> tupl
                 item['roteiro_original'],
                 code=item.get('codigo', ''),
                 product_name='', # Será extraído do texto do roteiro
-                selected_month=selected_month
+                selected_month=selected_month,
+                selected_date=selected_date
             )
             # Garante que o nome do arquivo seja único dentro do ZIP se houver duplicatas
             zip_file.writestr(filename, doc_bytes)

@@ -211,7 +211,7 @@ class RoteiristaAgent:
             print(f"Erro na auto-avaliação: {e}")
             return "Erro ao gerar memória."
 
-    def gerar_roteiro(self, scraped_data, modo_trabalho="NW (NewWeb)", mes="MAR"):
+    def gerar_roteiro(self, scraped_data, modo_trabalho="NW (NewWeb)", mes="MAR", data_roteiro=None):
         """Envia a requisição para o Gemini gerar o roteiro. Suporta Multimodal e Modos de Trabalho."""
         context = self._build_context()
 
@@ -228,10 +228,13 @@ class RoteiristaAgent:
         
         # INJEÇÃO DAS TÁTICAS NW LU (Mês e Cena Obrigatória)
         if "NW" in modo_trabalho:
+            data_str = data_roteiro if data_roteiro else "[DATA_ATUAL]"
             diretriz_modo += (
                 f"\n\n🚨 REGRA ABSOLUTA DE FORMATAÇÃO E ESTRUTURA (NW LU):\n"
                 f"1. O TEXTO DEVE COMEÇAR COM O CABEÇALHO EXATAMENTE NO FORMATO:\n"
-                f"   NW LU {mes} (CÓDIGO_AQUI Se Souber) (NOME DO PRODUTO AQUI)\n"
+                f"   Cliente: Magalu\n"
+                f"   Roteirista: Tiago Fernandes -- Data: {data_str}\n"
+                f"   Produto: NW LU {mes} [CÓDIGO_AQUI] [NOME_DO_PRODUTO_AQUI]\n"
                 f"2. A CENA 1 (Primeira cena do vídeo) DEVE OBRIGATORIAMENTE mostrar a 'Lu' em ação, interagindo com o produto ou apresentando-o.\n"
                 f"3. A partir da CENA 2, CORTE para cenas detalhadas apenas do produto (Sem a Lu no vídeo)."
             )

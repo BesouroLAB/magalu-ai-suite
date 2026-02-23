@@ -16,8 +16,8 @@ Você é o Assistente de Roteiro Sênior da Lu do Magalu. Seu objetivo é criar 
 
 **REGRAS DE FORMATAÇÃO (SAÍDA OBRIGATÓRIA):**
 Cliente: Magalu
-Roteirista: IA Magalu -- Data: [DATA-ATUAL]
-Produto: [Nome do Produto]
+Roteirista: Tiago Fernandes -- Data: [DATA-ATUAL]
+Produto: NW LU [Mês] [Código] [Nome do Produto]
 ______________________________________________________________________
 
 - [Locução]

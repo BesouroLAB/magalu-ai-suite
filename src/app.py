@@ -526,12 +526,16 @@ if page == "Criar Roteiros":
             mes_selecionado = st.selectbox(
                 "Mês de Lançamento para o Roteiro",
                 ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"],
-                index=2, # Default para MAR
+                index=datetime.now().month - 1, # Default para mês atual
                 label_visibility="collapsed"
             )
 
+            st.markdown("### 3. Data do Roteiro")
+            data_roteiro = st.date_input("Selecione a data que aparecerá no cabeçalho:", value=datetime.now(), format="DD/MM/YYYY")
+            data_roteiro_str = data_roteiro.strftime('%d/%m/%y')
+
             st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("### 3. Códigos dos Produtos")
+            st.markdown("### 4. Códigos dos Produtos")
 
             st.markdown("<p style='font-size: 14px; color: #8b92a5'>Digite os códigos Magalu, um por linha. Máximo de 15 por vez.</p>", unsafe_allow_html=True)
             
@@ -594,7 +598,7 @@ if page == "Criar Roteiros":
                             
                             
                             # 2. Gera o roteiro com os dados extraídos (retorna dict)
-                            resultado = agent.gerar_roteiro(ficha_extraida, modo_trabalho=modo_selecionado, mes=mes_selecionado)
+                            resultado = agent.gerar_roteiro(ficha_extraida, modo_trabalho=modo_selecionado, mes=mes_selecionado, data_roteiro=data_roteiro_str)
                             roteiro_texto = resultado["roteiro"]
                             
                             roteiros.append({
@@ -632,6 +636,7 @@ if page == "Criar Roteiros":
                                 time.sleep(3)
                         
                         progress.progress(1.0, text="✅ Lote Concluído com Sucesso!")
+                        st.session_state['data_roteiro_global'] = data_roteiro_str
                         st.session_state['roteiros'] = roteiros
                         st.rerun() # Força o rerun para fechar o expander
                         
@@ -639,7 +644,8 @@ if page == "Criar Roteiros":
                         st.error(f"Erro na geração: {e}")
         else:
             # --- MODO MANUAL (FALLBACK) ---
-            st.markdown("<p style='font-size: 14px; color: #8b92a5'>Cole as fichas técnicas dos produtos:</p>", unsafe_allow_html=True)
+            st.markdown("### 1. Dados dos Produtos")
+            st.markdown("<p style='font-size: 14px; color: #8b92a5'>Insira o código e a ficha técnica dos produtos:</p>", unsafe_allow_html=True)
             
             if 'num_fichas' not in st.session_state:
                 st.session_state['num_fichas'] = 1
@@ -647,13 +653,17 @@ if page == "Criar Roteiros":
             fichas_informadas = []
             
             for i in range(st.session_state['num_fichas']):
-                val = st.text_area(
-                    f"Ficha Técnica do Produto {i+1}",
-                    height=100,
-                    key=f"ficha_input_{i}",
-                    placeholder=""
-                )
-                fichas_informadas.append(val)
+                col_sku_man, col_ficha_man = st.columns([1, 3])
+                with col_sku_man:
+                    sku_man = st.text_input(f"Cód. Produto {i+1}", key=f"sku_man_{i}", placeholder="Ex: 2403047")
+                with col_ficha_man:
+                    val = st.text_area(
+                        f"Ficha Técnica {i+1}",
+                        height=100,
+                        key=f"ficha_input_{i}",
+                        placeholder="Cole a ficha técnica aqui..."
+                    )
+                fichas_informadas.append({"sku": sku_man, "ficha": val})
                 
             col_add, col_rem = st.columns(2)
             with col_add:
@@ -669,40 +679,69 @@ if page == "Criar Roteiros":
             st.markdown("<br>", unsafe_allow_html=True)
             
             # Seletor de Mês (Fallback Modo Manual)
-            st.markdown("### Selecione o Mês de Lançamento")
-            mes_selecionado = st.selectbox(
-                "Mês de Lançamento para o Roteiro",
-                ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"],
-                index=2 # Default para MAR
-            )
+            st.markdown("### 2. Mês e Data")
+            col_m_man, col_d_man = st.columns(2)
+            with col_m_man:
+                mes_selecionado = st.selectbox(
+                    "Mês de Lançamento",
+                    ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"],
+                    index=datetime.now().month - 1
+                )
+            with col_d_man:
+                data_roteiro = st.date_input("Data do Roteiro:", value=datetime.now(), format="DD/MM/YYYY", key="date_man")
+                data_roteiro_str = data_roteiro.strftime('%d/%m/%y')
             
             if st.button("🚀 Gerar Roteiros Mágicos", use_container_width=True, type="primary", key="btn_manual"):
-                fichas = [f.strip() for f in fichas_informadas if f.strip()]
+                fichas_validas = [f for f in fichas_informadas if f["ficha"].strip() and f["sku"].strip()]
                 
-                if not fichas:
-                    st.warning("⚠️ Cole pelo menos uma ficha técnica antes de gerar.")
+                if not fichas_validas:
+                    st.warning("⚠️ Preencha o Código e a Ficha Técnica de pelo menos um produto.")
                 elif not api_key_env:
                     st.warning("⚠️ Forneça uma chave da API do Gemini no painel.")
                 else:
                     modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
-                    with st.spinner(f"Processando {len(fichas)} roteiro(s)..."):
+                    with st.spinner(f"Processando {len(fichas_validas)} roteiro(s)..."):
                         try:
                             agent = RoteiristaAgent(
                                 supabase_client=st.session_state.get('supabase_client'),
                                 model_id=modelo_id
                             )
                             roteiros = []
-                            for ficha in fichas:
-                                resultado = agent.gerar_roteiro(ficha, modo_trabalho="NW (NewWeb)", mes=mes_selecionado)
+                            for item_man in fichas_validas:
+                                ficha = item_man["ficha"]
+                                code = item_man["sku"]
+                                resultado = agent.gerar_roteiro(ficha, modo_trabalho="NW (NewWeb)", mes=mes_selecionado, data_roteiro=data_roteiro_str)
+                                roteiro_texto = resultado["roteiro"]
+                                
                                 roteiros.append({
                                     "ficha": ficha,
-                                    "roteiro_original": resultado["roteiro"],
+                                    "roteiro_original": roteiro_texto,
                                     "categoria_id": cat_selecionada_id,
+                                    "codigo": code,
                                     "model_id": resultado["model_id"],
                                     "tokens_in": resultado["tokens_in"],
                                     "tokens_out": resultado["tokens_out"],
                                     "custo_brl": resultado["custo_brl"]
                                 })
+
+                                # Auto-log no histórico (Modo Manual)
+                                try:
+                                    sp_hist = st.session_state.get('supabase_client')
+                                    if sp_hist:
+                                        sp_hist.table("historico_roteiros").insert({
+                                            "codigo_produto": code,
+                                            "modo_trabalho": "Manual NW",
+                                            "roteiro_gerado": roteiro_texto,
+                                            "ficha_extraida": ficha[:5000],
+                                            "modelo_llm": resultado["model_id"],
+                                            "tokens_entrada": resultado["tokens_in"],
+                                            "tokens_saida": resultado["tokens_out"],
+                                            "custo_estimado_brl": resultado["custo_brl"]
+                                        }).execute()
+                                except Exception:
+                                    pass
+
+                            st.session_state['data_roteiro_global'] = data_roteiro_str
                             st.session_state['roteiros'] = roteiros
                             st.rerun()
                         except Exception as e:
@@ -711,138 +750,196 @@ if page == "Criar Roteiros":
     # --- MESA DE TRABALHO (FULL WIDTH) ---
     st.markdown("<br>", unsafe_allow_html=True)
     st.subheader("🖥️ Mesa de Trabalho")
+    
+    # --- INTEGRAÇÃO DE HISTÓRICO DIÁRIO NA MESA ---
+    col_hist_nav, col_main_work = st.columns([1, 3])
+    
+    with col_hist_nav:
+        st.markdown("##### 📅 Histórico por Dia")
+        st.caption("Acesse roteiros de outros dias para revisão ou re-exportação.")
         
-    if 'roteiros' in st.session_state and st.session_state['roteiros']:
-        # Controle de Mês para Exportação
-        meses_disponiveis = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
-        mes_atual = meses_disponiveis[datetime.now().month - 1]
-        
-        # Layout do cabeçalho da mesa de trabalho
-        col_btn, col_mes = st.columns([3, 1])
-        with col_mes:
-            mes_selecionado = st.selectbox("Mês de Ref. (Exportação)", meses_disponiveis, index=meses_disponiveis.index(mes_atual))
-        
-        with col_btn:
-            # Botão para baixar todos os roteiros em um ZIP
-            zip_bytes, zip_filename = export_all_roteiros_zip(st.session_state['roteiros'], selected_month=mes_selecionado)
-            st.download_button(
-                label="📦 BAIXAR TODOS (ZIP)",
-                data=zip_bytes,
-                file_name=zip_filename,
-                mime="application/zip",
-                use_container_width=True,
-                type="primary",
-                help="Baixa todos os roteiros da lista abaixo em um único arquivo compactado."
-            )
-        
-        st.divider()
-        
-        st.divider()
-        
-        # Tags de Navegação (Canva Selection)
-        if 'roteiro_ativo_idx' not in st.session_state:
-            st.session_state['roteiro_ativo_idx'] = 0
-            
-        opcoes_tags = []
-        for i, item in enumerate(st.session_state['roteiros']):
-            codigo = item.get("codigo", "")
-            ficha_raw = item.get('ficha', '')
-            ficha_str = ficha_raw.get('text', str(ficha_raw)) if isinstance(ficha_raw, dict) else str(ficha_raw)
-            linhas_ficha = ficha_str.split('\n')
-            nome_curto = linhas_ficha[0][:20] + "..." if linhas_ficha and len(linhas_ficha[0]) > 20 else (linhas_ficha[0] if linhas_ficha else f"Item {i+1}")
-            opcoes_tags.append(f"{i+1:02d} - 📦 {codigo} {nome_curto}")
-            
-        st.markdown("### 🗂️ Selecione o Roteiro para Edição")
-        try:
-            # st.pills está disponível no Streamlit 1.34+ (pode usar radio horizontal se falhar)
-            selecionado = st.pills("Roteiros Gerados", opcoes_tags, default=opcoes_tags[st.session_state['roteiro_ativo_idx']])
-        except AttributeError:
-            selecionado = st.radio("Roteiros Gerados", opcoes_tags, index=st.session_state['roteiro_ativo_idx'], horizontal=True)
-            
-        if selecionado:
-            idx = opcoes_tags.index(selecionado)
-            st.session_state['roteiro_ativo_idx'] = idx
-        else:
-            idx = st.session_state['roteiro_ativo_idx']
-            
-        item = st.session_state['roteiros'][idx]
-        ficha_raw = item.get('ficha', '')
-        ficha_str = ficha_raw.get('text', str(ficha_raw)) if isinstance(ficha_raw, dict) else str(ficha_raw)
-        linhas = ficha_str.split('\n')
-        titulo_curto = linhas[0][:60] if linhas else f"Produto {idx+1}"
-        cat_id_roteiro = item.get("categoria_id", cat_selecionada_id)
-        codigo_produto = item.get("codigo", "")
-
-        # O Canva do Roteiro Ativo
-        with st.container(border=True):
-            st.markdown(f"#### 🖌️ Canva: {codigo_produto} - {titulo_curto}")
-            
-            # Apenas uma saída editável em tela cheia (sem redundâncias)
-            st.caption("✏️ **Editor Final do Roteiro (Markdown)** - Esta é a versão final que será salva e exportada.")
-            edited_val = st.text_area(
-                "Editor",
-                value=st.session_state.get(f"editor_{idx}", item['roteiro_original']),
-                height=450,
-                key=f"editor_{idx}",
-                label_visibility="collapsed"
-            )
-            sp_cli = st.session_state.get('supabase_client', None)
+        if 'supabase_client' in st.session_state:
+            sp_h = st.session_state['supabase_client']
+            try:
+                # Busca roteiros recentes agrupados por dia
+                res_recent = sp_h.table("historico_roteiros").select("criado_em, codigo_produto, modo_trabalho, roteiro_gerado, ficha_extraida, modelo_llm, custo_estimado_brl").order('criado_em', desc=True).limit(50).execute()
                 
-            # Barra de Controle do Roteiro Específico
-            st.markdown("<br>", unsafe_allow_html=True)
+                if res_recent.data:
+                    df_recent = pd.DataFrame(res_recent.data)
+                    df_recent['data_simples'] = pd.to_datetime(df_recent['criado_em']).dt.date
+                    
+                    datas_unicas = df_recent['data_simples'].unique()
+                    
+                    for dia in datas_unicas:
+                        with st.expander(f"📁 {dia.strftime('%d/%m/%Y')}", expanded=(dia == datetime.now().date())):
+                            dia_df = df_recent[df_recent['data_simples'] == dia]
+                            for _, r_row in dia_df.iterrows():
+                                btn_label = f"{r_row['codigo_produto']} ({r_row['modo_trabalho'][:2]})"
+                                if st.button(f"👁️ {btn_label}", key=f"recall_{r_row['criado_em']}", use_container_width=True):
+                                    # Trazer de volta para a Mesa de Trabalho
+                                    rec_item = {
+                                        "ficha": r_row['ficha_extraida'],
+                                        "roteiro_original": r_row['roteiro_gerado'],
+                                        "categoria_id": 1,
+                                        "codigo": r_row['codigo_produto'],
+                                        "model_id": r_row['modelo_llm'],
+                                        "custo_brl": r_row['custo_estimado_brl']
+                                    }
+                                    if 'roteiros' not in st.session_state:
+                                        st.session_state['roteiros'] = []
+                                    
+                                    # Evita duplicar se já estiver na mesa
+                                    if not any(x.get('codigo') == rec_item['codigo'] for x in st.session_state['roteiros']):
+                                        st.session_state['roteiros'].append(rec_item)
+                                        st.session_state['roteiro_ativo_idx'] = len(st.session_state['roteiros']) - 1
+                                        st.rerun()
+                                    else:
+                                        st.info("Este roteiro já está na sua mesa.")
+                else:
+                    st.info("Nenhum histórico recente.")
+            except Exception as e:
+                st.error(f"Erro ao carregar histórico lateral: {e}")
+        else:
+            st.info("Conecte o Supabase.")
+
+    with col_main_work:
+        if 'roteiros' in st.session_state and st.session_state['roteiros']:
+            # Controle de Mês para Exportação
+            meses_disponiveis = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
+            mes_atual = meses_disponiveis[datetime.now().month - 1]
             
-            col_act1, col_act2 = st.columns([1, 2])
+            # Layout do cabeçalho da mesa de trabalho
+            col_btn, col_mes = st.columns([3, 1])
+            with col_mes:
+                mes_selecionado = st.selectbox("Mês de Ref. (Exportação)", meses_disponiveis, index=meses_disponiveis.index(mes_atual))
             
-            with col_act1:
-                docx_edited_bytes, docx_edited_fn = export_roteiro_docx(
-                    edited_val,
-                    code=codigo_produto,
-                    product_name=titulo_curto,
-                    selected_month=mes_selecionado
+            with col_btn:
+                # Botão para baixar todos os roteiros em um ZIP
+                zip_bytes, zip_filename = export_all_roteiros_zip(
+                    st.session_state['roteiros'], 
+                    selected_month=mes_selecionado,
+                    selected_date=st.session_state.get('data_roteiro_global')
                 )
                 st.download_button(
-                    label="📥 Baixar DOCX Deste Roteiro",
-                    data=docx_edited_bytes,
-                    file_name=docx_edited_fn,
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    key=f"export_edit_{idx}",
+                    label="📦 BAIXAR TODOS (ZIP)",
+                    data=zip_bytes,
+                    file_name=zip_filename,
+                    mime="application/zip",
                     use_container_width=True,
-                    type="secondary"
+                    type="primary",
+                    help="Baixa todos os roteiros da lista abaixo em um único arquivo compactado."
                 )
+            
+            st.divider()
+            
+            # Tags de Navegação (Canva Selection)
+            if 'roteiro_ativo_idx' not in st.session_state:
+                st.session_state['roteiro_ativo_idx'] = 0
                 
-            with col_act2:
-                # Ações Rápidas (Nova Dinâmica de Feedback de Edição)
-                c1, c2, c3, c4 = st.columns(4)
+            opcoes_tags = []
+            for i, item in enumerate(st.session_state['roteiros']):
+                codigo = item.get("codigo", "")
+                ficha_raw = item.get('ficha', '')
+                ficha_str = ficha_raw.get('text', str(ficha_raw)) if isinstance(ficha_raw, dict) else str(ficha_raw)
+                linhas_ficha = ficha_str.split('\n')
+                nome_curto = linhas_ficha[0][:20] + "..." if linhas_ficha and len(linhas_ficha[0]) > 20 else (linhas_ficha[0] if linhas_ficha else f"Item {i+1}")
+                opcoes_tags.append(f"{i+1:02d} - 📦 {codigo} {nome_curto}")
                 
-                with c1:
-                    if st.button("🎯 Ajuste Fino", key=f"fino_{idx}", use_container_width=True):
-                        salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, 2)
-                        
-                with c2:
-                    if st.button("🛠️ Edição Moderada", key=f"moderad_{idx}", use_container_width=True):
-                        salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, 1)
-
-                with c3:
-                    if st.button("🔄 Reescrita Pesada", key=f"pesada_{idx}", use_container_width=True):
-                        salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, -1)
+            st.markdown("### 🗂️ Selecione o Roteiro para Edição")
+            try:
+                # st.pills está disponível no Streamlit 1.34+ (pode usar radio horizontal se falhar)
+                selecionado = st.pills("Roteiros Gerados", opcoes_tags, default=opcoes_tags[st.session_state['roteiro_ativo_idx']])
+            except AttributeError:
+                selecionado = st.radio("Roteiros Gerados", opcoes_tags, index=st.session_state['roteiro_ativo_idx'], horizontal=True)
                 
-                with c4:
-                    if st.button("🏆 Enviar Ouro", key=f"ouro_{idx}", use_container_width=True, type="primary"):
-                        salvar_ouro(sp_cli, cat_id_roteiro, titulo_curto, edited_val)
-
-        if st.button("🗑️ Limpar Mesa de Trabalho", use_container_width=True, type="secondary"):
-            del st.session_state['roteiros']
-            st.rerun()
-    else:
-        st.markdown(
-            """
-            <div style='display: flex; height: 300px; align-items: center; justify-content: center; border: 2px dashed #2A3241; border-radius: 8px; color: #8b92a5; text-align: center; padding: 20px'>
-            Cole os códigos no Inseridor (Command Center) acima e clique em Gerar.<br><br>
-            Os roteiros aparecerão aqui prontos para calibração, treino da IA ou envio para Ouro!
-            </div>
-            """, 
-            unsafe_allow_html=True
-        )
+            if selecionado:
+                idx = opcoes_tags.index(selecionado)
+                st.session_state['roteiro_ativo_idx'] = idx
+            else:
+                idx = st.session_state['roteiro_ativo_idx']
+                
+            item = st.session_state['roteiros'][idx]
+            ficha_raw = item.get('ficha', '')
+            ficha_str = ficha_raw.get('text', str(ficha_raw)) if isinstance(ficha_raw, dict) else str(ficha_raw)
+            linhas = ficha_str.split('\n')
+            titulo_curto = linhas[0][:60] if linhas else f"Produto {idx+1}"
+            cat_id_roteiro = item.get("categoria_id", cat_selecionada_id)
+            codigo_produto = item.get("codigo", "")
+    
+            # O Canva do Roteiro Ativo
+            with st.container(border=True):
+                st.markdown(f"#### 🖌️ Canva: {codigo_produto} - {titulo_curto}")
+                
+                # Apenas uma saída editável em tela cheia (sem redundâncias)
+                st.caption("✏️ **Editor Final do Roteiro (Markdown)** - Esta é a versão final que será salva e exportada.")
+                edited_val = st.text_area(
+                    "Editor",
+                    value=st.session_state.get(f"editor_{idx}", item['roteiro_original']),
+                    height=450,
+                    key=f"editor_{idx}",
+                    label_visibility="collapsed"
+                )
+                sp_cli = st.session_state.get('supabase_client', None)
+                    
+                # Barra de Controle do Roteiro Específico
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                col_act1, col_act2 = st.columns([1, 2])
+                
+                with col_act1:
+                    docx_edited_bytes, docx_edited_fn = export_roteiro_docx(
+                        edited_val,
+                        code=codigo_produto,
+                        product_name=titulo_curto,
+                        selected_month=mes_selecionado,
+                        selected_date=st.session_state.get('data_roteiro_global')
+                    )
+                    st.download_button(
+                        label="📥 Baixar DOCX Deste Roteiro",
+                        data=docx_edited_bytes,
+                        file_name=docx_edited_fn,
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        key=f"export_edit_{idx}",
+                        use_container_width=True,
+                        type="secondary"
+                    )
+                    
+                with col_act2:
+                    # Ações Rápidas (Nova Dinâmica de Feedback de Edição)
+                    c1, c2, c3, c4 = st.columns(4)
+                    
+                    with c1:
+                        if st.button("🎯 Ajuste Fino", key=f"fino_{idx}", use_container_width=True):
+                            salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, 2)
+                            
+                    with c2:
+                        if st.button("🛠️ Edição Moderada", key=f"moderad_{idx}", use_container_width=True):
+                            salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, 1)
+    
+                    with c3:
+                        if st.button("🔄 Reescrita Pesada", key=f"pesada_{idx}", use_container_width=True):
+                            salvar_feedback(sp_cli, cat_id_roteiro, item['ficha'], item['roteiro_original'], edited_val, -1)
+                    
+                    with c4:
+                        if st.button("🏆 Enviar Ouro", key=f"ouro_{idx}", use_container_width=True, type="primary"):
+                            salvar_ouro(sp_cli, cat_id_roteiro, titulo_curto, edited_val)
+    
+            if st.button("🗑️ Limpar Mesa de Trabalho", use_container_width=True, type="secondary"):
+                if 'roteiros' in st.session_state:
+                    del st.session_state['roteiros']
+                if 'roteiro_ativo_idx' in st.session_state:
+                    del st.session_state['roteiro_ativo_idx']
+                st.rerun()
+        else:
+            st.markdown(
+                """
+                <div style='display: flex; height: 300px; align-items: center; justify-content: center; border: 2px dashed #2A3241; border-radius: 8px; color: #8b92a5; text-align: center; padding: 20px'>
+                Cole os códigos no Inseridor (Command Center) acima e clique em Gerar.<br><br>
+                Os roteiros aparecerão aqui prontos para calibração, treino da IA ou envio para Ouro!
+                </div>
+                """, 
+                unsafe_allow_html=True
+            )
 
 
 
@@ -1338,14 +1435,6 @@ elif page == "Dashboard":
             total_ouro = len(df_ouro)
             total_historico = len(df_hist_dash)
             
-            # === SEÇÃO 1: MÉTRICAS PREMIUM (HTML/CSS) ===
-            custo_total_dash = CUSTO_LEGADO_BRL
-            if not df_hist_dash.empty and 'custo_estimado_brl' in df_hist_dash.columns:
-                custo_total_dash += df_hist_dash['custo_estimado_brl'].sum() or 0.0
-            
-            taxa_aprovacao = (positivos / total_avaliados * 100) if total_avaliados > 0 else 0
-            
-
             # === SEÇÃO 1: MÉTRICAS PREMIUM (HTML/CSS) ===
             custo_total_dash = CUSTO_LEGADO_BRL
             if not df_hist_dash.empty and 'custo_estimado_brl' in df_hist_dash.columns:
