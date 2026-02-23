@@ -941,25 +941,24 @@ if page == "Criar Roteiros":
                             except Exception as e:
                                 st.error(f"Erro na geração: {e}")
 
-    # --- MESA DE TRABALHO E HISTÓRICO LATERAL ---
+    # --- MESA DE TRABALHO E HISTÓRICO ---
     st.markdown("<br>", unsafe_allow_html=True)
     
-    col_hist_nav, col_main_work = st.columns([0.8, 3.5]) # Layout 2 Colunas
-    
-    with col_hist_nav:
-        st.markdown("##### 📅 Roteiros Recentes")
-        st.caption("Acesse roteiros anteriores para revisão ou re-exportação.")
+    with st.expander("📜 Roteiros Recentes (Mesa de Trabalho)", expanded=False):
+        st.caption("Acesse roteiros da sessão atual ou busque no banco de dados para re-edição.")
         
         if 'roteiros' in st.session_state and st.session_state['roteiros']:
-            st.markdown("---")
             st.markdown("**Sessão Atual:** (Recentes no topo)")
+            
+            # Criar colunas para os botões da sessão atual
+            cols_sessao = st.columns(min(4, len(st.session_state['roteiros'])))
             for idx, r_item in enumerate(st.session_state['roteiros']):
-                # Lógica de número inverso: Se temos #102, #101...
                 num_tag = f"#{r_item.get('global_num', '?')}"
                 btn_txt = f"{num_tag} - {r_item.get('codigo', '...')}"
-                if st.button(btn_txt, key=f"session_btn_{idx}", use_container_width=True, type="primary" if st.session_state.get('roteiro_ativo_idx', 0) == idx else "secondary"):
-                    st.session_state['roteiro_ativo_idx'] = idx
-                    st.rerun()
+                with cols_sessao[idx % len(cols_sessao)]:
+                    if st.button(btn_txt, key=f"session_btn_{idx}", use_container_width=True, type="primary" if st.session_state.get('roteiro_ativo_idx', 0) == idx else "secondary"):
+                        st.session_state['roteiro_ativo_idx'] = idx
+                        st.rerun()
             st.markdown("---")
         
         if 'supabase_client' in st.session_state:
@@ -972,10 +971,8 @@ if page == "Criar Roteiros":
                     df_recent = pd.DataFrame(res_recent.data)
                     df_recent['data_simples'] = pd.to_datetime(df_recent['criado_em']).dt.date
                     
-                    # Filtro de Busca Digitada
-                    search_q = st.text_input("🔍 Buscar no histórico:", placeholder="Nome ou SKU...", label_visibility="collapsed", key="hist_search")
+                    search_q = st.text_input("🔍 Buscar no histórico do banco:", placeholder="Nome ou SKU...", key="hist_search")
                     if search_q:
-                        # Filtra por Código ou pelo conteúdo do Roteiro (que contém o nome do produto no topo)
                         df_recent = df_recent[
                             df_recent['codigo_produto'].str.contains(search_q, case=False, na=False) |
                             df_recent['roteiro_gerado'].str.contains(search_q, case=False, na=False)
@@ -984,13 +981,14 @@ if page == "Criar Roteiros":
                     datas_unicas = df_recent['data_simples'].unique()
                     
                     for dia in datas_unicas:
-                        with st.expander(f"📁 {dia.strftime('%d/%m/%Y')}", expanded=(dia == datetime.now().date())):
-                            dia_df = df_recent[df_recent['data_simples'] == dia]
-                            # Ordem inversa dentro do dia para os últimos ficarem no topo da lista lateral
-                            for _, r_row in dia_df.iterrows():
-                                btn_label = f"{r_row['codigo_produto']} ({r_row['modo_trabalho'][:2]})"
-                                if st.button(f"👁️ {btn_label}", key=f"recall_{r_row['criado_em']}", use_container_width=True):
-                                    # ... (lógica de item)
+                        dia_df = df_recent[df_recent['data_simples'] == dia]
+                        st.markdown(f"**📁 {dia.strftime('%d/%m/%Y')}**")
+                        # Em Grade
+                        cols_db = st.columns(4)
+                        for i, (_, r_row) in enumerate(dia_df.iterrows()):
+                            btn_label = f"👁️ {r_row['codigo_produto']} ({r_row['modo_trabalho'][:2]})"
+                            with cols_db[i % 4]:
+                                if st.button(btn_label, key=f"recall_{r_row['criado_em']}", use_container_width=True):
                                     rec_item = {
                                         "ficha": r_row['ficha_extraida'],
                                         "roteiro_original": r_row['roteiro_gerado'],
@@ -999,7 +997,6 @@ if page == "Criar Roteiros":
                                         "model_id": r_row['modelo_llm'],
                                         "custo_brl": r_row['custo_estimado_brl']
                                     }
-                                    # Tenta extrair o mês da primeira linha se for NW LU [MES]
                                     try:
                                         first_line = r_row['roteiro_gerado'].split('\n')[0]
                                         if "NW LU" in first_line:
@@ -1012,21 +1009,20 @@ if page == "Criar Roteiros":
                                         st.session_state['roteiros'] = []
                                     
                                     if not any(x.get('codigo') == rec_item['codigo'] for x in st.session_state['roteiros']):
-                                        # Insere no TOPO da mesa de trabalho
                                         st.session_state['roteiros'].insert(0, rec_item)
                                         st.session_state['roteiro_ativo_idx'] = 0
                                         st.rerun()
                                     else:
                                         st.info("Este roteiro já está na sua mesa.")
                 else:
-                    st.info("Nenhum histórico recente.")
+                    st.info("Nenhum histórico recente no banco.")
             except Exception as e:
-                st.error(f"Erro ao carregar histórico lateral: {e}")
+                st.error(f"Erro ao carregar histórico: {e}")
         else:
-            st.info("Conecte o Supabase.")
+            st.info("Conecte o Supabase para ver o histórico do banco de dados.")
 
-    with col_main_work:
-        if 'roteiros' in st.session_state and st.session_state['roteiros']:
+    # --- CANVA DO ROTEIRO ATIVO (AGORA OCUPANDO TODA A LARGURA) ---
+    if 'roteiros' in st.session_state and st.session_state['roteiros']:
             # Botão para baixar todos os roteiros em um ZIP (Full Width)
             zip_bytes, zip_filename = export_all_roteiros_zip(
                 st.session_state['roteiros'], 
@@ -1650,9 +1646,10 @@ elif page == "Histórico":
                 else:
                     df_hist['custo_brl'] = "-"
                 
-                # Define o index da tabela para começar do 01, 02...
+                # Define o index da tabela para usar a lógica inversa (mais recentes com nº maior)
                 df_hist.reset_index(drop=True, inplace=True)
-                df_hist.index = [f"{i+1:02d}" for i in range(len(df_hist))]
+                total_linhas = len(df_hist)
+                df_hist.index = [f"#{total_linhas - i:03d}" for i in range(total_linhas)]
                 
                 # Colunas a exibir
                 cols_display = ['criado_em', 'codigo_produto', 'modo_trabalho']
