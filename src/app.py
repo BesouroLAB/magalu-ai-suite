@@ -17,6 +17,18 @@ from src.jsonld_generator import export_jsonld_string, wrap_in_script_tag
 
 load_dotenv()
 
+# --- HELPERS PARA NUMERAÇÃO ---
+def get_total_script_count(sp_client):
+    """Retorna o total de registros na tabela historico_roteiros para numeração sequencial."""
+    if not sp_client:
+        return 0
+    try:
+        # Busca o total de registros no banco
+        res = sp_client.table("historico_roteiros").select("id", count="exact").limit(1).execute()
+        return res.count if hasattr(res, 'count') and res.count is not None else 0
+    except Exception:
+        return 0
+
 # --- CONFIGURAÇÃO GERAL ---
 st.set_page_config(page_title="Magalu AI Suite", page_icon="🛍️", layout="wide", initial_sidebar_state="expanded")
 
@@ -376,26 +388,26 @@ with st.sidebar:
         </div>
         """, unsafe_allow_html=True)
     
-    # --- STATUS INDICATORS (VIBRANT GREEN TAGS) ---
-    status_color_gem = "#00ff88" if api_key_env else "#4b5563"
+    # --- STATUS INDICATORS (VIBRANT TAGS) ---
+    status_color_gem = "#00ff88" if api_key_env else "#ff4b4b"
     status_label_gem = "ON" if api_key_env else "OFF"
-    status_bg_gem = "rgba(0, 255, 136, 0.15)" if api_key_env else "rgba(75, 85, 99, 0.15)"
+    status_bg_gem = "rgba(0, 255, 136, 0.12)" if api_key_env else "rgba(255, 75, 75, 0.12)"
     
-    status_color_supa = "#00ff88" if supabase_client else "#4b5563"
+    status_color_supa = "#00ff88" if supabase_client else "#ff4b4b"
     status_label_supa = "ON" if supabase_client else "OFF"
-    status_bg_supa = "rgba(0, 255, 136, 0.15)" if api_key_env else "rgba(75, 85, 99, 0.15)"
+    status_bg_supa = "rgba(0, 255, 136, 0.12)" if supabase_client else "rgba(255, 75, 75, 0.12)"
 
     st.markdown(f"""
-        <div style='font-size: 9px; color: #8b92a5; margin-bottom: 25px; margin-top: 5px; display: flex; align-items: center; gap: 8px;'>
-            <span style='font-weight: 700; letter-spacing: 0.5px;'>V2.5</span>
+        <div style='font-size: 8px; color: #8b92a5; margin-bottom: 25px; margin-top: 5px; display: flex; align-items: center; gap: 8px;'>
+            <span style='font-weight: 400; letter-spacing: 0.5px;'>V2.5</span>
             <span style='color: #2A3241;'>|</span>
             <div style='display: flex; align-items: center; gap: 4px;'>
-                <span style='color: {status_color_gem}; font-weight: 600; font-size: 9px;'>Gemini</span>
-                <span style='background: {status_bg_gem}; color: {status_color_gem}; padding: 0.5px 4px; border-radius: 3px; font-size: 7px; font-weight: 900; border: 1px solid {status_color_gem}33;'>{status_label_gem}</span>
+                <span style='color: {status_color_gem}; font-weight: 400; font-size: 8px;'>Gemini</span>
+                <span style='background: {status_bg_gem}; color: {status_color_gem}; padding: 0.2px 3px; border-radius: 2px; font-size: 6px; font-weight: 600; border: 1px solid {status_color_gem}22;'>{status_label_gem}</span>
             </div>
             <div style='display: flex; align-items: center; gap: 4px;'>
-                <span style='color: {status_color_supa}; font-weight: 600; font-size: 9px;'>Supabase</span>
-                <span style='background: {status_bg_supa}; color: {status_color_supa}; padding: 0.5px 4px; border-radius: 3px; font-size: 7px; font-weight: 900; border: 1px solid {status_color_supa}33;'>{status_label_supa}</span>
+                <span style='color: {status_color_supa}; font-weight: 400; font-size: 8px;'>Supabase</span>
+                <span style='background: {status_bg_supa}; color: {status_color_supa}; padding: 0.2px 3px; border-radius: 2px; font-size: 6px; font-weight: 600; border: 1px solid {status_color_supa}22;'>{status_label_supa}</span>
             </div>
         </div>
     """, unsafe_allow_html=True)
@@ -577,6 +589,8 @@ if page == "Criar Roteiros":
                             model_id=modelo_id
                         )
                         roteiros = []
+                        # Busca a base do histórico para numeração (o total já feito)
+                        base_count = get_total_script_count(st.session_state.get('supabase_client'))
                         
                         progress = st.progress(0, text="Iniciando extração...")
                         
@@ -601,7 +615,10 @@ if page == "Criar Roteiros":
                             resultado = agent.gerar_roteiro(ficha_extraida, modo_trabalho=modo_selecionado, mes=mes_selecionado, data_roteiro=data_roteiro_str)
                             roteiro_texto = resultado["roteiro"]
                             
-                            roteiros.append({
+                            # Atribuímos o número sequencial histórico (o último é o número mais alto)
+                            global_id = base_count + i + 1
+                            
+                            roteiros.insert(0, { # Insere no INÍCIO para o último ficar no topo
                                 "ficha": ficha_extraida,
                                 "roteiro_original": roteiro_texto,
                                 "categoria_id": cat_selecionada_id,
@@ -609,7 +626,8 @@ if page == "Criar Roteiros":
                                 "model_id": resultado["model_id"],
                                 "tokens_in": resultado["tokens_in"],
                                 "tokens_out": resultado["tokens_out"],
-                                "custo_brl": resultado["custo_brl"]
+                                "custo_brl": resultado["custo_brl"],
+                                "global_num": global_id # Salva o número para exibição
                             })
                             
                             # Auto-log no histórico (silencioso) com tracking de custo
@@ -637,8 +655,12 @@ if page == "Criar Roteiros":
                         
                         progress.progress(1.0, text="✅ Lote Concluído com Sucesso!")
                         st.session_state['data_roteiro_global'] = data_roteiro_str
-                        st.session_state['roteiros'] = roteiros
-                        st.rerun() # Força o rerun para fechar o expander
+                        if 'roteiros' not in st.session_state:
+                            st.session_state['roteiros'] = []
+                        # Prepend o novo lote ao início da lista global da sessão
+                        st.session_state['roteiros'] = roteiros + st.session_state.get('roteiros', [])
+                        st.session_state['roteiro_ativo_idx'] = 0 # Foca no mais novo
+                        st.rerun() 
                         
                     except Exception as e:
                         st.error(f"Erro na geração: {e}")
@@ -707,13 +729,19 @@ if page == "Criar Roteiros":
                                 model_id=modelo_id
                             )
                             roteiros = []
-                            for item_man in fichas_validas:
+                            # Busca a base do histórico para numeração
+                            base_count = get_total_script_count(st.session_state.get('supabase_client'))
+                            
+                            for i, item_man in enumerate(fichas_validas):
                                 ficha = item_man["ficha"]
                                 code = item_man["sku"]
                                 resultado = agent.gerar_roteiro(ficha, modo_trabalho="NW (NewWeb)", mes=mes_selecionado, data_roteiro=data_roteiro_str)
                                 roteiro_texto = resultado["roteiro"]
                                 
-                                roteiros.append({
+                                # Atribuímos o número sequencial histórico
+                                global_id = base_count + i + 1
+
+                                roteiros.insert(0, { # Newest at the beginning
                                     "ficha": ficha,
                                     "roteiro_original": roteiro_texto,
                                     "categoria_id": cat_selecionada_id,
@@ -721,7 +749,8 @@ if page == "Criar Roteiros":
                                     "model_id": resultado["model_id"],
                                     "tokens_in": resultado["tokens_in"],
                                     "tokens_out": resultado["tokens_out"],
-                                    "custo_brl": resultado["custo_brl"]
+                                    "custo_brl": resultado["custo_brl"],
+                                    "global_num": global_id
                                 })
 
                                 # Auto-log no histórico (Modo Manual)
@@ -742,7 +771,11 @@ if page == "Criar Roteiros":
                                     pass
 
                             st.session_state['data_roteiro_global'] = data_roteiro_str
-                            st.session_state['roteiros'] = roteiros
+                            if 'roteiros' not in st.session_state:
+                                st.session_state['roteiros'] = []
+                            # Prepend para o topo
+                            st.session_state['roteiros'] = roteiros + st.session_state.get('roteiros', [])
+                            st.session_state['roteiro_ativo_idx'] = 0
                             st.rerun()
                         except Exception as e:
                             st.error(f"Erro na geração: {e}")
@@ -773,10 +806,11 @@ if page == "Criar Roteiros":
                     for dia in datas_unicas:
                         with st.expander(f"📁 {dia.strftime('%d/%m/%Y')}", expanded=(dia == datetime.now().date())):
                             dia_df = df_recent[df_recent['data_simples'] == dia]
+                            # Ordem inversa dentro do dia para os últimos ficarem no topo da lista lateral
                             for _, r_row in dia_df.iterrows():
                                 btn_label = f"{r_row['codigo_produto']} ({r_row['modo_trabalho'][:2]})"
                                 if st.button(f"👁️ {btn_label}", key=f"recall_{r_row['criado_em']}", use_container_width=True):
-                                    # Trazer de volta para a Mesa de Trabalho
+                                    # ... (lógica de item)
                                     rec_item = {
                                         "ficha": r_row['ficha_extraida'],
                                         "roteiro_original": r_row['roteiro_gerado'],
@@ -788,10 +822,10 @@ if page == "Criar Roteiros":
                                     if 'roteiros' not in st.session_state:
                                         st.session_state['roteiros'] = []
                                     
-                                    # Evita duplicar se já estiver na mesa
                                     if not any(x.get('codigo') == rec_item['codigo'] for x in st.session_state['roteiros']):
-                                        st.session_state['roteiros'].append(rec_item)
-                                        st.session_state['roteiro_ativo_idx'] = len(st.session_state['roteiros']) - 1
+                                        # Insere no TOPO da mesa de trabalho
+                                        st.session_state['roteiros'].insert(0, rec_item)
+                                        st.session_state['roteiro_ativo_idx'] = 0
                                         st.rerun()
                                     else:
                                         st.info("Este roteiro já está na sua mesa.")
@@ -843,7 +877,10 @@ if page == "Criar Roteiros":
                 ficha_str = ficha_raw.get('text', str(ficha_raw)) if isinstance(ficha_raw, dict) else str(ficha_raw)
                 linhas_ficha = ficha_str.split('\n')
                 nome_curto = linhas_ficha[0][:20] + "..." if linhas_ficha and len(linhas_ficha[0]) > 20 else (linhas_ficha[0] if linhas_ficha else f"Item {i+1}")
-                opcoes_tags.append(f"{i+1:02d} - 📦 {codigo} {nome_curto}")
+                
+                # Usa o número global histórico se disponível, senão usa contagem regressiva da sessão
+                global_num = item.get('global_num', len(st.session_state['roteiros']) - i)
+                opcoes_tags.append(f"{global_num:03d} - 📦 {codigo} {nome_curto}")
                 
             st.markdown("### 🗂️ Selecione o Roteiro para Edição")
             try:
