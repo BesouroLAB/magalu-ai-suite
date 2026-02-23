@@ -55,13 +55,14 @@ DARK_MODE_CSS = """
         transition: all 0.2s ease-in-out !important;
     }
     
-    /* Botões Primários */
-    button[kind="primary"] {
+    /* Botões Primários (Global) */
+    button[kind="primary"], .stButton > button[kind="primary"], [data-testid="stFormSubmitButton"] > button, .stFormSubmitButton > button {
         background-color: var(--mglu-blue) !important;
         color: white !important;
         border: none !important;
+        box-shadow: none !important;
     }
-    button[kind="primary"]:hover {
+    button[kind="primary"]:hover, .stButton > button[kind="primary"]:hover, [data-testid="stFormSubmitButton"] > button:hover, .stFormSubmitButton > button:hover {
         background-color: #0066cc !important;
         transform: scale(1.02) !important;
     }
@@ -686,10 +687,10 @@ elif page == "Treinar IA":
             st.error(f"Erro ao carregar dados do hub: {e}")
             df_fb = df_est = df_fon = df_ouro = pd.DataFrame()
 
-        tab_fb, tab_est, tab_fon, tab_ouro = st.tabs(["📉 Calibração (Logs & Comparação)", "💬 Estruturas (Aberturas/Fechamentos)", "🗣️ Fonética", "🏆 Roteiros Ouro"])
+        tab_fb, tab_est, tab_fon, tab_ouro = st.tabs(["⚖️ Calibração (Logs & Comparação)", "💬 Estruturas (Aberturas/Fechamentos)", "🗣️ Fonética", "🏆 Roteiros Ouro"])
         
         with tab_fb:
-            st.markdown("### 📉 Calibração: IA vs Aprovado")
+            st.markdown("### ⚖️ Calibração: IA vs Aprovado")
             st.caption("Compare o que a IA gerou com o que o Breno aprovou. Cada registro alimenta o aprendizado contínuo.")
             
             # --- FORMULÁRIO DE ENTRADA ---
@@ -704,7 +705,7 @@ elif page == "Treinar IA":
                 
                 avaliacao_input = st.select_slider("Avaliação geral do roteiro original da IA:", options=["Ruim", "Regular", "Bom", "Ótimo"], value="Bom")
                 
-                submitted = st.form_submit_button("📥 Registrar Comparação", type="primary", use_container_width=True)
+                submitted = st.form_submit_button("⚖️ Registrar Comparação", type="primary", use_container_width=True)
                 if submitted:
                     if roteiro_ia_input.strip() and roteiro_breno_input.strip():
                         try:
