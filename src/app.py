@@ -3,6 +3,7 @@ import os
 import sys
 import pandas as pd
 from datetime import datetime
+import pytz
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
@@ -161,13 +162,27 @@ if not check_login():
     st.stop()
 
 
-# --- FUNÇÕES SUPABASE ---
+# --- FUNÇÕES SUPABASE E AUXILIARES ---
 def init_supabase():
     url = os.environ.get("SUPABASE_URL") or st.secrets.get("SUPABASE_URL")
     key = os.environ.get("SUPABASE_KEY") or st.secrets.get("SUPABASE_KEY")
     if url and key:
         return create_client(url, key)
     return None
+
+def convert_to_sp_time(utc_datetime_str):
+    """Converte string UTC do Supabase para o fuso de São Paulo formatado."""
+    if not utc_datetime_str:
+        return ""
+    try:
+        # Tenta interpretar o formato ISO do Supabase
+        dt_utc = pd.to_datetime(utc_datetime_str)
+        if dt_utc.tzinfo is None:
+            dt_utc = dt_utc.tz_localize('UTC')
+        dt_sp = dt_utc.tz_convert('America/Sao_Paulo')
+        return dt_sp.strftime('%d/%m/%Y %H:%M:%S')
+    except Exception:
+        return utc_datetime_str
 
 def salvar_feedback(sp_client, cat_id, ficha, roteiro_ia, roteiro_final, avaliacao):
     if not sp_client:
@@ -373,8 +388,19 @@ if page == "Criar Roteiros":
     expander_input = st.expander("📝 Command Center (Entradas de Dados)", expanded=True if 'roteiros' not in st.session_state else False)
     
     with expander_input:
-        # Categoria padrão
-        cat_selecionada_id = 1
+        # Categoria (Busca dinâmica do banco)
+        categorias = {"Móveis e Colchões": 1} # Fallback
+        try:
+            sp_client = st.session_state.get('supabase_client')
+            if sp_client:
+                res_cats = sp_client.table("categorias").select("*").execute()
+                if hasattr(res_cats, 'data') and res_cats.data:
+                    categorias = {c['nome']: c['id'] for c in res_cats.data}
+        except Exception:
+            pass
+            
+        cat_nome_selecionada = st.selectbox("Departamento / Categoria", list(categorias.keys()))
+        cat_selecionada_id = categorias[cat_nome_selecionada]
 
         # Modo de entrada: Código do Produto ou Ficha Manual
         modo_entrada = st.toggle("Modo Manual (colar ficha técnica)", value=False)
@@ -459,7 +485,7 @@ if page == "Criar Roteiros":
                             )
                             
                             # 2. Gera o roteiro com os dados extraídos
-                            roteiro = agent.gerar_roteiro(ficha_extraida, modo_trabalho=modo_selecionado)
+                            roteiro = agent.gerar_roteiro(ficha_extraida, modo_trabalho=modo_selecionado, categoria_id=cat_selecionada_id)
                             roteiros.append({
                                 "ficha": ficha_extraida,
                                 "roteiro_original": roteiro,
@@ -605,7 +631,9 @@ if page == "Criar Roteiros":
             idx = st.session_state['roteiro_ativo_idx']
             
         item = st.session_state['roteiros'][idx]
-        linhas = item['ficha'].split('\n')
+        ficha_raw = item.get('ficha', '')
+        ficha_str = ficha_raw.get('text', str(ficha_raw)) if isinstance(ficha_raw, dict) else str(ficha_raw)
+        linhas = ficha_str.split('\n')
         titulo_curto = linhas[0][:60] if linhas else f"Produto {idx+1}"
         cat_id_roteiro = item.get("categoria_id", cat_selecionada_id)
         codigo_produto = item.get("codigo", "")
@@ -699,16 +727,45 @@ elif page == "Treinar IA":
             res_est = sp_client.table("treinamento_estruturas").select("*").execute()
             res_fon = sp_client.table("treinamento_fonetica").select("*").execute()
             res_ouro = sp_client.table("roteiros_ouro").select("*").execute()
+            res_cats = sp_client.table("categorias").select("*").execute()
             
             df_fb = pd.DataFrame(res_fb.data if hasattr(res_fb, 'data') else [])
             df_est = pd.DataFrame(res_est.data if hasattr(res_est, 'data') else [])
             df_fon = pd.DataFrame(res_fon.data if hasattr(res_fon, 'data') else [])
             df_ouro = pd.DataFrame(res_ouro.data if hasattr(res_ouro, 'data') else [])
+            df_cats = pd.DataFrame(res_cats.data if hasattr(res_cats, 'data') else [])
+            
+            # --- CONVERSÃO DE FUSO HORÁRIO GLOBAL (UTC -> SÃO PAULO) ---
+            for df in [df_fb, df_est, df_fon, df_ouro, df_cats]:
+                if not df.empty and 'criado_em' in df.columns:
+                    df['criado_em'] = df['criado_em'].apply(convert_to_sp_time)
+                    
         except Exception as e:
             st.error(f"Erro ao carregar dados do hub: {e}")
-            df_fb = df_est = df_fon = df_ouro = pd.DataFrame()
+            df_fb = df_est = df_fon = df_ouro = df_cats = pd.DataFrame()
 
-        tab_fb, tab_est, tab_fon, tab_ouro = st.tabs(["⚖️ Calibração (Logs & Comparação)", "💬 Estruturas (Aberturas/Fechamentos)", "🗣️ Fonética", "🏆 Roteiros Ouro"])
+        tab_fb, tab_est, tab_fon, tab_ouro, tab_cat = st.tabs(["⚖️ Calibração", "💬 Estruturas", "🗣️ Fonética", "🏆 Roteiros Ouro", "📂 Categorias"])
+        
+        with tab_cat:
+            st.markdown("### 📂 Gestão de Categorias e Tom de Voz")
+            st.caption("A IA usa o 'Tom de Voz' de cada categoria para adaptar a linguagem do roteiro.")
+            
+            with st.form("form_nova_cat", clear_on_submit=True):
+                c_nome = st.text_input("Nome da Categoria (Ex: Eletrodomésticos, Beleza)")
+                c_tom = st.text_area("Tom de Voz / Diretrizes", placeholder="Ex: Linguagem alegre, empolgada, focada em praticidade do dia a dia...")
+                if st.form_submit_button("➕ Cadastrar Nova Categoria", type="primary"):
+                    if c_nome.strip() and c_tom.strip():
+                        sp_client.table("categorias").insert({"nome": c_nome, "tom_voz_diretrizes": c_tom}).execute()
+                        st.success(f"Categoria '{c_nome}' criada com sucesso!")
+                        st.rerun()
+                    else:
+                        st.warning("Preencha nome e tom de voz.")
+            
+            st.divider()
+            if not df_cats.empty:
+                st.dataframe(df_cats[['id', 'nome', 'tom_voz_diretrizes', 'criado_em']], use_container_width=True)
+            else:
+                st.info("Nenhuma categoria encontrada.")
         
         with tab_fb:
             st.markdown("### ⚖️ Calibração: IA vs Aprovado")
@@ -849,6 +906,9 @@ elif page == "Histórico":
             if res_hist.data:
                 df_hist = pd.DataFrame(res_hist.data)
                 
+                if not df_hist.empty and 'criado_em' in df_hist.columns:
+                    df_hist['criado_em'] = df_hist['criado_em'].apply(convert_to_sp_time)
+                
                 # Barra de busca simples
                 search = st.text_input("🔍 Buscar no histórico (Código ou Roteiro):", placeholder="Digite o código do produto...")
                 if search:
@@ -897,6 +957,11 @@ elif page == "Dashboard":
             df_pers = pd.DataFrame(pers_data)
             df_fon = pd.DataFrame(fon_data)
             df_est = pd.DataFrame(est_data)
+            
+            # --- CONVERSÃO DE FUSO HORÁRIO GLOBAL (UTC -> SÃO PAULO) ---
+            for df in [df_fb, df_ouro, df_pers, df_fon, df_est]:
+                if not df.empty and 'criado_em' in df.columns:
+                    df['criado_em'] = df['criado_em'].apply(convert_to_sp_time)
             
             if not df_fb.empty: df_fb['categoria'] = df_fb['categoria_id'].map(cats_dict)
             if not df_ouro.empty: df_ouro['categoria'] = df_ouro['categoria_id'].map(cats_dict)
