@@ -3,6 +3,7 @@ import json
 import glob
 from google import genai
 from google.genai.types import GenerateContentConfig
+from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,6 +22,8 @@ MODELOS_DISPONIVEIS = {
     "Gemini 2.5 Flash (Rápido)": "gemini-2.5-flash",
     "Gemini 2.5 Pro (Qualidade)": "gemini-2.5-pro",
     "Gemini 2.0 Flash (Econômico)": "gemini-2.0-flash",
+    "Grok 4.1 Fast (Puter/xAI)": "x-ai/grok-4-1-fast",
+    "Grok 2 (Puter/xAI)": "x-ai/grok-2",
 }
 
 def calcular_custo_brl(model_id, tokens_in, tokens_out):
@@ -31,13 +34,24 @@ def calcular_custo_brl(model_id, tokens_in, tokens_out):
 
 class RoteiristaAgent:
     def __init__(self, supabase_client=None, model_id="gemini-2.5-flash"):
-        api_key = os.environ.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("GEMINI_API_KEY não encontrada!")
-
-        self.client = genai.Client(api_key=api_key)
         self.model_id = model_id
         self.supabase = supabase_client
+        self.client_gemini = None
+        self.client_openai = None
+
+        if "gemini" in self.model_id.lower():
+            api_key = os.environ.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
+            if not api_key:
+                raise ValueError("GEMINI_API_KEY não encontrada!")
+            self.client_gemini = genai.Client(api_key=api_key)
+        else:
+            puter_key = os.environ.get("PUTER_API_KEY")
+            if not puter_key:
+                raise ValueError("PUTER_API_KEY não encontrada!")
+            self.client_openai = OpenAI(
+                api_key=puter_key,
+                base_url="https://api.puter.com/puterai/openai/v1/"
+            )
 
         # Carrega toda a base de conhecimento estática
         self.system_prompt = self._load_file(
@@ -264,35 +278,51 @@ class RoteiristaAgent:
             f"7. **REGRA DE REFERÊNCIA:** Se você usar conhecimento interno (item 6) OU dados de 'FONTE EXTERNA' (fabricante), você deve OBRIGATORIAMENTE adicionar uma nota de referência com o link da fonte (ou site oficial do fabricante) no rodapé do roteiro."
         )
 
-        contents = [final_prompt]
+        if self.client_gemini:
+            contents = [final_prompt]
+            # Adiciona a lista de imagens se houver
+            if images_list:
+                from google.genai.types import Part
+                for img_dict in images_list:
+                    img_bytes = img_dict.get("bytes")
+                    img_mime = img_dict.get("mime")
+                    if img_bytes and img_mime:
+                        contents.append(
+                            Part.from_bytes(data=img_bytes, mime_type=img_mime)
+                        )
+
+            response = self.client_gemini.models.generate_content(
+                model=self.model_id,
+                contents=contents,
+            )
+            roteiro = response.text
+            
+            # Captura métricas de uso (tokens)
+            tokens_in = getattr(response.usage_metadata, 'prompt_token_count', 0) if hasattr(response, 'usage_metadata') else 0
+            tokens_out = getattr(response.usage_metadata, 'candidates_token_count', 0) if hasattr(response, 'usage_metadata') else 0
         
-        # Adiciona a lista de imagens se houver
-        if images_list:
-            from google.genai.types import Part
-            for img_dict in images_list:
-                img_bytes = img_dict.get("bytes")
-                img_mime = img_dict.get("mime")
-                if img_bytes and img_mime:
-                    contents.append(
-                        Part.from_bytes(data=img_bytes, mime_type=img_mime)
-                    )
-
-        response = self.client.models.generate_content(
-            model=self.model_id,
-            contents=contents,
-        )
-
-        # Captura métricas de uso (tokens)
-        tokens_in = 0
-        tokens_out = 0
-        if hasattr(response, 'usage_metadata') and response.usage_metadata:
-            tokens_in = getattr(response.usage_metadata, 'prompt_token_count', 0) or 0
-            tokens_out = getattr(response.usage_metadata, 'candidates_token_count', 0) or 0
+        elif self.client_openai:
+            messages = [{"role": "user", "content": final_prompt}]
+            # Para modelos OpenAI/Puter, o envio de imagens (vision) tem uma estrutura diferente.
+            # Como a documentação primária do Puter para Grok Fast não deixa claro o suporte a imagens,
+            # passaremos apenas texto por enquanto, a não ser que o modelo suporte e tenhamos url.
+            
+            response = self.client_openai.chat.completions.create(
+                model=self.model_id,
+                messages=messages
+            )
+            roteiro = response.choices[0].message.content
+            
+            tokens_in = response.usage.prompt_tokens if hasattr(response, 'usage') else 0
+            tokens_out = response.usage.completion_tokens if hasattr(response, 'usage') else 0
+        
+        else:
+            raise Exception("Nenhum cliente LLM configurado válido.")
 
         custo_brl = calcular_custo_brl(self.model_id, tokens_in, tokens_out)
 
         return {
-            "roteiro": response.text,
+            "roteiro": roteiro,
             "model_id": self.model_id,
             "tokens_in": tokens_in,
             "tokens_out": tokens_out,

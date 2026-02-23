@@ -393,6 +393,10 @@ with st.sidebar:
     status_label_gem = "ON" if api_key_env else "OFF"
     status_bg_gem = "rgba(0, 255, 136, 0.12)" if api_key_env else "rgba(255, 75, 75, 0.12)"
     
+    status_color_puter = "#00ff88" if puter_key_env else "#ff4b4b"
+    status_label_puter = "ON" if puter_key_env else "OFF"
+    status_bg_puter = "rgba(0, 255, 136, 0.12)" if puter_key_env else "rgba(255, 75, 75, 0.12)"
+    
     status_color_supa = "#00ff88" if supabase_client else "#ff4b4b"
     status_label_supa = "ON" if supabase_client else "OFF"
     status_bg_supa = "rgba(0, 255, 136, 0.12)" if supabase_client else "rgba(255, 75, 75, 0.12)"
@@ -404,6 +408,10 @@ with st.sidebar:
             <div style='display: flex; align-items: center; gap: 4px;'>
                 <span style='color: {status_color_gem}; font-weight: 400; font-size: 8px;'>Gemini</span>
                 <span style='background: {status_bg_gem}; color: {status_color_gem}; padding: 0.2px 3px; border-radius: 2px; font-size: 6px; font-weight: 600; border: 1px solid {status_color_gem}22;'>{status_label_gem}</span>
+            </div>
+            <div style='display: flex; align-items: center; gap: 4px;'>
+                <span style='color: {status_color_puter}; font-weight: 400; font-size: 8px;'>Grok</span>
+                <span style='background: {status_bg_puter}; color: {status_color_puter}; padding: 0.2px 3px; border-radius: 2px; font-size: 6px; font-weight: 600; border: 1px solid {status_color_puter}22;'>{status_label_puter}</span>
             </div>
             <div style='display: flex; align-items: center; gap: 4px;'>
                 <span style='color: {status_color_supa}; font-weight: 400; font-size: 8px;'>Supabase</span>
@@ -440,17 +448,29 @@ with st.sidebar:
         
         # Gemini Key
         gemini_placeholder = "••••••••" + api_key_env[-4:] if api_key_env and len(api_key_env) > 4 else ""
-        api_key_input = st.text_input(
-            f"🔑 Chave Gemini ({gemini_status}):", 
-            type="password", 
-            placeholder=gemini_placeholder if api_key_env else "Cole sua chave aqui"
-        )
-        if st.button("Salvar Chave Gemini", key="save_gemini"):
-            if api_key_input.strip():
+        if "GEMINI_API_KEY" in os.environ:
+            st.sidebar.success("✅ API do Gemini (Carregada do .env)")
+            api_key_env = os.environ.get("GEMINI_API_KEY")
+        else:
+            api_key_input = st.sidebar.text_input("Gemini API Key:", type="password", key="gemini_key_in")
+            if api_key_input:
                 with open('.env', 'a', encoding='utf-8') as f:
                     f.write(f"\nGEMINI_API_KEY={api_key_input}")
                 os.environ["GEMINI_API_KEY"] = api_key_input
-                st.success("Salva! F5.")
+                st.sidebar.success("✅ Chave Gemini Adicionada!")
+                st.stop()
+            
+        # Puter API Key Input
+        if "PUTER_API_KEY" in os.environ:
+            st.sidebar.success("✅ API do Puter (Carregada do .env)")
+            puter_key_env = os.environ.get("PUTER_API_KEY")
+        else:
+            puter_key_input = st.sidebar.text_input("Puter Auth Token (Grok):", type="password", key="puter_key_in")
+            if puter_key_input:
+                with open('.env', 'a', encoding='utf-8') as f:
+                    f.write(f"\nPUTER_API_KEY={puter_key_input}")
+                os.environ["PUTER_API_KEY"] = puter_key_input
+                st.sidebar.success("✅ Token Puter Adicionado!")
                 st.stop()
 
         st.markdown("---")
@@ -580,8 +600,10 @@ if page == "Criar Roteiros":
                     st.warning("⚠️ Digite pelo menos um código de produto.")
                 elif len(codigos) > 15:
                     st.warning("⚠️ Limite excedido: Por favor, insira no máximo 15 códigos por vez (Rate Limit da API).")
-                elif not api_key_env:
+                elif "gemini" in modelo_id and not api_key_env:
                     st.warning("⚠️ Forneça uma chave da API do Gemini no painel.")
+                elif "grok" in modelo_id and not puter_key_env:
+                    st.warning("⚠️ Forneça o token de autenticação do Puter no painel.")
                 else:
                     try:
                         agent = RoteiristaAgent(
@@ -731,8 +753,10 @@ if page == "Criar Roteiros":
                 
                 if not fichas_validas:
                     st.warning("⚠️ Preencha o Código e a Ficha Técnica de pelo menos um produto.")
-                elif not api_key_env:
+                elif "gemini" in st.session_state.get('modelo_llm', '') and not api_key_env:
                     st.warning("⚠️ Forneça uma chave da API do Gemini no painel.")
+                elif "grok" in st.session_state.get('modelo_llm', '') and not puter_key_env:
+                    st.warning("⚠️ Forneça o token de autenticação do Puter no painel.")
                 else:
                     modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
                     with st.spinner(f"Processando {len(fichas_validas)} roteiro(s)..."):
