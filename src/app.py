@@ -693,8 +693,8 @@ if page == "Criar Roteiros":
                                 
                                 # Delay para evitar 429 Too Many Requests
                                 if i < len(codigos) - 1:
-                                    progress.progress((i + 0.8) / len(codigos), text=f"⏳ [{code}] Cota de segurança... Aguardando 3s.")
-                                    time.sleep(3)
+                                    progress.progress((i + 0.8) / len(codigos), text=f"⏳ [{code}] Cota de segurança... Aguardando 5s.")
+                                    time.sleep(5)
                             
                             progress.progress(1.0, text="✅ Lote Concluído com Sucesso!")
                             st.session_state['data_roteiro_global'] = data_roteiro_str
@@ -827,6 +827,11 @@ if page == "Criar Roteiros":
                                             }).execute()
                                     except Exception:
                                         pass
+
+                                    # Delay de segurança extra
+                                    if i < len(fichas_validas) - 1:
+                                        import time
+                                        time.sleep(5)
 
                                 st.session_state['data_roteiro_global'] = data_roteiro_str
                                 st.session_state['mes_global'] = mes_selecionado
