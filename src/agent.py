@@ -454,39 +454,85 @@ class RoteiristaAgent:
 
         user_prompt = f"--- CÓDIGO SUGERIDO ---\n{codigo_original}\n\n--- ROTEIRO ORIGINAL (IA) ---\n{original}\n\n--- ROTEIRO FINAL (HUMANO) ---\n{final}"
 
-        api_key = os.environ.get("GEMINI_API_KEY")
-        if not api_key:
-            return {"percentual": 50, "aprendizado": "Erro: API Key ausente.", "categoria_id": fallback_id, "codigo_produto": codigo_original}
-            
-        try:
-            client = genai.Client(api_key=api_key)
-            response = client.models.generate_content(
-                model='gemini-2.0-flash',
-                contents=user_prompt,
-                config=GenerateContentConfig(
-                    system_instruction=sys_prompt,
-                    response_mime_type="application/json",
+        # Tenta múltiplos provedores para garantir a calibragem (Gemini 2.0 -> Puter -> OpenRouter)
+        
+        # 🟢 OPÇÃO 1: GEMINI (Direto)
+        api_key_gemini = os.environ.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
+        if api_key_gemini:
+            try:
+                client = genai.Client(api_key=api_key_gemini)
+                response = client.models.generate_content(
+                    model='gemini-2.0-flash',
+                    contents=user_prompt,
+                    config=GenerateContentConfig(
+                        system_instruction=sys_prompt,
+                        response_mime_type="application/json",
+                        temperature=0.1
+                    ),
+                )
+                import json
+                res = json.loads(response.text)
+                return self._process_calib_res(res, fallback_id, categories_list, codigo_original)
+            except Exception as e:
+                print(f"⚠️ Erro Gemini Calibragem: {e}")
+
+        # 🔵 OPÇÃO 2: PUTER (Grok/Llama - Grátis)
+        api_key_puter = os.environ.get("PUTER_API_KEY")
+        if api_key_puter:
+            try:
+                from openai import OpenAI as OpenAIClient
+                client = OpenAIClient(api_key=api_key_puter, base_url="https://api.puter.com/puterai/openai/v1/")
+                response = client.chat.completions.create(
+                    model="x-ai/grok-2", # Ou outro modelo grátis do Puter
+                    messages=[
+                        {"role": "system", "content": sys_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    response_format={"type": "json_object"},
                     temperature=0.1
-                ),
-            )
-            
-            import json
-            res = json.loads(response.text)
-            
-            # Validação rigorosa do ID de categoria
-            returned_id = int(res.get("categoria_id", fallback_id))
-            valid_ids = [c['id'] for c in categories_list] if categories_list else []
-            
-            final_cat_id = returned_id if returned_id in valid_ids else fallback_id
-            
-            return {
-                "percentual": int(res.get("percentual", 50)),
-                "aprendizado": res.get("aprendizado", "Análise realizada."),
-                "categoria_id": final_cat_id,
-                "codigo_produto": res.get("codigo_produto", codigo_original)
-            }
-        except Exception as e:
-            return {"percentual": 50, "aprendizado": f"Erro: {str(e)}", "categoria_id": fallback_id, "codigo_produto": codigo_original}
+                )
+                import json
+                res = json.loads(response.choices[0].message.content)
+                return self._process_calib_res(res, fallback_id, categories_list, codigo_original)
+            except Exception as e:
+                print(f"⚠️ Erro Puter Calibragem: {e}")
+
+        # 🟡 OPÇÃO 3: OPENROUTER (DeepSeek/Phi - Grátis)
+        api_key_or = os.environ.get("OPENROUTER_API_KEY")
+        if api_key_or:
+            try:
+                from openai import OpenAI as OpenAIClient
+                client = OpenAIClient(api_key=api_key_or, base_url="https://openrouter.ai/api/v1")
+                response = client.chat.completions.create(
+                    model="google/gemma-2-9b-it:free",
+                    messages=[
+                        {"role": "system", "content": sys_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.1
+                )
+                import json
+                res = json.loads(response.choices[0].message.content)
+                return self._process_calib_res(res, fallback_id, categories_list, codigo_original)
+            except Exception as e:
+                print(f"⚠️ Erro OpenRouter Calibragem: {e}")
+
+        return {"percentual": 50, "aprendizado": "Erro: Nenhum provedor de IA disponível para calibragem.", "categoria_id": fallback_id, "codigo_produto": codigo_original}
+
+    def _process_calib_res(self, res, fallback_id, categories_list, codigo_original):
+        """Helper para processar e validar o JSON retornado pelos provedores."""
+        # Validação rigorosa do ID de categoria
+        returned_id = int(res.get("categoria_id", fallback_id))
+        valid_ids = [c['id'] for c in categories_list] if categories_list else []
+        final_cat_id = returned_id if returned_id in valid_ids else fallback_id
+        
+        return {
+            "percentual": int(res.get("percentual", 50)),
+            "aprendizado": res.get("aprendizado", "Análise realizada."),
+            "categoria_id": final_cat_id,
+            "codigo_produto": res.get("codigo_produto", codigo_original)
+        }
 
     def chat_with_context(self, user_query, chat_history=[], supabase_context=None):
         """
