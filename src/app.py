@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from src.agent import RoteiristaAgent
 from src.scraper import scrape_with_gemini, parse_codes
 from src.exporter import export_roteiro_docx, format_for_display, export_all_roteiros_zip
+from src.jsonld_generator import export_jsonld_string, wrap_in_script_tag
 
 load_dotenv()
 
@@ -871,14 +872,83 @@ elif page == "Treinar IA":
         
         with tab_ouro:
             st.markdown("### 🏆 Hall da Fama (Roteiros Ouro)")
-            t_prod = st.text_input("Produto:")
-            t_rot = st.text_area("Roteiro Finalizado:")
-            if st.button("Cadastrar Roteiro Ouro", type="primary"):
-                salvar_ouro(sp_client, 1, t_prod, t_rot)
+            st.caption("Roteiros finalizados e aprovados. Alimentam o Few-Shot da IA e podem ser exportados como JSON-LD.")
+            
+            with st.form("form_roteiro_ouro", clear_on_submit=True):
+                col_sku, col_prod = st.columns([1, 2])
+                with col_sku:
+                    t_sku = st.text_input("Código do Produto (SKU):", placeholder="Ex: 240304700")
+                with col_prod:
+                    t_prod = st.text_input("Título do Produto:")
+                t_rot = st.text_area("Roteiro Finalizado (Aprovado):")
+                if st.form_submit_button("🏆 Cadastrar Roteiro Ouro", type="primary"):
+                    if t_prod.strip() and t_rot.strip():
+                        data_ouro = {
+                            "categoria_id": 1,
+                            "titulo_produto": t_prod,
+                            "roteiro_perfeito": t_rot,
+                        }
+                        if t_sku.strip():
+                            data_ouro["codigo_produto"] = t_sku.strip()
+                        sp_client.table("roteiros_ouro").insert(data_ouro).execute()
+                        st.success(f"Roteiro Ouro '{t_prod}' cadastrado!")
+                        st.rerun()
+                    else:
+                        st.warning("Preencha pelo menos o título e o roteiro.")
             
             st.divider()
             if not df_ouro.empty:
-                st.dataframe(df_ouro[['titulo_produto', 'roteiro_perfeito']], use_container_width=True)
+                # Tabela de visualização
+                cols_ouro = ['titulo_produto', 'roteiro_perfeito']
+                if 'codigo_produto' in df_ouro.columns:
+                    cols_ouro.insert(0, 'codigo_produto')
+                st.dataframe(df_ouro[cols_ouro], use_container_width=True)
+                
+                # --- EXPORTAÇÃO JSON-LD ---
+                st.divider()
+                st.markdown("#### 🌐 Exportar JSON-LD (Schema.org)")
+                st.caption("Gere dados estruturados prontos para SEO e integração com sistemas externos.")
+                
+                # Busca nomes das categorias para o mapeamento
+                cats_dict_ouro = {}
+                try:
+                    res_cats_ouro = sp_client.table("categorias").select("id, nome").execute()
+                    if hasattr(res_cats_ouro, 'data') and res_cats_ouro.data:
+                        cats_dict_ouro = {c['id']: c['nome'] for c in res_cats_ouro.data}
+                except Exception:
+                    pass
+                
+                # Seletor de qual roteiro exportar
+                opcoes_ouro = [f"{r.get('codigo_produto', '???')} - {r.get('titulo_produto', 'Sem Título')[:40]}" for _, r in df_ouro.iterrows()]
+                sel_ouro = st.selectbox("Selecione o Roteiro Ouro:", opcoes_ouro)
+                
+                if sel_ouro:
+                    idx_ouro = opcoes_ouro.index(sel_ouro)
+                    roteiro_sel = df_ouro.iloc[idx_ouro].to_dict()
+                    cat_name = cats_dict_ouro.get(roteiro_sel.get('categoria_id'), 'Genérico')
+                    
+                    col_prod_ld, col_cw_ld = st.columns(2)
+                    with col_prod_ld:
+                        jsonld_product = export_jsonld_string(roteiro_sel, cat_name, "Product")
+                        st.download_button(
+                            "📦 Baixar JSON-LD (Product)",
+                            data=jsonld_product,
+                            file_name=f"jsonld_product_{roteiro_sel.get('codigo_produto', 'roteiro')}.json",
+                            mime="application/json",
+                            use_container_width=True
+                        )
+                    with col_cw_ld:
+                        jsonld_cw = export_jsonld_string(roteiro_sel, cat_name, "CreativeWork")
+                        st.download_button(
+                            "🎨 Baixar JSON-LD (CreativeWork)",
+                            data=jsonld_cw,
+                            file_name=f"jsonld_creative_{roteiro_sel.get('codigo_produto', 'roteiro')}.json",
+                            mime="application/json",
+                            use_container_width=True
+                        )
+                    
+                    with st.expander("👁️ Pré-visualizar JSON-LD (Product)"):
+                        st.code(jsonld_product, language="json")
             else:
                 st.info("Nenhum roteiro ouro cadastrado ainda.")
 

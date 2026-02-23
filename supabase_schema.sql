@@ -1,6 +1,9 @@
 -- ==========================================
--- MAGALU AI SUITE - SCHEMA CONSOLIDADO V1.5
+-- MAGALU AI SUITE - SCHEMA CONSOLIDADO V2.0
 -- ==========================================
+-- Changelog V2.0:
+--   + Adicionado codigo_produto em roteiros_ouro (SKU p/ JSON-LD)
+--   + Migration script ao final do arquivo
 
 -- Tabela 1: Categorias (Organiza o Cérebro da IA)
 create table if not exists categorias (
@@ -29,11 +32,12 @@ create table if not exists feedback_roteiros (
   comentarios text
 );
 
--- Tabela 3: Roteiros Ouro (O 'Few-Shot' Premium)
+-- Tabela 3: Roteiros Ouro (O 'Few-Shot' Premium + JSON-LD Ready)
 create table if not exists roteiros_ouro (
   id uuid default gen_random_uuid() primary key,
   criado_em timestamp with time zone default timezone('utc'::text, now()) not null,
   categoria_id int references categorias(id),
+  codigo_produto varchar(50),  -- SKU Magalu (ex: 240304700) para JSON-LD
   titulo_produto text not null,
   roteiro_perfeito text not null
 );
@@ -132,3 +136,21 @@ begin
     create policy "Allow access" on historico_roteiros for all using (true);
   end if;
 end $$;
+
+-- ==========================================
+-- MIGRATION V1.5 -> V2.0
+-- ==========================================
+-- Execute este bloco no SQL Editor do Supabase para atualizar schemas existentes.
+-- É seguro rodar múltiplas vezes (idempotente).
+
+DO $$
+BEGIN
+  -- Adiciona codigo_produto em roteiros_ouro se não existir
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'roteiros_ouro' AND column_name = 'codigo_produto'
+  ) THEN
+    ALTER TABLE roteiros_ouro ADD COLUMN codigo_produto varchar(50);
+    RAISE NOTICE 'Coluna codigo_produto adicionada em roteiros_ouro.';
+  END IF;
+END $$;
