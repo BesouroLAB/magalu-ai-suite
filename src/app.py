@@ -494,6 +494,7 @@ with st.sidebar:
         st.session_state['page'] = "Criar Roteiros"
 
     nav_items = {
+        "Assistente Lu": "💬 Assistente Lu",
         "Criar Roteiros": "✍️ Criar Roteiros",
         "Histórico": "🕒 Histórico",
         "Treinar IA": "🧠 Treinar IA",
@@ -1050,13 +1051,7 @@ if page == "Criar Roteiros":
                         use_container_width=True,
                         type="secondary"
                     )
-                    
-                    st.copy_button(
-                        label="📋 Copiar Roteiro",
-                        text=edited_val,
-                        use_container_width=True,
-                        help="Copia o conteúdo final do roteiro para a área de transferência."
-                    )
+                    st.caption("💡 Você pode copiar o roteiro diretamente do campo de texto acima.")
                     
                 with col_act2:
                     # Ações Rápidas (Nova Dinâmica de Feedback de Edição)
@@ -1961,3 +1956,72 @@ elif page == "Dashboard":
                 
         except Exception as e:
             st.error(f"Erro ao carregar os dados do dashboard: {e}")
+
+# --- PÁGINA 7: ASSISTENTE LU (INTERACTIVE CHAT) ---
+elif page == "Assistente Lu":
+    st.subheader("💬 Assistente Lu")
+    st.caption("Converse com a Lu sobre os roteiros gerados, métricas da equipe ou dúvidas gerais.")
+    
+    # Initialize chat history
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = [
+            {"role": "Lu", "content": "Oi! Sou a Lu, sua assistente focada em IA para Magalu. Como posso te ajudar hoje?"}
+        ]
+
+    # Display chat messages from history on app rerun
+    for message in st.session_state.chat_history:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    # Accept user input
+    if prompt := st.chat_input("Pergunte sobre os roteiros (ex: 'quantos foram gerados hoje?')..."):
+        # Display user message in chat message container
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        # Add user message to chat history
+        st.session_state.chat_history.append({"role": "user", "content": prompt})
+
+        # Generate response using the active RoteiristaAgent
+        with st.chat_message("Lu"):
+            message_placeholder = st.empty()
+            
+            # Re-instantiate agent to ensure it uses the current model_id
+            modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
+            
+            try:
+                # Compile Supabase context for RAG
+                context_str = ""
+                sp = st.session_state.get('supabase_client')
+                if sp:
+                    try:
+                        # Buscamos as estatísticas rápidas
+                        hoje = datetime.now().date().isoformat()
+                        # Consulta os ultimos roteiros da semana
+                        d_recent = sp.table("historico_roteiros").select("criado_em, codigo_produto, custo_estimado_brl, modelo_llm").order('criado_em', desc=True).limit(200).execute()
+                        if d_recent.data:
+                            df = pd.DataFrame(d_recent.data)
+                            df['data'] = pd.to_datetime(df['criado_em']).dt.date
+                            total_geral = len(df)
+                            total_hoje = len(df[df['data'] == datetime.now().date()])
+                            custo_total = df['custo_estimado_brl'].sum()
+                            context_str = f"Métricas do Banco de Dados:\n- Total Recente Analisado: {total_geral}\n- Gerados Hoje ({hoje}): {total_hoje}\n- Custo Recente Total: R$ {custo_total:.4f}\n"
+                    except Exception as e:
+                        context_str = f"Aviso: Não consegui ler o banco de dados completamente ({e})."
+                else:
+                    context_str = "Aviso: Banco de dados Supabase não conectado nesta sessão."
+
+                agent = RoteiristaAgent(
+                    supabase_client=sp,
+                    model_id=modelo_id
+                )
+                
+                # Fetch response with delay for loading perception
+                with st.spinner("Lu está digitando..."):
+                    resposta_lu = agent.chat_with_context(prompt, st.session_state.chat_history, context_str)
+                
+                message_placeholder.markdown(resposta_lu)
+                # Add assistant response to chat history
+                st.session_state.chat_history.append({"role": "Lu", "content": resposta_lu})
+                
+            except Exception as e:
+                st.error(f"Erro de comunicação com a IA: {e}")
