@@ -20,8 +20,8 @@ DARK_MODE_CSS = """
 <style>
     /* Tema Escuro Magalu Premium */
     :root {
-        --bg-main: #00122e; /* Azul Escuro Fundo */
-        --bg-card: #001f4d; /* Azul Escuro Cards */
+        --bg-main: #020710; /* Azul quase preto */
+        --bg-card: #050e1d; /* Azul ultra escuro */
         --mglu-blue: #0086ff; /* Azul Magalu Principal */
         --text-primary: #f0f0f0;
         --text-muted: #8b92a5;
@@ -36,7 +36,7 @@ DARK_MODE_CSS = """
     .stTextArea > div > div > textarea, .stTextInput > div > div > input, .stSelectbox > div > div > div {
         background-color: var(--bg-card) !important;
         color: var(--text-primary) !important;
-        border: 1px solid #003380 !important;
+        border: 1px solid #0a1b33 !important;
         border-radius: 8px;
     }
     .stTextArea > div > div > textarea:focus, .stTextInput > div > div > input:focus {
