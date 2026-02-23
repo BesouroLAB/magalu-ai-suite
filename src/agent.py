@@ -234,12 +234,12 @@ class RoteiristaAgent:
                         refinamento += f"\n  FORMA IDEAL: '{n['exemplo_ouro']}'"
                     sb_parts.append(refinamento)
 
-            # 6. Memória de Calibração (Lições Recentes do Juiz de IA)
+            # 6. Memória de Calibração (Lições Recentes da Calibragem)
             res_fb = self.supabase.table("nw_roteiros_ouro").select("aprendizado").neq("aprendizado", "null").order('criado_em', desc=True).limit(8).execute()
             if res_fb.data:
                 valid_mems = [f for f in res_fb.data if f.get('aprendizado') and f['aprendizado'].strip()]
                 if valid_mems:
-                    sb_parts.append("\n**LIÇÕES RECENTES DA IA JUÍZA (NÃO REPITA ESTES ERROS):**")
+                    sb_parts.append("\n**LIÇÕES RECENTES DA CALIBRAGEM (NÃO REPITA ESTES ERROS):**")
                     for fb in valid_mems:
                         sb_parts.append(f"- {fb['aprendizado']}")
         except Exception as e:
@@ -427,9 +427,11 @@ class RoteiristaAgent:
 
     def analisar_calibracao(self, original, final, categories_list=[], codigo_original=""):
         """
-        Atua como um juiz de qualidade usando o modelo Gemini 1.5 Flash (Gratuito).
+        Realiza a análise de calibragem de qualidade usando o modelo Gemini 1.5 Flash (Gratuito).
         Além de analisar o aproveitamento, identifica a categoria correta baseada no conteúdo.
         """
+        # Define um ID de fallback seguro (o primeiro da lista ou 0)
+        fallback_id = categories_list[0]['id'] if categories_list else 1
         # Formata a lista de categorias para o prompt
         cat_str = "\n".join([f"- ID {c['id']}: {c['nome']}" for c in categories_list]) if categories_list else "Genérico (ID 1)"
 
@@ -454,7 +456,7 @@ class RoteiristaAgent:
 
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
-            return {"percentual": 50, "aprendizado": "Erro: API Key ausente.", "categoria_id": 1, "codigo_produto": codigo_original}
+            return {"percentual": 50, "aprendizado": "Erro: API Key ausente.", "categoria_id": fallback_id, "codigo_produto": codigo_original}
             
         try:
             client = genai.Client(api_key=api_key)
@@ -470,14 +472,21 @@ class RoteiristaAgent:
             
             import json
             res = json.loads(response.text)
+            
+            # Validação rigorosa do ID de categoria
+            returned_id = int(res.get("categoria_id", fallback_id))
+            valid_ids = [c['id'] for c in categories_list] if categories_list else []
+            
+            final_cat_id = returned_id if returned_id in valid_ids else fallback_id
+            
             return {
                 "percentual": int(res.get("percentual", 50)),
                 "aprendizado": res.get("aprendizado", "Análise realizada."),
-                "categoria_id": int(res.get("categoria_id", 1)),
+                "categoria_id": final_cat_id,
                 "codigo_produto": res.get("codigo_produto", codigo_original)
             }
         except Exception as e:
-            return {"percentual": 50, "aprendizado": f"Erro: {str(e)}", "categoria_id": 1, "codigo_produto": codigo_original}
+            return {"percentual": 50, "aprendizado": f"Erro: {str(e)}", "categoria_id": fallback_id, "codigo_produto": codigo_original}
 
     def chat_with_context(self, user_query, chat_history=[], supabase_context=None):
         """

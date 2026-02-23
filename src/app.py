@@ -1113,7 +1113,7 @@ if page == "Criar Roteiros":
                 with c_fb:
                     if st.button("🚀 Enviar Calibração para a IA", key=f"fino_{idx}", use_container_width=True, type="primary"):
                         if sp_cli:
-                            with st.spinner("A IA está analisando suas correções e classificando a categoria... 🤔"):
+                            with st.spinner("A IA está analisando suas correções para calibrar o estilo... 🤔"):
                                 try:
                                     res_c = sp_cli.table("nw_categorias").select("id, nome").execute()
                                     lista_c = res_c.data if hasattr(res_c, 'data') else []
@@ -1232,7 +1232,7 @@ elif page == "Treinar IA":
         
         with tab_fb:
             st.markdown("### ⚖️ Calibração: IA vs Aprovado")
-            st.caption("Compare o que a IA gerou com o que o Breno aprovou. O botão pedirá para a IA Juíza calcular a porcentagem de aprovação.")
+            st.caption("Compare o que a IA gerou com o que o Breno aprovou. O botão pedirá para a Calibragem calcular a porcentagem de aprovação.")
             
             # --- FORMULÁRIO DE ENTRADA ---
             with st.form("form_calibracao", clear_on_submit=True):
@@ -1246,14 +1246,14 @@ elif page == "Treinar IA":
                 
                 # A IA identificará a categoria automaticamente via analisar_calibracao
                 
-                submitted = st.form_submit_button("⚖️ Executar Juiz IA e Salvar em Ouro", type="primary", use_container_width=True)
+                submitted = st.form_submit_button("⚖️ Executar Calibragem e Salvar em Ouro", type="primary", use_container_width=True)
                 if submitted:
                     if roteiro_ia_input.strip() and roteiro_breno_input.strip():
                         try:
                             api_key_env = os.environ.get("GEMINI_API_KEY")
                             if api_key_env:
                                 ag = RoteiristaAgent(supabase_client=sp_client)
-                                with st.spinner("🧠 IA Juíza avaliando a calibração e identificando categoria..."):
+                                with st.spinner("🧠 Analisando a calibragem para identificar lições aprendidas..."):
                                     cats_list_manual = df_cats[['id', 'nome']].to_dict('records') if not df_cats.empty else []
                                     calc = ag.analisar_calibracao(roteiro_ia_input, roteiro_breno_input, cats_list_manual)
                                     
@@ -1770,7 +1770,7 @@ elif page == "Dashboard":
             """, unsafe_allow_html=True)
             
             with st.popover("ℹ️ Entenda a Métrica de Aprovação", use_container_width=False):
-                st.markdown("#### 🎯 Qualidade Medida por IA Juíza")
+                st.markdown("#### 🎯 Qualidade Medida via Calibragem")
                 st.markdown("A **Taxa de Aprovação** não é mais uma nota subjetiva dada por botões. Ela é a **média do aproveitamento real** dos roteiros gerados.")
                 st.markdown("Toda vez que você edita um roteiro e clica em `🚀 Enviar Calibração para a IA`, uma **IA especializada** atua como QA (Quality Assurance). Ela compara o rascunho original com a sua edição final e calcula qual o percentual (%) das ideias geradas que foi mantido por você.")
                 st.info("💡 **Exemplo:** Se a IA nota que 90% das ideias do rascunho foram mantidas, a nota de aprovação daquele roteiro é 90%. O Dashboard exibe a média histórica de todas essas calibrações.")
