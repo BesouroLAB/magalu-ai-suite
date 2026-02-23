@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from src.agent import RoteiristaAgent, MODELOS_DISPONIVEIS, MODELOS_DESCRICAO
+from src.agent import RoteiristaAgent, MODELOS_DISPONIVEIS, MODELOS_DESCRICAO, PROVIDER_KEY_MAP
 from src.scraper import scrape_with_gemini, parse_codes
 from src.exporter import export_roteiro_docx, format_for_display, export_all_roteiros_zip
 from src.jsonld_generator import export_jsonld_string, wrap_in_script_tag
