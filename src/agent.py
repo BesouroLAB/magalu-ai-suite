@@ -163,13 +163,13 @@ class RoteiristaAgent:
             f"-> {diretriz_modo}\n\n"
             f"**CONTEXTO DO PRODUTO (INPUT TEXTUAL E/OU VISUAL):**\n{text_data}\n\n"
             f"**INSTRUÇÃO FINAL:**\n"
-            f"Gere o roteiro no FORMATO DE SAÍDA OBRIGATÓRIO.\n"
-            f"Siga RIGOROSAMENTE as Regras de Ouro do Estilo Breno.\n"
-            f"Se houverem imagens fornecidas, extraia o máximo de detalhes visuais (cor, textura, design dos vários ângulos) para enriquecer o roteiro.\n"
-            f"Imite fielmente o estilo dos exemplos APROVADOS.\n"
-            f"Use 'pra' no lugar de 'para'. Coloque a marca entre vírgulas.\n"
-            f"NÃO invente capacidades que não possam ser comprovadas pelas imagens ou texto.\n"
-            f"Se o contexto textual contiver uma 'FONTE EXTERNA' (indicando que dados do fabricante foram usados), adicione OBRIGATORIAMENTE o link de referência no final do roteiro."
+            f"1. Gere o roteiro no FORMATO DE SAÍDA OBRIGATÓRIO.\n"
+            f"2. Siga RIGOROSAMENTE as Regras de Ouro do Estilo Breno.\n"
+            f"3. Se houverem imagens fornecidas, extraia o máximo de detalhes visuais (cor, textura, design dos vários ângulos) para enriquecer o roteiro.\n"
+            f"4. Imite fielmente o estilo dos exemplos APROVADOS.\n"
+            f"5. Use 'pra' no lugar de 'para'. Coloque a marca entre vírgulas.\n"
+            f"6. **ENRIQUECIMENTO DE CONTEXTO:** Para produtos mundialmente conhecidos (Ex: LEGO, Star Wars, iPhone), você PODE usar seu conhecimento interno para adicionar detalhes técnicos ou curiosidades que NÃO estejam na ficha, visando valorizar o roteiro.\n"
+            f"7. **REGRA DE REFERÊNCIA:** Se você usar conhecimento interno (item 6) OU dados de 'FONTE EXTERNA' (fabricante), você deve OBRIGATORIAMENTE adicionar uma nota de referência com o link da fonte (ou site oficial do fabricante) no rodapé do roteiro."
         )
 
         contents = [final_prompt]
