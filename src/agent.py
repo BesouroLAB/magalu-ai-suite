@@ -28,7 +28,7 @@ MODELOS_DISPONIVEIS = {
     "DeepSeek Chat V3 (OpenRouter)": "openrouter/deepseek/deepseek-chat-v3-0324:free",
     "DeepSeek R1 (OpenRouter)": "openrouter/deepseek/deepseek-r1:free",
     "Gemini 2.5 Flash (OpenRouter)": "openrouter/google/gemini-2.5-flash-preview",
-    "GLM-5 (Z.ai Grátis)": "zai/glm-5",
+    "GLM-4 Flash (Z.ai Grátis)": "zai/glm-4-flash",
 }
 
 # Mapeamento de provider -> env var necessária
