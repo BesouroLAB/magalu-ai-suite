@@ -741,11 +741,20 @@ elif page == "Treinar IA":
                             except Exception as e:
                                 memoria = "Erro interno ao avaliar."
 
-                            # 2. Salva no banco
+                            # 2. Mapeia a avaliação string para int para o Supabase
+                            avaliacao_map = {
+                                "Ruim": -1,
+                                "Regular": 0,
+                                "Bom": 1,
+                                "Ótimo": 2
+                            }
+                            avaliacao_int = avaliacao_map.get(avaliacao_input, 0)
+                            
+                            # 3. Salva no banco
                             data = {
                                 "roteiro_original_ia": roteiro_ia_input,
                                 "roteiro_final_humano": roteiro_breno_input,
-                                "avaliacao": avaliacao_input,
+                                "avaliacao": avaliacao_int,
                                 "comentarios": memoria
                             }
                             sp_client.table("feedback_roteiros").insert(data).execute()
