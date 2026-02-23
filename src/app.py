@@ -612,7 +612,7 @@ elif page == "Treinar IA":
         tab_fb, tab_est, tab_fon, tab_ouro = st.tabs(["📉 Calibração (Logs & Comparação)", "💬 Estruturas (Aberturas/Fechamentos)", "🗣️ Fonética", "🏆 Roteiros Ouro"])
         
         with tab_fb:
-            st.markdown("### 📉 Calibração: IA vs Breno")
+            st.markdown("### 📉 Calibração: IA vs Aprovado")
             st.caption("Compare o que a IA gerou com o que o Breno aprovou. Cada registro alimenta o aprendizado contínuo.")
             
             # --- FORMULÁRIO DE ENTRADA ---
