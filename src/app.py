@@ -270,7 +270,7 @@ def convert_to_sp_time(utc_datetime_str):
     except Exception:
         return utc_datetime_str
 
-def salvar_calibracao_ouro(sp_client, cat_id, roteiro_ia, roteiro_final, percentual, aprendizado, codigo_produto="", titulo_produto=""):
+def salvar_calibracao_ouro(sp_client, cat_id, roteiro_ia, roteiro_final, percentual, aprendizado, codigo_produto="", titulo_produto="", modelo_calibragem="N/A"):
     if not sp_client:
         st.error("Supabase não conectado.")
         return False
@@ -278,15 +278,16 @@ def salvar_calibracao_ouro(sp_client, cat_id, roteiro_ia, roteiro_final, percent
         data = {
             "categoria_id": cat_id,
             "codigo_produto": codigo_produto,
-            "titulo_produto": titulo_produto if titulo_produto else f"Edição {codigo_produto}",
+            "titulo_produto": titulo_produto if titulo_produto else codigo_produto,
             "roteiro_original_ia": roteiro_ia,
             "roteiro_perfeito": roteiro_final,
             "nota_percentual": percentual,
-            "aprendizado": aprendizado
+            "aprendizado": aprendizado,
+            "modelo_calibragem": modelo_calibragem
         }
         res = sp_client.table("nw_roteiros_ouro").insert(data).execute()
         if hasattr(res, 'data') and len(res.data) > 0:
-            msg = f"🏆 Calibragem salva como Roteiro Ouro! (Aproveitamento: {percentual}% | Cat ID: {cat_id})"
+            msg = f"🏆 Calibragem salva como Roteiro Ouro! (Aproveitamento: {percentual}% | Cat ID: {cat_id} | IA: {modelo_calibragem})"
             st.success(msg)
             return True
         else:
@@ -360,6 +361,98 @@ def salvar_fonetica(sp_client, termo_err, termo_cor, exemplo_rot):
     except Exception as e:
         st.error(f"❌ Erro: {e}")
         return False
+
+def _auto_salvar_fonetica(sp_client, fonetica_regras):
+    """Salva regras fonéticas automaticamente a partir da calibragem, evitando duplicatas."""
+    if not sp_client or not fonetica_regras:
+        return 0
+    
+    count = 0
+    for regra in fonetica_regras:
+        if not isinstance(regra, dict):
+            continue
+        termo_err = regra.get('termo_errado', '').strip()
+        termo_cor = regra.get('termo_corrigido', '').strip()
+        exemplo = regra.get('exemplo', '').strip()
+        if not termo_err or not termo_cor:
+            continue
+        
+        try:
+            existing = sp_client.table("nw_treinamento_fonetica").select("id").eq("termo_errado", termo_err).execute()
+            if hasattr(existing, 'data') and len(existing.data) > 0:
+                continue
+            
+            sp_client.table("nw_treinamento_fonetica").insert({
+                "termo_errado": termo_err,
+                "termo_corrigido": termo_cor,
+                "exemplo_no_roteiro": exemplo
+            }).execute()
+            count += 1
+        except Exception as e:
+            print(f"⚠️ Erro ao salvar fonética auto: {e}")
+    
+    if count > 0:
+        st.toast(f"📖 {count} regra(s) fonética(s) aprendida(s) automaticamente!", icon="🎓")
+    return count
+
+def _auto_salvar_estrutura(sp_client, estrutura_regras):
+    """Salva regras de abertura/fechamento automaticamente a partir da calibragem."""
+    if not sp_client or not estrutura_regras:
+        return 0
+    
+    count = 0
+    for regra in estrutura_regras:
+        if not isinstance(regra, dict):
+            continue
+        tipo = regra.get('tipo', '').strip()
+        texto_ouro = regra.get('texto_ouro', '').strip()
+        if not tipo or not texto_ouro or tipo not in ('Abertura', 'Fechamento'):
+            continue
+        
+        try:
+            sp_client.table("nw_treinamento_estruturas").insert({
+                "tipo_estrutura": tipo,
+                "texto_ouro": texto_ouro
+            }).execute()
+            count += 1
+        except Exception as e:
+            print(f"⚠️ Erro ao salvar estrutura auto: {e}")
+    
+    if count > 0:
+        st.toast(f"📝 {count} estrutura(s) (abertura/fechamento) aprendida(s)!", icon="✨")
+    return count
+
+def _auto_salvar_persona(sp_client, persona_regras):
+    """Salva regras de persona da Lu automaticamente a partir da calibragem."""
+    if not sp_client or not persona_regras:
+        return 0
+    
+    count = 0
+    for regra in persona_regras:
+        if not isinstance(regra, dict):
+            continue
+        pilar = regra.get('pilar', '').strip()
+        erro = regra.get('erro', '').strip()
+        correcao = regra.get('correcao', '').strip()
+        lexico = regra.get('lexico', '').strip()
+        if not pilar or not erro:
+            continue
+        
+        try:
+            sp_client.table("nw_treinamento_persona_lu").insert({
+                "pilar_persona": pilar,
+                "texto_gerado_ia": erro,
+                "texto_corrigido_humano": correcao,
+                "lexico_sugerido": lexico,
+                "erro_cometido": erro
+            }).execute()
+            count += 1
+        except Exception as e:
+            print(f"⚠️ Erro ao salvar persona auto: {e}")
+    
+    if count > 0:
+        st.toast(f"💃 {count} regra(s) de persona da Lu aprendida(s)!", icon="🎭")
+    return count
 
 def salvar_estrutura(sp_client, tipo, texto):
     if not sp_client:
@@ -661,25 +754,43 @@ if page == "Criar Roteiros":
 
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # Regra de Bloqueio para Modos Futuros
-            geracao_bloqueada = modo_selecionado != "NW (NewWeb)"
-
-            if st.button("🚀 Iniciar Extração e Geração", use_container_width=True, type="primary", disabled=geracao_bloqueada, key="btn_auto"):
-                if geracao_bloqueada:
-                    st.warning("🚧 Este formato de roteiro ainda está em desenvolvimento. Selecione 'NW (NewWeb)' para continuar.")
-                    st.stop()
-                elif len(codigos_raw.strip()) < 3:
-                    st.warning("⚠️ Digite pelo menos um código de produto.")
-                    st.stop()
-
+            # --- NOVO FLUXO: PRÉ-GERAÇÃO (TABELA EDITÁVEL) ---
+            if st.button("🔍 Validar Códigos", use_container_width=True):
                 codigos = parse_codes(codigos_raw) if codigos_raw else []
-                modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
-                
                 if not codigos:
                     st.warning("⚠️ Digite pelo menos um código de produto.")
                 elif len(codigos) > 15:
                     st.warning("⚠️ Limite excedido: Por favor, insira no máximo 15 códigos por vez (Rate Limit da API).")
                 else:
+                    df_pre = pd.DataFrame({
+                        "SKU Principal": codigos,
+                        "Outros Códigos (Cor/Voltagem)": [""] * len(codigos),
+                        "Vídeo do Fornecedor (Link)": [""] * len(codigos)
+                    })
+                    st.session_state['skus_validados'] = df_pre
+            
+            geracao_bloqueada = modo_selecionado != "NW (NewWeb)"
+            
+            if 'skus_validados' in st.session_state and not st.session_state['skus_validados'].empty:
+                st.markdown("### 5. Dados Extras (Opcional)")
+                st.info("💡 Preencha SKUs relacionados (se houver variações de cor/voltagem) e o link do vídeo do fornecedor para enriquecer o roteiro.")
+                
+                # Editor Interativo
+                df_edited = st.data_editor(
+                    st.session_state['skus_validados'],
+                    use_container_width=True,
+                    disabled=["SKU Principal"],
+                    hide_index=True,
+                    key="editor_pre_gen"
+                )
+                
+                if st.button("🚀 Iniciar Extração e Geração", use_container_width=True, type="primary", disabled=geracao_bloqueada, key="btn_auto"):
+                    if geracao_bloqueada:
+                        st.warning("🚧 Este formato de roteiro ainda está em desenvolvimento. Selecione 'NW (NewWeb)' para continuar.")
+                        st.stop()
+                    
+                    modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
+                    
                     # Validação genérica de API Key baseada no provider
                     _provider = modelo_id.split('/')[0] if '/' in modelo_id else 'gemini'
                     _env_var = PROVIDER_KEY_MAP.get(_provider)
@@ -692,17 +803,21 @@ if page == "Criar Roteiros":
                                 model_id=modelo_id
                             )
                             roteiros = []
-                            # Busca a base do histórico para numeração (o total já feito)
                             base_count = get_total_script_count(st.session_state.get('supabase_client'))
                             
                             progress = st.progress(0, text="Iniciando extração...")
                             
-                            for i, code in enumerate(codigos):
+                            total_skus = len(df_edited)
+                            for i, row in df_edited.iterrows():
+                                code = str(row['SKU Principal']).strip()
+                                sub_skus = str(row['Outros Códigos (Cor/Voltagem)']).strip()
+                                video_url = str(row['Vídeo do Fornecedor (Link)']).strip()
+                                
                                 import time
                                 
                                 progress.progress(
-                                    (i) / len(codigos),
-                                    text=f"🔍 [{code}] Buscando página na Magalu... ({i+1}/{len(codigos)})"
+                                    (i) / total_skus,
+                                    text=f"🔍 [{code}] Buscando página na Magalu... ({i+1}/{total_skus})"
                                 )
                                 
                                 # 1. Gemini extrai dados do produto via URL
@@ -742,7 +857,9 @@ if page == "Criar Roteiros":
                                         mes=mes_selecionado, 
                                         data_roteiro=data_roteiro_str,
                                         codigo=code,
-                                        nome_produto=nome_p
+                                        nome_produto=nome_p,
+                                        sub_skus=sub_skus,
+                                        video_url=video_url
                                     )
                                     roteiro_texto = resultado["roteiro"]
                                 
@@ -758,9 +875,16 @@ if page == "Criar Roteiros":
                                     "tokens_in": resultado["tokens_in"],
                                     "tokens_out": resultado["tokens_out"],
                                     "custo_brl": resultado["custo_brl"],
-                                    "global_num": global_id, # Salva o número para exibição
-                                    "mes": mes_selecionado # Salva o mês de lançamento
+                                    "id_sequencial": global_id, # Salva o número para exibição
+                                    "mes": mes_selecionado, # Salva o mês de lançamento
+                                    "sub_skus": sub_skus,
+                                    "video_url": video_url
                                 })
+                                
+                                progress.progress(
+                                    (i + 1) / total_skus,
+                                    text=f"✅ [{code}] Roteiro finalizado! ({i+1}/{total_skus})"
+                                )
                                 
                                 # Auto-log no histórico (silencioso) com tracking de custo
                                 try:
@@ -1113,6 +1237,7 @@ if page == "Criar Roteiros":
                 with c_fb:
                     if st.button("🚀 Enviar Calibragem para a IA", key=f"fino_{idx}", use_container_width=True, type="primary"):
                         if sp_cli:
+                            st.toast("🧠 Iniciando calibragem...", icon="⏳")
                             with st.spinner("A IA está analisando suas correções para calibrar o estilo... 🤔"):
                                 try:
                                     res_c = sp_cli.table("nw_categorias").select("id, nome").execute()
@@ -1121,7 +1246,10 @@ if page == "Criar Roteiros":
                                     lista_c = []
                                     
                                 calc = _temp_agent.analisar_calibracao(item['roteiro_original'], edited_val, lista_c, codigo_produto)
-                                salvar_calibracao_ouro(sp_cli, calc['categoria_id'], item['roteiro_original'], edited_val, calc['percentual'], calc['aprendizado'], calc['codigo_produto'], titulo_curto)
+                                salvar_calibracao_ouro(sp_cli, calc['categoria_id'], item['roteiro_original'], edited_val, calc['percentual'], calc['aprendizado'], calc['codigo_produto'], titulo_curto, calc.get('modelo_calibragem', 'N/A'))
+                                _auto_salvar_fonetica(sp_cli, calc.get('fonetica_regras', []))
+                                _auto_salvar_estrutura(sp_cli, calc.get('estrutura_regras', []))
+                                _auto_salvar_persona(sp_cli, calc.get('persona_regras', []))
                         else:
                             st.error("Conecte o Supabase primeiro.")
                 
@@ -1249,10 +1377,22 @@ elif page == "Treinar IA":
                 submitted = st.form_submit_button("⚖️ Executar Calibragem e Salvar em Ouro", type="primary", use_container_width=True)
                 if submitted:
                     if roteiro_ia_input.strip() and roteiro_breno_input.strip():
+                        st.toast("🧠 Enviando para a IA analisar...", icon="⏳")
                         try:
-                            api_key_env = os.environ.get("GEMINI_API_KEY")
-                            if api_key_env:
-                                ag = RoteiristaAgent(supabase_client=sp_client)
+                            # Usa qualquer provedor disponível (Puter/OpenRouter/Gemini)
+                            # Determina qual model_id usar para instanciar o agente
+                            _calib_model = "gemini-2.5-flash"
+                            if not os.environ.get("GEMINI_API_KEY"):
+                                if os.environ.get("PUTER_API_KEY"):
+                                    _calib_model = "puter/x-ai/grok-4-1-fast"
+                                elif os.environ.get("OPENROUTER_API_KEY"):
+                                    _calib_model = "openrouter/deepseek/deepseek-chat-v3-0324:free"
+                                else:
+                                    st.error("Nenhuma chave de IA configurada (Gemini, Puter ou OpenRouter).")
+                                    _calib_model = None
+                            
+                            if _calib_model:
+                                ag = RoteiristaAgent(supabase_client=sp_client, model_id=_calib_model)
                                 with st.spinner("🧠 Analisando a calibragem para identificar lições aprendidas..."):
                                     cats_list_manual = df_cats[['id', 'nome']].to_dict('records') if not df_cats.empty else []
                                     calc = ag.analisar_calibracao(roteiro_ia_input, roteiro_breno_input, cats_list_manual)
@@ -1264,13 +1404,16 @@ elif page == "Treinar IA":
                                     "nota_percentual": calc['percentual'],
                                     "aprendizado": calc['aprendizado'],
                                     "codigo_produto": calc['codigo_produto'],
-                                    "titulo_produto": f"Edição {calc['codigo_produto']}"
+                                    "titulo_produto": calc['codigo_produto'],
+                                    "modelo_calibragem": calc.get('modelo_calibragem', 'N/A')
                                 }
                                 sp_client.table("nw_roteiros_ouro").insert(data).execute()
-                                st.success(f"🏆 Salvo como Roteiro Ouro! Categoria: {calc['categoria_id']} | Código: {calc['codigo_produto']} | Aproveitamento: {calc['percentual']}%")
+                                _score_color = '🟢' if calc['percentual'] >= 80 else ('🟡' if calc['percentual'] >= 50 else '🔴')
+                                st.success(f"🏆 Salvo como Roteiro Ouro! {_score_color} Aproveitamento: {calc['percentual']}% | Código: {calc['codigo_produto']} | IA: {calc.get('modelo_calibragem', 'N/A')}")
+                                _auto_salvar_fonetica(sp_client, calc.get('fonetica_regras', []))
+                                _auto_salvar_estrutura(sp_client, calc.get('estrutura_regras', []))
+                                _auto_salvar_persona(sp_client, calc.get('persona_regras', []))
                                 st.rerun()
-                            else:
-                                st.error("Erro: GEMINI_API_KEY ausente.")
                         except Exception as e:
                             st.error(f"Erro ao salvar calibragem: {e}")
                     else:
@@ -1279,12 +1422,31 @@ elif page == "Treinar IA":
             st.divider()
             st.markdown("#### 📋 Histórico de Calibragens Ouro")
             if not df_ouro.empty and 'nota_percentual' in df_ouro.columns:
-                cols_view = ['criado_em', 'titulo_produto']
+                cols_view = ['criado_em', 'codigo_produto']
                 if 'nota_percentual' in df_ouro.columns: cols_view.append('nota_percentual')
+                if 'modelo_calibragem' in df_ouro.columns: cols_view.append('modelo_calibragem')
                 if 'aprendizado' in df_ouro.columns: cols_view.append('aprendizado')
                 
                 df_view = df_ouro[cols_view].dropna(subset=['aprendizado']).copy()
-                df_view.rename(columns={'aprendizado': 'Memória da IA (Lição Aprendida)', 'nota_percentual': 'Score %'}, inplace=True)
+                df_view = df_view.sort_values(by='criado_em', ascending=False).reset_index(drop=True)
+                
+                # Adiciona Sequential ID (#005, #004...) e Emojis de Qualidade
+                total_calib = len(df_view)
+                df_view.index = [f"#{total_calib - i:03d}" for i in range(total_calib)]
+                
+                if 'nota_percentual' in df_view.columns:
+                    df_view['nota_percentual'] = df_view['nota_percentual'].apply(
+                        lambda x: f"{'🟢' if x >= 80 else ('🟡' if x >= 50 else '🔴')} {x}%"
+                    )
+
+                rename_map = {
+                    'aprendizado': 'Memória da IA (Lição Aprendida)', 
+                    'nota_percentual': 'Score %', 
+                    'codigo_produto': 'SKU', 
+                    'modelo_calibragem': 'IA Analista',
+                    'criado_em': 'Data'
+                }
+                df_view.rename(columns={k: v for k, v in rename_map.items() if k in df_view.columns}, inplace=True)
                 st.dataframe(df_view, use_container_width=True)
             else:
                 st.info("Nenhuma calibragem ouro registrada ainda.")
@@ -1426,16 +1588,14 @@ elif page == "Guia de Modelos":
     
     # Categorizando modelos por provedor
     categorias = {
-        "Google (Nativo)": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"],
+        "Google (Nativo)": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-flash"],
         "OpenAI": ["openai/gpt-4o-mini"],
         "Puter (Grok & Elite)": ["puter/x-ai/grok-4-1-fast", "puter/x-ai/grok-2", "puter/meta-llama/llama-3.1-70b-instruct", "puter/claude-3-5-sonnet"],
         "OpenRouter (Especializados)": [
             "openrouter/deepseek/deepseek-chat-v3-0324:free", 
-            "openrouter/deepseek/deepseek-r1:free",
-            "openrouter/google/gemma-2-9b-it:free",
-            "openrouter/mistralai/mistral-7b-instruct:free",
-            "openrouter/microsoft/phi-3-mini-128k-instruct:free",
-            "openrouter/qwen/qwen-2-7b-instruct:free"
+            "openrouter/deepseek/deepseek-r1-0528:free",
+            "openrouter/google/gemma-3-27b-it:free",
+            "openrouter/meta-llama/llama-4-scout:free"
         ],
         "Outros (Z.ai & Moonshot)": ["zai/glm-4-flash", "kimi/moonshot-v1-8k"]
     }

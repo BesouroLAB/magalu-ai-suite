@@ -165,13 +165,13 @@ end $$;
 
 DO $$
 BEGIN
-  -- Adiciona codigo_produto em roteiros_ouro se não existir
+  -- Adiciona codigo_produto em nw_roteiros_ouro se não existir
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'roteiros_ouro' AND column_name = 'codigo_produto'
+    WHERE table_name = 'nw_roteiros_ouro' AND column_name = 'codigo_produto'
   ) THEN
-    ALTER TABLE roteiros_ouro ADD COLUMN codigo_produto varchar(50);
-    RAISE NOTICE 'Coluna codigo_produto adicionada em roteiros_ouro.';
+    ALTER TABLE nw_roteiros_ouro ADD COLUMN codigo_produto varchar(50);
+    RAISE NOTICE 'Coluna codigo_produto adicionada em nw_roteiros_ouro.';
   END IF;
 END $$;
 
@@ -185,12 +185,42 @@ DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'historico_roteiros' AND column_name = 'modelo_llm'
+    WHERE table_name = 'nw_historico_roteiros' AND column_name = 'modelo_llm'
   ) THEN
-    ALTER TABLE historico_roteiros ADD COLUMN modelo_llm varchar(50) DEFAULT 'gemini-2.5-flash';
-    ALTER TABLE historico_roteiros ADD COLUMN tokens_entrada int;
-    ALTER TABLE historico_roteiros ADD COLUMN tokens_saida int;
-    ALTER TABLE historico_roteiros ADD COLUMN custo_estimado_brl numeric(10,6);
-    RAISE NOTICE 'Colunas de tracking LLM adicionadas em historico_roteiros.';
+    ALTER TABLE nw_historico_roteiros ADD COLUMN modelo_llm varchar(50) DEFAULT 'gemini-2.5-flash';
+    ALTER TABLE nw_historico_roteiros ADD COLUMN tokens_entrada int;
+    ALTER TABLE nw_historico_roteiros ADD COLUMN tokens_saida int;
+    ALTER TABLE nw_historico_roteiros ADD COLUMN custo_estimado_brl numeric(10,6);
+    RAISE NOTICE 'Colunas de tracking LLM adicionadas em nw_historico_roteiros.';
+  END IF;
+END $$;
+
+-- ==========================================
+-- MIGRATION V2.5 -> V3.0 (Calibragem Inteligente)
+-- ==========================================
+-- Adiciona coluna modelo_calibragem em roteiros_ouro.
+-- Relaxa CHECK de tipo_estrutura para aceitar valores simplificados.
+-- É seguro rodar múltiplas vezes (idempotente).
+
+DO $$
+BEGIN
+  -- 1. modelo_calibragem em roteiros_ouro
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'nw_roteiros_ouro' AND column_name = 'modelo_calibragem'
+  ) THEN
+    ALTER TABLE nw_roteiros_ouro ADD COLUMN modelo_calibragem text DEFAULT 'N/A';
+    RAISE NOTICE 'Coluna modelo_calibragem adicionada em nw_roteiros_ouro.';
+  END IF;
+
+  -- 2. Relaxa CHECK em tipo_estrutura para aceitar 'Abertura' e 'Fechamento' também
+  IF EXISTS (
+    SELECT 1 FROM information_schema.check_constraints 
+    WHERE constraint_name LIKE '%tipo_estrutura%'
+  ) THEN
+    ALTER TABLE nw_treinamento_estruturas DROP CONSTRAINT IF EXISTS nw_treinamento_estruturas_tipo_estrutura_check;
+    ALTER TABLE nw_treinamento_estruturas ADD CONSTRAINT nw_treinamento_estruturas_tipo_estrutura_check 
+      CHECK (tipo_estrutura IN ('Abertura', 'Fechamento', 'Abertura (Gancho)', 'Fechamento (CTA)'));
+    RAISE NOTICE 'CHECK de tipo_estrutura atualizado para aceitar valores simplificados.';
   END IF;
 END $$;
