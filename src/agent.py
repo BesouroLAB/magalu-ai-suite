@@ -1,8 +1,7 @@
 import os
 import json
 import glob
-from google import genai
-from google.genai.types import GenerateContentConfig
+import google.generativeai as genai_v1
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -85,7 +84,8 @@ class RoteiristaAgent:
             api_key = os.environ.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
             if not api_key:
                 raise ValueError("GEMINI_API_KEY não encontrada!")
-            self.client_gemini = genai.Client(api_key=api_key)
+            genai_v1.configure(api_key=api_key)
+            self.client_gemini = genai_v1.GenerativeModel(self.model_id)
         elif self.model_id.startswith("puter/"):
             self.provider = "puter"
             puter_key = os.environ.get("PUTER_API_KEY")
@@ -393,26 +393,23 @@ class RoteiristaAgent:
 
         if self.client_gemini:
             contents = [final_prompt]
-            # Adiciona a lista de imagens se houver
             if images_list:
-                from google.genai.types import Part
                 for img_dict in images_list:
                     img_bytes = img_dict.get("bytes")
                     img_mime = img_dict.get("mime")
                     if img_bytes and img_mime:
-                        contents.append(
-                            Part.from_bytes(data=img_bytes, mime_type=img_mime)
-                        )
+                        contents.append({
+                            "mime_type": img_mime,
+                            "data": img_bytes
+                        })
 
-            response = self.client_gemini.models.generate_content(
-                model=self.model_id,
-                contents=contents,
-            )
+            # Chamada via SDK v1
+            response = self.client_gemini.generate_content(contents)
             roteiro = response.text
             
-            # Captura métricas de uso (tokens)
-            tokens_in = getattr(response.usage_metadata, 'prompt_token_count', 0) if hasattr(response, 'usage_metadata') else 0
-            tokens_out = getattr(response.usage_metadata, 'candidates_token_count', 0) if hasattr(response, 'usage_metadata') else 0
+            # Métricas via v1
+            tokens_in = len(final_prompt) // 4
+            tokens_out = len(roteiro) // 4
         
         elif self.client_openai:
             messages = [{"role": "user", "content": final_prompt}]
@@ -577,22 +574,24 @@ class RoteiristaAgent:
             except Exception as e:
                 print(f"⚠️ Erro OpenRouter Calibragem: {e}")
 
-        # 🟡 OPÇÃO 3: GEMINI (último recurso)
+        # 🟡 OPÇÃO 3: GEMINI (último recurso — via SDK v1 Estável)
         api_key_gemini = os.environ.get("GEMINI_API_KEY")
         if api_key_gemini:
             try:
                 print("🔄 Tentando calibragem via Gemini (2.5-flash)...")
-                client = genai.Client(api_key=api_key_gemini)
-                response = client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=user_prompt,
-                    config=GenerateContentConfig(
-                        system_instruction=sys_prompt,
-                        response_mime_type="application/json",
-                        temperature=0.1
-                    ),
+                genai_v1.configure(api_key=api_key_gemini)
+                model_v1 = genai_v1.GenerativeModel('gemini-2.5-flash')
+                
+                # Prompt de sistema + usuário combinados (v1)
+                full_prompt = f"{sys_prompt}\n\n{user_prompt}"
+                
+                response = model_v1.generate_content(
+                    full_prompt,
+                    generation_config=genai_v1.types.GenerationConfig(
+                        temperature=0.1,
+                    )
                 )
-                res = json.loads(response.text)
+                res = self._extract_json(response.text)
                 print("✅ Calibragem realizada via Gemini (2.5-flash)")
                 return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "Gemini 2.5 Flash (via Google)")
             except Exception as e:

@@ -284,7 +284,7 @@ def convert_to_sp_time(utc_datetime_str):
         if dt_utc.tzinfo is None:
             dt_utc = dt_utc.tz_localize('UTC')
         dt_sp = dt_utc.tz_convert('America/Sao_Paulo')
-        return dt_sp.strftime('%d/%m/%Y %H:%M:%S')
+        return dt_sp.strftime('%d/%m/%Y %H:%M')
     except Exception:
         return utc_datetime_str
 
@@ -301,7 +301,8 @@ def salvar_calibracao_ouro(sp_client, cat_id, roteiro_ia, roteiro_final, percent
             "roteiro_perfeito": roteiro_final,
             "nota_percentual": percentual,
             "aprendizado": aprendizado,
-            "modelo_calibragem": modelo_calibragem
+            "modelo_calibragem": modelo_calibragem,
+            "criado_em": get_now_sp().isoformat()
         }
         res = sp_client.table("nw_roteiros_ouro").insert(data).execute()
         if hasattr(res, 'data') and len(res.data) > 0:
@@ -671,10 +672,42 @@ with st.sidebar:
 
     page = st.session_state['page']
 
-
+@st.fragment
+def show_calibragem_summary():
+    """Exibe um resumo persistente das regras aprendidas após calibragem."""
+    if 'show_calib_modal' in st.session_state:
+        m = st.session_state['show_calib_modal']
+        calc = m['calc']
+        
+        st.markdown(f"### 🧪 Resumo do Aprendizado da IA")
+        st.success(f"🏆 Roteiro Ouro Salvo! {m['score_color']} Qualidade: {m['estrelas']:.1f} ⭐")
+        
+        with st.container(border=True):
+            if m['n_f'] > 0:
+                st.markdown(f"**🎓 Fonética ({m['n_f']}):**")
+                for r in calc['fonetica_regras']:
+                    st.code(f"{r['termo_errado']} → {r['termo_corrigido']}", language="text")
+            
+            if m['n_e'] > 0:
+                st.markdown(f"**✨ Estrutura ({m['n_e']}):**")
+                for r in calc['estrutura_regras']:
+                    st.caption(f"Tipo: {r['tipo']}")
+                    st.text_area("Texto Ouro:", value=r['texto_ouro'], height=70, disabled=True, key=f"mdl_est_{r['tipo']}")
+            
+            if m['n_p'] > 0:
+                st.markdown(f"**🎭 Persona Lu ({m['n_p']}):**")
+                for r in calc['persona_regras']:
+                    st.caption(f"Pilar: {r['pilar']}")
+                    st.markdown(f"*Correção:* {r['correcao']}")
+        
+        st.info("Estas regras foram integradas ao 'cérebro' da IA e serão aplicadas nos próximos roteiros.")
+        if st.button("✅ Entendido, Fechar Relatório", use_container_width=True, type="primary"):
+            del st.session_state['show_calib_modal']
+            st.rerun()
 
 # --- APLICAÇÃO PRINCIPAL ---
-# (O título foi movido para a sidebar conforme solicitado)
+if 'show_calib_modal' in st.session_state:
+    show_calibragem_summary()
 
 
 # --- PÁGINA 1: CRIAR ROTEIROS ---
@@ -1459,22 +1492,12 @@ elif page == "Treinar IA":
                                 n_p = _auto_salvar_persona(sp_client, calc.get('persona_regras', []))
 
                                 if n_f > 0 or n_e > 0 or n_p > 0:
-                                    with st.expander("📝 Detalhes do Aprendizado (Extração Automática)", expanded=True):
-                                        if n_f > 0:
-                                            st.markdown(f"**🎓 Fonética ({n_f}):**")
-                                            for r in calc['fonetica_regras']:
-                                                st.write(f"- {r['termo_errado']} → {r['termo_corrigido']}")
-                                        if n_e > 0:
-                                            st.markdown(f"**✨ Estrutura ({n_e}):**")
-                                            for r in calc['estrutura_regras']:
-                                                st.write(f"- {r['tipo']}: {r['texto_ouro'][:60]}...")
-                                        if n_p > 0:
-                                            st.markdown(f"**🎭 Persona Lu ({n_p}):**")
-                                            for r in calc['persona_regras']:
-                                                st.write(f"- {r['pilar']}: {r['correcao'][:60]}...")
-                                    st.info("As regras acima foram enviadas para as tabelas de treinamento e serão usadas nos próximos roteiros.")
-                                    import time
-                                    time.sleep(5) # Dá tempo do usuário ler antes do rerun
+                                    st.session_state['show_calib_modal'] = {
+                                        "calc": calc,
+                                        "n_f": n_f, "n_e": n_e, "n_p": n_p,
+                                        "estrelas": estrelas_ui,
+                                        "score_color": _score_color
+                                    }
                                 else:
                                     st.info("A IA analisou as mudanças, mas não identificou padrões repetíveis para as tabelas de treinamento (apenas ajustes de estilo/contextuais).")
                                     import time
