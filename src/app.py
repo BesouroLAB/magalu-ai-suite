@@ -521,7 +521,7 @@ with st.sidebar:
         """, unsafe_allow_html=True)
     
     # --- STATUS INDICATORS (apenas LLM ativa + Supabase) ---
-    _modelo_atual = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
+    _modelo_atual = st.session_state.get('modelo_llm', 'gemini-2.0-flash')
     _prov = _modelo_atual.split('/')[0] if '/' in _modelo_atual else 'gemini'
     _env_map = {
         "gemini": api_key_env, 
@@ -536,7 +536,7 @@ with st.sidebar:
     _nomes_modelos = {v: k for k, v in MODELOS_DISPONIVEIS.items()}
     _full_name = _nomes_modelos.get(_modelo_atual, "LLM Desconhecida")
     
-    # Ex: "⚡ Gemini 2.5 Flash — Grátis" -> "Gemini 2.5 Flash"
+    # Ex: "⚡ Gemini 2.0 Flash — Grátis" -> "Gemini 2.0 Flash"
     _llm_name = _full_name.split(' — ')[0]
     
     # Remove emoji/símbolo inicial se houver espaco logo apos
@@ -594,7 +594,7 @@ with st.sidebar:
                 time.sleep(1.0) # Espera o toast ser lido antes do rebuild
             except Exception as e:
                 st.error(f"Erro ao ativar modelo: {e}")
-                st.session_state['modelo_llm'] = "gemini-2.5-flash" # Fallback
+                st.session_state['modelo_llm'] = "gemini-2.0-flash" # Fallback
         st.rerun()
 
     # Info rápida sobre o modelo
@@ -801,7 +801,7 @@ if page == "Criar Roteiros":
                         st.warning("🚧 Este formato de roteiro ainda está em desenvolvimento. Selecione 'NW (NewWeb)' para continuar.")
                         st.stop()
                     
-                    modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
+                    modelo_id = st.session_state.get('modelo_llm', 'gemini-2.0-flash')
                     
                     # Validação genérica de API Key baseada no provider
                     _provider = modelo_id.split('/')[0] if '/' in modelo_id else 'gemini'
@@ -887,7 +887,8 @@ if page == "Criar Roteiros":
                                     "tokens_in": resultado["tokens_in"],
                                     "tokens_out": resultado["tokens_out"],
                                     "custo_brl": resultado["custo_brl"],
-                                    "id_sequencial": global_id, # Salva o número para exibição
+                                    "id_sequencial": global_id, # Deprecated
+                                    "global_num": global_id,
                                     "mes": mes_selecionado, # Salva o mês de lançamento
                                     "sub_skus": sub_skus,
                                     "video_url": video_url
@@ -993,7 +994,7 @@ if page == "Criar Roteiros":
                 if not fichas_validas:
                     st.warning("⚠️ Preencha o Código e a Ficha Técnica de pelo menos um produto.")
                 else:
-                    modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
+                    modelo_id = st.session_state.get('modelo_llm', 'gemini-2.0-flash')
                     _provider = modelo_id.split('/')[0] if '/' in modelo_id else 'gemini'
                     _env_var = PROVIDER_KEY_MAP.get(_provider)
                     if _env_var and not os.environ.get(_env_var):
@@ -1063,8 +1064,8 @@ if page == "Criar Roteiros":
                                         import time
                                         time.sleep(5)
 
-                                st.session_state['data_roteiro_global'] = data_roteiro_str
-                                st.session_state['mes_global'] = mes_selecionado
+                                st.session_state['data_roteiro_global'] = data_roteiro_str_man
+                                st.session_state['mes_global'] = mes_selecionado_man
                                 if 'roteiros' not in st.session_state:
                                     st.session_state['roteiros'] = []
                                 # Prepend para o topo
@@ -1401,7 +1402,7 @@ elif page == "Treinar IA":
                         try:
                             # Usa qualquer provedor disponível (Puter/OpenRouter/Gemini)
                             # Determina qual model_id usar para instanciar o agente. Novo Default: DeepSeek (OpenRouter)
-                            _calib_model = "gemini-2.5-flash"
+                            _calib_model = "gemini-2.0-flash"
                             # Verifica tanto env quanto secrets para garantir que DeepSeek seja priorizado se houver chave
                             openrouter_key = os.environ.get("OPENROUTER_API_KEY") or st.secrets.get("OPENROUTER_API_KEY")
                             puter_key = os.environ.get("PUTER_API_KEY") or st.secrets.get("PUTER_API_KEY")
@@ -1412,7 +1413,7 @@ elif page == "Treinar IA":
                             elif puter_key:
                                 _calib_model = "puter/x-ai/grok-4-1-fast"
                             elif gemini_key:
-                                _calib_model = "gemini-2.5-flash"
+                                _calib_model = "gemini-2.0-flash"
                             else:
                                 st.error("Nenhuma chave de IA configurada (OpenRouter, Puter ou Gemini).")
                                 _calib_model = None
@@ -1615,7 +1616,7 @@ elif page == "Guia de Modelos":
     
     # Categorizando modelos por provedor
     categorias = {
-        "Google (Nativo)": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-flash"],
+        "Google (Nativo)": ["gemini-2.0-flash", "gemini-2.0-pro", "gemini-1.5-flash"],
         "OpenAI": ["openai/gpt-4o-mini"],
         "Puter (Grok & Elite)": ["puter/x-ai/grok-4-1-fast", "puter/x-ai/grok-2", "puter/meta-llama/llama-3.1-70b-instruct", "puter/claude-3-5-sonnet"],
         "OpenRouter (Especializados)": [
@@ -2245,7 +2246,7 @@ elif page == "Assistente Lu":
             message_placeholder = st.empty()
             
             # Re-instantiate agent to ensure it uses the current model_id
-            modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
+            modelo_id = st.session_state.get('modelo_llm', 'gemini-2.0-flash')
             
             try:
                 # Compile Supabase context for RAG

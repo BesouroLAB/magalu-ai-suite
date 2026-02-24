@@ -12,8 +12,8 @@ PROJECT_ROOT = os.path.join(os.path.dirname(__file__), '..')
 
 # Tabela de preços por 1M tokens (USD)
 PRICING_USD_PER_1M = {
-    "gemini-2.5-flash": {"input": 0.70, "output": 2.10},
-    "gemini-2.5-pro":   {"input": 3.50, "output": 10.50},
+    "gemini-2.0-flash": {"input": 0.70, "output": 2.10},
+    "gemini-2.0-pro":   {"input": 3.50, "output": 10.50},
     "gemini-1.5-flash":  {"input": 0.35, "output": 1.05},
     # Novos modelos (Z.ai, Kimi, etc. em modo free por enquanto)
     "gpt-4o-mini": {"input": 0.00, "output": 0.00},
@@ -31,8 +31,8 @@ PRICING_USD_PER_1M = {
 USD_TO_BRL = 5.80
 
 MODELOS_DISPONIVEIS = {
-    "⚡ Gemini 2.5 Flash [PAGO] — ~R$0,03/roteiro": "gemini-2.5-flash",
-    "🏆 Gemini 2.5 Pro [PAGO] — ~R$0,06/roteiro": "gemini-2.5-pro",
+    "⚡ Gemini 2.0 Flash [PAGO] — ~R$0,03/roteiro": "gemini-2.0-flash",
+    "🏆 Gemini 2.0 Pro [PAGO] — ~R$0,06/roteiro": "gemini-2.0-pro",
     "🔥 Grok 4.1 Fast [GRÁTIS] — Criativo (Puter)": "puter/x-ai/grok-4-1-fast",
     "🐋 DeepSeek R1 [GRÁTIS] — Técnico (OpenRouter)": "openrouter/deepseek/deepseek-r1-0528:free",
     "🤖 GPT-4o Mini [GRÁTIS] — Fluído (OpenAI)": "openai/gpt-4o-mini",
@@ -48,8 +48,8 @@ MODELOS_DISPONIVEIS = {
 }
 
 MODELOS_DESCRICAO = {
-    "gemini-2.5-flash": "[RECOMENDADO] (2025) O equilíbrio perfeito. Extremamente rápido, lida bem com lotes e tem a melhor integração com a persona da Lu. Custo baixíssimo (~R$ 0,03).",
-    "gemini-2.5-pro": "[ELITE] (2025) O modelo mais inteligente. Ideal para produtos complexos ou roteiros que exigem criatividade fora da curva e lógica impecável. Custo (~R$ 0,06).",
+    "gemini-2.0-flash": "[RECOMENDADO] (2025) O equilíbrio perfeito. Extremamente rápido, lida bem com lotes e tem a melhor integração com a persona da Lu. Custo baixíssimo (~R$ 0,03).",
+    "gemini-2.0-pro": "[ELITE] (2025) O modelo mais inteligente. Ideal para produtos complexos ou roteiros que exigem criatividade fora da curva e lógica impecável. Custo (~R$ 0,06).",
     "gemini-1.5-flash": "[ECONÔMICO] (2024) Uma versão estável e muito rápida se as chaves 2.5 estiverem lentas. Ótimo custo-benefício.",
     "openai/gpt-4o-mini": "[ESTÁVEL] (2024) Respostas muito diretas e limpas. Excelente para manter o formato NW sem erros de estrutura.",
     "puter/x-ai/grok-4-1-fast": "[NEGOCIAL/RETIRO] (2025) Excelente para Reels e formatos sociais. Tem um tom mais persuasivo e ganchos de retenção mais fortes.",
@@ -74,12 +74,12 @@ PROVIDER_KEY_MAP = {
 
 def calcular_custo_brl(model_id, tokens_in, tokens_out):
     """Calcula o custo estimado em BRL com base nos tokens consumidos."""
-    pricing = PRICING_USD_PER_1M.get(model_id, PRICING_USD_PER_1M["gemini-2.5-flash"])
+    pricing = PRICING_USD_PER_1M.get(model_id, PRICING_USD_PER_1M["gemini-2.0-flash"])
     custo_usd = (tokens_in / 1_000_000 * pricing["input"]) + (tokens_out / 1_000_000 * pricing["output"])
     return round(custo_usd * USD_TO_BRL, 6)
 
 class RoteiristaAgent:
-    def __init__(self, supabase_client=None, model_id="gemini-2.5-flash"):
+    def __init__(self, supabase_client=None, model_id="gemini-2.0-flash"):
         self.model_id = model_id
         self.supabase = supabase_client
         self.client_gemini = None
@@ -329,7 +329,7 @@ class RoteiristaAgent:
                 from google.genai import types
                 client = genai.Client(api_key=api_key_gemini)
                 response = client.models.generate_content(
-                    model='gemini-2.5-flash',
+                    model='gemini-2.0-flash',
                     contents=prompt,
                     config=types.GenerateContentConfig(temperature=0.3)
                 )
@@ -340,7 +340,7 @@ class RoteiristaAgent:
 
         return "Erro: Nenhum provedor disponível para gerar memória de calibragem."
 
-    def gerar_roteiro(self, scraped_data, modo_trabalho="NW (NewWeb)", mes="MAR", data_roteiro=None, codigo=None, nome_produto=None):
+    def gerar_roteiro(self, scraped_data, modo_trabalho="NW (NewWeb)", mes="MAR", data_roteiro=None, codigo=None, nome_produto=None, sub_skus=None, video_url=None):
         """Envia a requisição para o Gemini gerar o roteiro. Suporta Multimodal e Modos de Trabalho."""
         context = self._build_context()
 
@@ -475,7 +475,7 @@ class RoteiristaAgent:
     def analisar_calibracao(self, original, final, categories_list=[], codigo_original=""):
         """
         Realiza a análise de calibragem de qualidade usando LLMs gratuitos.
-        Cadeia de fallback: Puter (Grok 4.1 Fast) → OpenRouter (DeepSeek V3) → Gemini (2.5 Flash).
+        Cadeia de fallback: Puter (Grok 4.1 Fast) → OpenRouter (DeepSeek V3) → Gemini (2.0 Flash).
         """
         # Define um ID de fallback seguro (o primeiro da lista ou 0)
         fallback_id = categories_list[0]['id'] if categories_list else 1
@@ -586,10 +586,10 @@ class RoteiristaAgent:
         api_key_gemini = os.environ.get("GEMINI_API_KEY")
         if api_key_gemini:
             try:
-                print("🔄 Tentando calibragem via Gemini (2.5-flash)...")
+                print("🔄 Tentando calibragem via Gemini (2.0-flash)...")
                 client = genai.Client(api_key=api_key_gemini)
                 response = client.models.generate_content(
-                    model='gemini-2.5-flash',
+                    model='gemini-2.0-flash',
                     contents=user_prompt,
                     config=GenerateContentConfig(
                         system_instruction=sys_prompt,
@@ -598,8 +598,8 @@ class RoteiristaAgent:
                     ),
                 )
                 res = json.loads(response.text)
-                print("✅ Calibragem realizada via Gemini (2.5-flash)")
-                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "Gemini 2.5 Flash (via Google)")
+                print("✅ Calibragem realizada via Gemini (2.0-flash)")
+                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "Gemini 2.0 Flash (via Google)")
             except Exception as e:
                 print(f"⚠️ Erro Gemini Calibragem: {e}")
 

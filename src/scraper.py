@@ -153,7 +153,7 @@ def _try_combined_search(prompt: str, api_key: str) -> str | None:
     try:
         client = genai.Client(api_key=api_key)
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.0-flash",
             contents=prompt,
             config=GenerateContentConfig(
                 tools=[
@@ -175,7 +175,7 @@ def _try_google_search(prompt: str, api_key: str) -> str | None:
     try:
         client = genai.Client(api_key=api_key)
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.0-flash",
             contents=prompt,
             config=GenerateContentConfig(
                 tools=[Tool(google_search={})],
