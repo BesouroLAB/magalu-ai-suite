@@ -1870,6 +1870,20 @@ elif page == "Dashboard":
             df_hist_dash = pd.DataFrame(hist_data)
             df_nuan = pd.DataFrame(nuan_data)
             
+            # --- NOVA LÓGICA: df_fb agora vem de df_ouro (Calibragens) ---
+            if not df_ouro.empty:
+                df_fb = df_ouro[df_ouro['roteiro_original_ia'].notna()].copy()
+                # Converte nota_percentual (0-100) para labels de sentimento
+                def map_sentimento(p):
+                    if p >= 96: return "Ajuste Fino"
+                    if p >= 85: return "Edição Moderada"
+                    if p >= 60: return "Mudança Estrutural"
+                    return "Reescrita Pesada"
+                df_fb['avaliacao_label'] = df_fb['nota_percentual'].apply(map_sentimento)
+                df_fb['estrela'] = df_fb['nota_percentual'].apply(lambda x: f"{(x/20.0):.1f} ⭐")
+            else:
+                df_fb = pd.DataFrame()
+            
             # --- CONVERSÃO DE FUSO HORÁRIO GLOBAL (UTC -> SÃO PAULO) ---
             for df in [df_ouro, df_pers, df_fon, df_est, df_nuan]:
                 if not df.empty and 'criado_em' in df.columns:
@@ -2011,10 +2025,13 @@ elif page == "Dashboard":
 
             with col_chart_kb:
                 st.markdown("#### 🧠 Saúde da Base de Conhecimento")
-                total_calib_feitos = len(df_ouro) if not df_ouro.empty else 0
+                # Distinguimos o que é Calibragem (tem rascunho IA) do que é Ouro puro (Manual)
+                num_calib = len(df_fb) if not df_fb.empty else 0
+                num_ouro_puro = total_ouro - num_calib
+                
                 kb_data = {
-                    "Componente": ["Fonéticas", "Estruturas", "Calibrações", "Roteiros Ouro", "Persona", "Nuances"],
-                    "Registros": [len(df_fon), len(df_est), total_calib_feitos, total_ouro, len(df_pers), len(df_nuan)]
+                    "Componente": ["Fonética", "Estrutura", "Calibragem", "Roteiro Ouro", "Persona", "Nuances"],
+                    "Registros": [len(df_fon), len(df_est), num_calib, num_ouro_puro, len(df_pers), len(df_nuan)]
                 }
                 df_kb = pd.DataFrame(kb_data)
                 fig_kb = px.bar(df_kb, x='Registros', y='Componente', orientation='h', 
@@ -2081,23 +2098,20 @@ elif page == "Dashboard":
             
             with col_aval:
                 st.markdown("#### ⚖️ Sentimento das Calibrações")
-                if not df_fb.empty and 'avaliacao' in df_fb.columns:
-                    # Atualizado para as novas métricas de intensidade
-                    aval_map = {-1: "Reescrita Pesada", 0: "Legado/Regular", 1: "Edição Moderada", 2: "Ajuste Fino"}
-                    df_fb['avaliacao_label'] = df_fb['avaliacao'].map(aval_map).fillna("Outro")
+                if not df_fb.empty and 'avaliacao_label' in df_fb.columns:
                     aval_counts = df_fb['avaliacao_label'].value_counts().reset_index()
                     aval_counts.columns = ['Avaliação', 'Quantidade']
                     
                     # Cores específicas para as novas métricas
                     color_map = {
-                        "Ajuste Fino": "#10b981",       # Verde (Sucesso total)
-                        "Edição Moderada": "#f59e0b",   # Amarelo/Laranja (Atenção/Trabalho médio)
-                        "Reescrita Pesada": "#ef4444",  # Vermelho (Trabalho pesado/Falha)
-                        "Legado/Regular": "#6b7280"     # Cinza para avaliações antigas
+                        "Ajuste Fino": "#10b981",       # Verde
+                        "Edição Moderada": "#34d399",   # Esmeralda
+                        "Mudança Estrutural": "#f59e0b", # Âmbar
+                        "Reescrita Pesada": "#ef4444"    # Vermelho
                     }
                     
                     fig_aval = px.bar(aval_counts, x='Avaliação', y='Quantidade', color='Avaliação',
-                                    color_discrete_map=color_map)
+                                    color_discrete_map=color_map, category_orders={"Avaliação": ["Ajuste Fino", "Edição Moderada", "Mudança Estrutural", "Reescrita Pesada"]})
                     fig_aval.update_layout(
                         template="plotly_dark",
                         paper_bgcolor="rgba(0,0,0,0)",
@@ -2179,9 +2193,11 @@ elif page == "Dashboard":
             
             with tab_feed:
                 if not df_fb.empty:
-                    st.dataframe(df_fb[['criado_em', 'avaliacao', 'categoria', 'roteiro_original_ia', 'roteiro_final_humano', 'comentarios']].sort_values(by='criado_em', ascending=False), use_container_width=True)
+                    # Colunas do novo sistema de calibragem
+                    cols_feed = ['criado_em', 'estrela', 'categoria', 'modelo_calibragem', 'aprendizado', 'roteiro_original_ia', 'roteiro_perfeito']
+                    st.dataframe(df_fb[cols_feed].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
-                    st.info("Nenhum feedback registrado.")
+                    st.info("Nenhuma calibração realizada ainda.")
             
             with tab_pers:
                 if not df_pers.empty:
