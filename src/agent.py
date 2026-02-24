@@ -113,6 +113,16 @@ class RoteiristaAgent:
                 base_url="https://openrouter.ai/api/v1"
             )
             self.model_id = self.model_id.replace("openrouter/", "")
+        elif self.model_id.startswith("puter/"):
+            self.provider = "puter"
+            puter_key = os.environ.get("PUTER_API_KEY")
+            if not puter_key:
+                raise ValueError("PUTER_API_KEY não encontrada!")
+            self.client_openai = OpenAI(
+                api_key=puter_key,
+                base_url="https://api.puter.com/puterai/openai/v1/"
+            )
+            self.model_id = self.model_id.replace("puter/", "")
         elif self.model_id.startswith("zai/"):
             self.provider = "zai"
             zai_key = os.environ.get("ZAI_API_KEY")
