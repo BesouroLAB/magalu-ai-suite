@@ -17,6 +17,13 @@ from src.jsonld_generator import export_jsonld_string, wrap_in_script_tag
 
 load_dotenv()
 
+# --- DEFINIÇÃO DE FUSO HORÁRIO ---
+BR_TIMEZONE = pytz.timezone('America/Sao_Paulo')
+
+def get_now_sp():
+    """Retorna o datetime atual em São Paulo."""
+    return datetime.now(BR_TIMEZONE)
+
 # --- HELPERS PARA NUMERAÇÃO ---
 def get_total_script_count(sp_client):
     """Retorna o total de registros na tabela historico_roteiros para numeração sequencial."""
@@ -739,7 +746,8 @@ if page == "Criar Roteiros":
             
             with col_d_auto:
                 st.markdown("**Data do Roteiro**")
-                data_roteiro = st.date_input("Data", value=datetime.now(), format="DD/MM/YYYY", key="data_auto", label_visibility="collapsed")
+                now_sp = get_now_sp()
+                data_roteiro = st.date_input("Data", value=now_sp, format="DD/MM/YYYY", key="data_auto", label_visibility="collapsed")
                 data_roteiro_str = data_roteiro.strftime('%d/%m/%y')
 
             st.markdown("<br>", unsafe_allow_html=True)
@@ -987,7 +995,8 @@ if page == "Criar Roteiros":
                 )
             with col_d_man:
                 st.markdown("**Data do Roteiro**")
-                data_roteiro_man = st.date_input("Data do Roteiro:", value=datetime.now(), format="DD/MM/YYYY", key="date_man", label_visibility="collapsed")
+                now_sp_man = get_now_sp()
+                data_roteiro_man = st.date_input("Data do Roteiro:", value=now_sp_man, format="DD/MM/YYYY", key="date_man", label_visibility="collapsed")
                 data_roteiro_str_man = data_roteiro_man.strftime('%d/%m/%y')
             
             st.markdown("<br>", unsafe_allow_html=True)
@@ -2281,17 +2290,18 @@ elif page == "Assistente Lu":
                 sp = st.session_state.get('supabase_client')
                 if sp:
                     try:
-                        # Buscamos as estatísticas rápidas
-                        hoje = datetime.now().date().isoformat()
-                        # Consulta os ultimos roteiros da semana
-                        d_recent = sp.table("nw_historico_roteiros").select("criado_em, codigo_produto, custo_estimado_brl, modelo_llm").order('criado_em', desc=True).limit(200).execute()
-                        if d_recent.data:
-                            df = pd.DataFrame(d_recent.data)
-                            df['data'] = pd.to_datetime(df['criado_em']).dt.date
-                            total_geral = len(df)
-                            total_hoje = len(df[df['data'] == datetime.now().date()])
-                            custo_total = df['custo_estimado_brl'].sum()
-                            context_str = f"Métricas do Banco de Dados:\n- Total Recente Analisado: {total_geral}\n- Gerados Hoje ({hoje}): {total_hoje}\n- Custo Recente Total: R$ {custo_total:.4f}\n"
+                            # Buscamos as estatísticas rápidas
+                            now_sp_chat = get_now_sp()
+                            hoje = now_sp_chat.date().isoformat()
+                            # Consulta os ultimos roteiros da semana
+                            d_recent = sp.table("nw_historico_roteiros").select("criado_em, codigo_produto, custo_estimado_brl, modelo_llm").order('criado_em', desc=True).limit(200).execute()
+                            if d_recent.data:
+                                df = pd.DataFrame(d_recent.data)
+                                df['data'] = pd.to_datetime(df['criado_em']).dt.tz_convert('America/Sao_Paulo').dt.date
+                                total_geral = len(df)
+                                total_hoje = len(df[df['data'] == now_sp_chat.date()])
+                                custo_total = df['custo_estimado_brl'].sum()
+                                context_str = f"Métricas do Banco de Dados:\n- Total Recente Analisado: {total_geral}\n- Gerados Hoje ({hoje}): {total_hoje}\n- Custo Recente Total: R$ {custo_total:.4f}\n"
                     except Exception as e:
                         context_str = f"Aviso: Não consegui ler o banco de dados completamente ({e})."
                 else:
