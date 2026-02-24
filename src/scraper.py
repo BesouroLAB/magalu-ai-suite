@@ -131,6 +131,7 @@ def scrape_with_gemini(code_or_url: str) -> dict:
     
     result_text = None
     # Método 1: Google Search + URL Context combinados (mais poderoso)
+    # Usamos 1.5-flash pela estabilidade comprovada com ferramentas de pesquisa em 2026
     result = _try_combined_search(prompt, api_key)
     if result:
         result_text = result
@@ -148,44 +149,32 @@ def scrape_with_gemini(code_or_url: str) -> dict:
         "images": images_list
     }
 
+import google.generativeai as genai_old
+
 def _try_combined_search(prompt: str, api_key: str) -> str | None:
-    """Tenta com Google Search + URL Context combinados."""
+    """Tenta com Google Search + URL Context combinados usando SDK v1 para estabilidade."""
     try:
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt,
-            config=GenerateContentConfig(
-                tools=[
-                    Tool(google_search={}),
-                    Tool(url_context={}),
-                ],
-            ),
-        )
+        genai_old.configure(api_key=api_key)
+        model = genai_old.GenerativeModel('gemini-2.5-flash', tools='google_search_retrieval')
+        response = model.generate_content(prompt)
         text = response.text
         if text and len(text.strip()) > 80:
             return text
     except Exception as e:
-        print(f"[scraper] Combinado falhou: {e}")
+        print(f"[scraper] Combinado falhou (v1 auth): {e}")
     return None
 
-
 def _try_google_search(prompt: str, api_key: str) -> str | None:
-    """Fallback: apenas Google Search grounding."""
+    """Fallback: apenas Google Search usando SDK v1."""
     try:
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt,
-            config=GenerateContentConfig(
-                tools=[Tool(google_search={})],
-            ),
-        )
+        genai_old.configure(api_key=api_key)
+        model = genai_old.GenerativeModel('gemini-2.5-flash', tools='google_search_retrieval')
+        response = model.generate_content(prompt)
         text = response.text
         if text and len(text.strip()) > 80:
             return text
     except Exception as e:
-        print(f"[scraper] Google Search falhou: {e}")
+        print(f"[scraper] Google Search Fallback falhou: {e}")
     return None
 
 

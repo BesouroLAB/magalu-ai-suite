@@ -12,18 +12,16 @@ PROJECT_ROOT = os.path.join(os.path.dirname(__file__), '..')
 
 # Tabela de preços por 1M tokens (USD)
 PRICING_USD_PER_1M = {
-    "gemini-2.0-flash": {"input": 0.70, "output": 2.10},
-    "gemini-2.0-pro":   {"input": 3.50, "output": 10.50},
-    "gemini-1.5-flash":  {"input": 0.35, "output": 1.05},
-    # Novos modelos (Z.ai, Kimi, etc. em modo free por enquanto)
+    "gemini-2.5-flash": {"input": 0.70, "output": 2.10},
+    "gemini-2.5-pro":   {"input": 3.50, "output": 10.50},
+    "gemini-2.5-flash-lite": {"input": 0.10, "output": 0.40},
+    # Modelos gratuitos (via Puter, OpenRouter, Z.ai, Kimi)
     "gpt-4o-mini": {"input": 0.00, "output": 0.00},
     "x-ai/grok-4-1-fast": {"input": 0.00, "output": 0.00},
-    "x-ai/grok-2": {"input": 0.00, "output": 0.00},
     "moonshot-v1-8k": {"input": 0.00, "output": 0.00},
-    "glm-4-flash": {"input": 0.00, "output": 0.00},
+    "glm-4.5-flash": {"input": 0.00, "output": 0.00},
     "deepseek/deepseek-r1-0528:free": {"input": 0.00, "output": 0.00},
-    "deepseek/deepseek-r1-0528:free": {"input": 0.00, "output": 0.00},
-    "google/gemma-3-27b-it:free": {"input": 0.00, "output": 0.00},
+    "google/gemma-3-27b:free": {"input": 0.00, "output": 0.00},
     "meta-llama/llama-4-scout:free": {"input": 0.00, "output": 0.00},
     "meta-llama/llama-3.1-70b-instruct": {"input": 0.00, "output": 0.00},
     "claude-3-5-sonnet": {"input": 0.00, "output": 0.00},
@@ -31,34 +29,30 @@ PRICING_USD_PER_1M = {
 USD_TO_BRL = 5.80
 
 MODELOS_DISPONIVEIS = {
-    "⚡ Gemini 2.0 Flash [PAGO] — ~R$0,03/roteiro": "gemini-2.0-flash",
-    "🏆 Gemini 2.0 Pro [PAGO] — ~R$0,06/roteiro": "gemini-2.0-pro",
+    "💰 Gemini 2.5 Flash-Lite [PAGO] — ~R$0,01/roteiro": "gemini-2.5-flash-lite",
+    "⚡ Gemini 2.5 Flash [PAGO] — ~R$0,03/roteiro": "gemini-2.5-flash",
+    "🏆 Gemini 2.5 Pro [PAGO] — ~R$0,06/roteiro": "gemini-2.5-pro",
     "🔥 Grok 4.1 Fast [GRÁTIS] — Criativo (Puter)": "puter/x-ai/grok-4-1-fast",
-    "🐋 DeepSeek R1 [GRÁTIS] — Técnico (OpenRouter)": "openrouter/deepseek/deepseek-r1-0528:free",
-    "🤖 GPT-4o Mini [GRÁTIS] — Fluído (OpenAI)": "openai/gpt-4o-mini",
-    "🧠 DeepSeek R1 [GRÁTIS] — Análise (OpenRouter)": "openrouter/deepseek/deepseek-r1-0528:free",
-    "💰 Gemini 1.5 Flash [GRÁTIS/PAGO] — Super Econômico": "gemini-1.5-flash",
-    "🔥 Grok 2 [GRÁTIS] — Robusto (Puter)": "puter/x-ai/grok-2",
-    "💎 Gemma 3 27B [GRÁTIS] — Multimodal (OpenRouter)": "openrouter/google/gemma-3-27b-it:free",
+    "🐋 DeepSeek R1 [GRÁTIS] — Raciocínio (OpenRouter)": "openrouter/deepseek/deepseek-r1-0528:free",
+    "🤖 GPT-4o Mini [GRÁTIS] — Fluído (Puter)": "puter/gpt-4o-mini",
+    "💎 Gemma 3 27B [GRÁTIS] — Multimodal (OpenRouter)": "openrouter/google/gemma-3-27b:free",
     "🦙 Llama 4 Scout [GRÁTIS] — Nova Geração (OpenRouter)": "openrouter/meta-llama/llama-4-scout:free",
-    "🇨🇳 GLM-4 Flash [GRÁTIS] — Ficha Técnica (Z.ai)": "zai/glm-4-flash",
+    "🇨🇳 GLM-4.5 Flash [GRÁTIS] — Ficha Técnica (Z.ai)": "zai/glm-4.5-flash",
     "🌙 Kimi v1 [GRÁTIS] — Coerência (Moonshot)": "kimi/moonshot-v1-8k",
     "🦙 Llama 3.1 70B [GRÁTIS] — Equilibrado (Puter)": "puter/meta-llama/llama-3.1-70b-instruct",
     "🎭 Claude 3.5 Sonnet [GRÁTIS] — Narrativa Premium (Puter)": "puter/claude-3-5-sonnet",
 }
 
 MODELOS_DESCRICAO = {
-    "gemini-2.0-flash": "[RECOMENDADO] (2025) O equilíbrio perfeito. Extremamente rápido, lida bem com lotes e tem a melhor integração com a persona da Lu. Custo baixíssimo (~R$ 0,03).",
-    "gemini-2.0-pro": "[ELITE] (2025) O modelo mais inteligente. Ideal para produtos complexos ou roteiros que exigem criatividade fora da curva e lógica impecável. Custo (~R$ 0,06).",
-    "gemini-1.5-flash": "[ECONÔMICO] (2024) Uma versão estável e muito rápida se as chaves 2.5 estiverem lentas. Ótimo custo-benefício.",
-    "openai/gpt-4o-mini": "[ESTÁVEL] (2024) Respostas muito diretas e limpas. Excelente para manter o formato NW sem erros de estrutura.",
-    "puter/x-ai/grok-4-1-fast": "[NEGOCIAL/RETIRO] (2025) Excelente para Reels e formatos sociais. Tem um tom mais persuasivo e ganchos de retenção mais fortes.",
-    "puter/x-ai/grok-2": "[ROBUSTO] (2024) Muito bom para seguir regras rígidas sem 'pular' instruções. Segue bem a proibição de humanos nas imagens.",
-    "openrouter/deepseek/deepseek-r1-0528:free": "Ideal para lógica rigorosa, revisão gramatical avançada e extração de regras complexas, sem as taxas da OpenAI. Menos 'criativo', mas muito preciso nos dados.",
+    "gemini-2.5-flash": "[RECOMENDADO] (2025) O equilíbrio perfeito. Extremamente rápido, lida bem com lotes e tem a melhor integração com a persona da Lu. Custo baixíssimo (~R$ 0,03).",
+    "gemini-2.5-pro": "[ELITE] (2025) O modelo mais inteligente. Ideal para produtos complexos ou roteiros que exigem criatividade fora da curva e lógica impecável. Custo (~R$ 0,06).",
+    "gemini-2.5-flash-lite": "[ECONÔMICO] (2025) O mais barato da família 2.5. Ultra-rápido, ótimo para lotes grandes. ~R$ 0,01 por roteiro.",
+    "puter/gpt-4o-mini": "[ESTÁVEL] (2024) Respostas muito diretas e limpas. Excelente para manter o formato NW sem erros de estrutura. Gratuito via Puter.",
+    "puter/x-ai/grok-4-1-fast": "[NEGOCIAL/CRIATIVO] (2025) Excelente para Reels e formatos sociais. Tom persuasivo e ganchos de retenção fortes.",
     "openrouter/deepseek/deepseek-r1-0528:free": "[RACIOCÍNIO] (2025) Ideal para calibragem. Pensa passo a passo, identificando erros sutis de pronúncia e tom.",
-    "openrouter/google/gemma-3-27b-it:free": "[IMAGEM/VISÃO] (2025) Versão aberta do Google. Surpreendentemente bom em descrever detalhes de fotos do produto.",
+    "openrouter/google/gemma-3-27b:free": "[MULTIMODAL] (2025) Versão aberta do Google. Surpreendentemente bom em descrever detalhes de fotos do produto.",
     "openrouter/meta-llama/llama-4-scout:free": "[GIGANTE] (2025) Inteligência de ponta para descrições ricas. Ótimo para quando você quer um texto mais longo e detalhado.",
-    "zai/glm-4-flash": "[PRECISÃO] (2024) IA chinesa focada em não alucinar. Se o produto tem muitos números e medidas, ele é uma ótima escolha.",
+    "zai/glm-4.5-flash": "[PRECISÃO] (2025) IA chinesa focada em não alucinar. Se o produto tem muitos números e medidas, ele é uma ótima escolha.",
     "kimi/moonshot-v1-8k": "[COERÊNCIA] (2024) Mantém o fio da meada em roteiros longos. Bom para vídeos de Review extensos.",
     "puter/meta-llama/llama-3.1-70b-instruct": "[EQUILIBRADO] (2024) Inteligência de nível Pro em formato aberto. Versátil para todos os modos de trabalho.",
     "puter/claude-3-5-sonnet": "[NARRATIVA PREMIUM] (2024) O rei da escrita natural. Se você quer que o roteiro pareça escrito por um redator sênior, use este.",
@@ -74,12 +68,12 @@ PROVIDER_KEY_MAP = {
 
 def calcular_custo_brl(model_id, tokens_in, tokens_out):
     """Calcula o custo estimado em BRL com base nos tokens consumidos."""
-    pricing = PRICING_USD_PER_1M.get(model_id, PRICING_USD_PER_1M["gemini-2.0-flash"])
+    pricing = PRICING_USD_PER_1M.get(model_id, PRICING_USD_PER_1M["gemini-2.5-flash"])
     custo_usd = (tokens_in / 1_000_000 * pricing["input"]) + (tokens_out / 1_000_000 * pricing["output"])
     return round(custo_usd * USD_TO_BRL, 6)
 
 class RoteiristaAgent:
-    def __init__(self, supabase_client=None, model_id="gemini-2.0-flash"):
+    def __init__(self, supabase_client=None, model_id="gemini-2.5-flash"):
         self.model_id = model_id
         self.supabase = supabase_client
         self.client_gemini = None
@@ -136,7 +130,7 @@ class RoteiristaAgent:
                 raise ValueError("KIMI_API_KEY não encontrada!")
             self.client_openai = OpenAI(
                 api_key=kimi_key,
-                base_url="https://api.moonshot.cn/v1"
+                base_url="https://api.moonshot.ai/v1"
             )
             self.model_id = self.model_id.replace("kimi/", "")
 
@@ -306,18 +300,18 @@ class RoteiristaAgent:
             except Exception as e:
                 print(f"⚠️ Erro Puter Memória: {e}")
 
-        # 🔵 OPÇÃO 2: OPENROUTER (DeepSeek V3 — Grátis)
+        # 🔵 OPÇÃO 2: OPENROUTER (DeepSeek R1 — Grátis)
         api_key_or = os.environ.get("OPENROUTER_API_KEY")
         if api_key_or:
             try:
                 from openai import OpenAI as OpenAIClient
                 client = OpenAIClient(api_key=api_key_or, base_url="https://openrouter.ai/api/v1")
                 response = client.chat.completions.create(
-                    model="deepseek/deepseek-chat-v3-0324:free",
+                    model="deepseek/deepseek-r1-0528:free",
                     messages=[{"role": "user", "content": prompt}],
                     temperature=0.3
                 )
-                print("✅ Memória de calibragem gerada via OpenRouter (deepseek-v3)")
+                print("✅ Memória de calibragem gerada via OpenRouter (deepseek-r1)")
                 return response.choices[0].message.content.replace('\n', ' ').strip()
             except Exception as e:
                 print(f"⚠️ Erro OpenRouter Memória: {e}")
@@ -329,7 +323,7 @@ class RoteiristaAgent:
                 from google.genai import types
                 client = genai.Client(api_key=api_key_gemini)
                 response = client.models.generate_content(
-                    model='gemini-2.0-flash',
+                    model='gemini-2.5-flash',
                     contents=prompt,
                     config=types.GenerateContentConfig(temperature=0.3)
                 )
@@ -475,7 +469,7 @@ class RoteiristaAgent:
     def analisar_calibracao(self, original, final, categories_list=[], codigo_original=""):
         """
         Realiza a análise de calibragem de qualidade usando LLMs gratuitos.
-        Cadeia de fallback: Puter (Grok 4.1 Fast) → OpenRouter (DeepSeek V3) → Gemini (2.0 Flash).
+        Cadeia de fallback: Puter (Grok 4.1 Fast) → OpenRouter (DeepSeek V3) → Gemini (2.5 Flash).
         """
         # Define um ID de fallback seguro (o primeiro da lista ou 0)
         fallback_id = categories_list[0]['id'] if categories_list else 1
@@ -521,10 +515,11 @@ class RoteiristaAgent:
             "LISTA DE CATEGORIAS DISPONÍVEIS:\n"
             f"{cat_str}\n\n"
             "🚨 REGRA CRÍTICA DE FORMATAÇÃO DE SAÍDA:\n"
-            "Você é um robô de extração de dados. Retorne EXCLUSIVAMENTE o conteúdo JSON abaixo.\n"
+            "Você é um robô de extração de dados Puros. Retorne EXCLUSIVAMENTE o conteúdo JSON abaixo.\n"
+            "- NENHUM TEXTO ANTES OU DEPOIS DO JSON.\n"
+            "- SEM PENSAMENTOS (tags <think> são proibidas na resposta final).\n"
             "- NÃO use blocos de código markdown (```json ... ```).\n"
-            "- NÃO diga 'Aqui está o JSON'.\n"
-            "- Inicie com { e termine com }.\n\n"
+            "- Inicie OBRIGATORIAMENTE com { e termine OBRIGATORIAMENTE com }.\n\n"
             "Formato exato:\n"
             "{\n"
             "  \"percentual\": <inteiro 0-100>,\n"
@@ -539,30 +534,10 @@ class RoteiristaAgent:
 
         user_prompt = f"--- CÓDIGO SUGERIDO ---\n{codigo_original}\n\n--- ROTEIRO ORIGINAL (IA) ---\n{original}\n\n--- ROTEIRO FINAL (HUMANO) ---\n{final}"
 
-        # Tenta múltiplos provedores para garantir a calibragem (OpenRouter [DeepSeek] → Puter [Grok] → Gemini)
+        # Tenta múltiplos provedores para garantir a calibragem (Puter [Grok] → OpenRouter [DeepSeek] → Gemini)
         from openai import OpenAI as OpenAIClient
         
-        # 🔵 OPÇÃO 1: OPENROUTER (DeepSeek V3 — Grátis e Superior para Lógica)
-        api_key_or = os.environ.get("OPENROUTER_API_KEY")
-        if api_key_or:
-            try:
-                print("🔄 Tentando calibragem via OpenRouter (deepseek-r1)...")
-                client = OpenAIClient(api_key=api_key_or, base_url="https://openrouter.ai/api/v1")
-                response = client.chat.completions.create(
-                    model="deepseek/deepseek-r1-0528:free",
-                    messages=[
-                        {"role": "system", "content": sys_prompt},
-                        {"role": "user", "content": user_prompt}
-                    ],
-                    temperature=0.1
-                )
-                res = self._extract_json(response.choices[0].message.content)
-                print("✅ Calibragem realizada via OpenRouter (deepseek-r1)")
-                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "DeepSeek R1 (via OpenRouter)")
-            except Exception as e:
-                print(f"⚠️ Erro OpenRouter Calibragem: {e}")
-
-        # 🟢 OPÇÃO 2: PUTER (Grok 4.1 Fast — Grátis e reserva)
+        # 🟢 OPÇÃO 1: PUTER (Grok 4.1 Fast — Grátis, Rápido e Melhor em JSON)
         api_key_puter = os.environ.get("PUTER_API_KEY")
         if api_key_puter:
             try:
@@ -582,14 +557,34 @@ class RoteiristaAgent:
             except Exception as e:
                 print(f"⚠️ Erro Puter Calibragem: {e}")
 
-        # 🟡 OPÇÃO 3: GEMINI (último recurso — pode ter key inválida)
+        # 🔵 OPÇÃO 2: OPENROUTER (DeepSeek R1 — Fallback para Raciocínio)
+        api_key_or = os.environ.get("OPENROUTER_API_KEY")
+        if api_key_or:
+            try:
+                print("🔄 Tentando calibragem via OpenRouter (deepseek-r1)...")
+                client = OpenAIClient(api_key=api_key_or, base_url="https://openrouter.ai/api/v1")
+                response = client.chat.completions.create(
+                    model="deepseek/deepseek-r1-0528:free",
+                    messages=[
+                        {"role": "system", "content": sys_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.1
+                )
+                res = self._extract_json(response.choices[0].message.content)
+                print("✅ Calibragem realizada via OpenRouter (deepseek-r1)")
+                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "DeepSeek R1 (via OpenRouter)")
+            except Exception as e:
+                print(f"⚠️ Erro OpenRouter Calibragem: {e}")
+
+        # 🟡 OPÇÃO 3: GEMINI (último recurso)
         api_key_gemini = os.environ.get("GEMINI_API_KEY")
         if api_key_gemini:
             try:
-                print("🔄 Tentando calibragem via Gemini (2.0-flash)...")
+                print("🔄 Tentando calibragem via Gemini (2.5-flash)...")
                 client = genai.Client(api_key=api_key_gemini)
                 response = client.models.generate_content(
-                    model='gemini-2.0-flash',
+                    model='gemini-2.5-flash',
                     contents=user_prompt,
                     config=GenerateContentConfig(
                         system_instruction=sys_prompt,
@@ -598,8 +593,8 @@ class RoteiristaAgent:
                     ),
                 )
                 res = json.loads(response.text)
-                print("✅ Calibragem realizada via Gemini (2.0-flash)")
-                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "Gemini 2.0 Flash (via Google)")
+                print("✅ Calibragem realizada via Gemini (2.5-flash)")
+                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "Gemini 2.5 Flash (via Google)")
             except Exception as e:
                 print(f"⚠️ Erro Gemini Calibragem: {e}")
 

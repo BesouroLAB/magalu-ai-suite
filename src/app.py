@@ -177,11 +177,22 @@ DARK_MODE_CSS = """
         text-transform: uppercase;
         letter-spacing: 1px;
         margin-bottom: 0.5rem;
+    }
     .metric-value {
         font-size: 1.25rem !important;
         color: #ffffff !important;
         font-weight: 700;
         letter-spacing: -0.5px;
+    }
+
+    /* Estilização de Placeholders para cores nítidas */
+    ::placeholder { color: #5c677d !important; opacity: 1; }
+    :-ms-input-placeholder { color: #5c677d !important; }
+    ::-ms-input-placeholder { color: #5c677d !important; }
+    
+    textarea::placeholder, input::placeholder {
+        color: #5c677d !important;
+        font-style: italic;
     }
 
 </style>
@@ -521,7 +532,7 @@ with st.sidebar:
         """, unsafe_allow_html=True)
     
     # --- STATUS INDICATORS (apenas LLM ativa + Supabase) ---
-    _modelo_atual = st.session_state.get('modelo_llm', 'gemini-2.0-flash')
+    _modelo_atual = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
     _prov = _modelo_atual.split('/')[0] if '/' in _modelo_atual else 'gemini'
     _env_map = {
         "gemini": api_key_env, 
@@ -536,7 +547,7 @@ with st.sidebar:
     _nomes_modelos = {v: k for k, v in MODELOS_DISPONIVEIS.items()}
     _full_name = _nomes_modelos.get(_modelo_atual, "LLM Desconhecida")
     
-    # Ex: "⚡ Gemini 2.0 Flash — Grátis" -> "Gemini 2.0 Flash"
+    # Ex: "⚡ Gemini 2.5 Flash — Grátis" -> "Gemini 2.5 Flash"
     _llm_name = _full_name.split(' — ')[0]
     
     # Remove emoji/símbolo inicial se houver espaco logo apos
@@ -594,7 +605,7 @@ with st.sidebar:
                 time.sleep(1.0) # Espera o toast ser lido antes do rebuild
             except Exception as e:
                 st.error(f"Erro ao ativar modelo: {e}")
-                st.session_state['modelo_llm'] = "gemini-2.0-flash" # Fallback
+                st.session_state['modelo_llm'] = "gemini-2.5-flash" # Fallback
         st.rerun()
 
     # Info rápida sobre o modelo
@@ -621,15 +632,13 @@ with st.sidebar:
         st.session_state['page'] = "Criar Roteiros"
 
     nav_items = {
-        "Assistente Lu": "💬 Assistente Lu",
         "Criar Roteiros": "✍️ Criar Roteiros",
-        "Histórico": "🕒 Histórico",
         "Treinar IA": "🧠 Treinar IA",
+        "Histórico": "🕒 Histórico",
         "Dashboard": "📊 Dashboard"
     }
     
     for page_key, page_label in nav_items.items():
-        if page_key == "Assistente Lu": continue # Será movido para o rodapé
         is_active = st.session_state['page'] == page_key
         if st.button(page_label, use_container_width=True, type="primary" if is_active else "secondary"):
             st.session_state['page'] = page_key
@@ -665,7 +674,9 @@ with st.sidebar:
 if page == "Criar Roteiros":
     
     # --- COMMAND CENTER (INPUTS) ---
-    expander_input = st.expander("📝 Command Center (Entradas de Dados)", expanded=True if 'roteiros' not in st.session_state else False)
+    # Colapsa automaticamente após geração, mas o usuário sempre pode reabrir
+    _has_roteiros = 'roteiros' in st.session_state and st.session_state['roteiros']
+    expander_input = st.expander("✍️ Inserir Códigos e Gerar", expanded=not _has_roteiros)
     
     with expander_input:
         # Categoria padrão
@@ -734,13 +745,6 @@ if page == "Criar Roteiros":
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown("### 2. Códigos dos Produtos")
 
-            st.markdown("### 3. Data do Roteiro")
-            data_roteiro = st.date_input("Selecione a data que aparecerá no cabeçalho:", value=datetime.now(), format="DD/MM/YYYY")
-            data_roteiro_str = data_roteiro.strftime('%d/%m/%y')
-
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("### 4. Códigos dos Produtos")
-
             st.markdown("<p style='font-size: 14px; color: #8b92a5'>Digite os códigos Magalu, um por linha. Mínimo 3 dígitos. Máximo 15 por vez.</p>", unsafe_allow_html=True)
             
             codigos_raw = st.text_area(
@@ -772,7 +776,7 @@ if page == "Criar Roteiros":
             geracao_bloqueada = modo_selecionado != "NW (NewWeb)"
             
             if 'skus_validados' in st.session_state and not st.session_state['skus_validados'].empty:
-                st.markdown("### 5. Dados Extras (Opcional)")
+                st.markdown("### 3. Dados Extras (Opcional)")
                 st.info("💡 Preencha SKUs relacionados (se houver variações de cor/voltagem) e o link do vídeo do fornecedor para enriquecer o roteiro.")
                 
                 # Editor Interativo
@@ -801,7 +805,7 @@ if page == "Criar Roteiros":
                         st.warning("🚧 Este formato de roteiro ainda está em desenvolvimento. Selecione 'NW (NewWeb)' para continuar.")
                         st.stop()
                     
-                    modelo_id = st.session_state.get('modelo_llm', 'gemini-2.0-flash')
+                    modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
                     
                     # Validação genérica de API Key baseada no provider
                     _provider = modelo_id.split('/')[0] if '/' in modelo_id else 'gemini'
@@ -994,7 +998,7 @@ if page == "Criar Roteiros":
                 if not fichas_validas:
                     st.warning("⚠️ Preencha o Código e a Ficha Técnica de pelo menos um produto.")
                 else:
-                    modelo_id = st.session_state.get('modelo_llm', 'gemini-2.0-flash')
+                    modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
                     _provider = modelo_id.split('/')[0] if '/' in modelo_id else 'gemini'
                     _env_var = PROVIDER_KEY_MAP.get(_provider)
                     if _env_var and not os.environ.get(_env_var):
@@ -1075,37 +1079,40 @@ if page == "Criar Roteiros":
                             except Exception as e:
                                 st.error(f"Erro na geração: {e}")
 
-    # --- MESA DE TRABALHO E HISTÓRICO ---
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    with st.expander("📜 Roteiros Recentes (Mesa de Trabalho)", expanded=False):
-        st.caption("Acesse roteiros da sessão atual ou busque no banco de dados para re-edição.")
+    # --- SCRIPTS DA SESSÃO (CARDS VISÍVEIS — SEM EXPANDER) ---
+    if 'roteiros' in st.session_state and st.session_state['roteiros']:
+        st.markdown("<br>", unsafe_allow_html=True)
         
-        if 'roteiros' in st.session_state and st.session_state['roteiros']:
-            st.markdown("**Sessão Atual:** (Recentes no topo)")
-            
-            # Criar colunas para os botões da sessão atual
-            cols_sessao = st.columns(min(4, len(st.session_state['roteiros'])))
-            for idx, r_item in enumerate(st.session_state['roteiros']):
-                num_tag = f"#{r_item.get('global_num', '?')}"
-                btn_txt = f"{num_tag} - {r_item.get('codigo', '...')}"
-                with cols_sessao[idx % len(cols_sessao)]:
-                    if st.button(btn_txt, key=f"session_btn_{idx}", use_container_width=True, type="primary" if st.session_state.get('roteiro_ativo_idx', 0) == idx else "secondary"):
-                        st.session_state['roteiro_ativo_idx'] = idx
-                        st.rerun()
-            st.markdown("---")
-        
-        if 'supabase_client' in st.session_state:
+        # Cards horizontais de seleção
+        n_roteiros = len(st.session_state['roteiros'])
+        cols_sessao = st.columns(min(4, n_roteiros))
+        for idx, r_item in enumerate(st.session_state['roteiros']):
+            num_tag = f"#{r_item.get('global_num', '?')}"
+            codigo_card = r_item.get('codigo', '...')
+            modelo_tag = r_item.get('model_id', '').split('/')[-1][:12]
+            is_active = st.session_state.get('roteiro_ativo_idx', 0) == idx
+            with cols_sessao[idx % len(cols_sessao)]:
+                if st.button(
+                    f"{codigo_card}\n{modelo_tag}",
+                    key=f"session_btn_{idx}",
+                    use_container_width=True,
+                    type="primary" if is_active else "secondary"
+                ):
+                    st.session_state['roteiro_ativo_idx'] = idx
+                    st.rerun()
+
+    # --- HISTÓRICO DO BANCO (Expandível, separado) ---
+    if 'supabase_client' in st.session_state:
+        with st.expander("📜 Histórico do Banco de Dados", expanded=False):
             sp_h = st.session_state['supabase_client']
             try:
-                # Busca roteiros recentes agrupados por dia
                 res_recent = sp_h.table("nw_historico_roteiros").select("criado_em, codigo_produto, modo_trabalho, roteiro_gerado, ficha_extraida, modelo_llm, custo_estimado_brl").order('criado_em', desc=True).limit(50).execute()
                 
                 if res_recent.data:
                     df_recent = pd.DataFrame(res_recent.data)
                     df_recent['data_simples'] = pd.to_datetime(df_recent['criado_em']).dt.date
                     
-                    search_q = st.text_input("🔍 Buscar no histórico do banco:", placeholder="Nome ou SKU...", key="hist_search")
+                    search_q = st.text_input("🔍 Buscar no histórico:", placeholder="Nome ou SKU...", key="hist_search")
                     if search_q:
                         df_recent = df_recent[
                             df_recent['codigo_produto'].str.contains(search_q, case=False, na=False) |
@@ -1116,44 +1123,43 @@ if page == "Criar Roteiros":
                     
                     for dia in datas_unicas:
                         dia_df = df_recent[df_recent['data_simples'] == dia]
-                        st.markdown(f"**📁 {dia.strftime('%d/%m/%Y')}**")
-                        # Em Grade
-                        cols_db = st.columns(4)
-                        for i, (_, r_row) in enumerate(dia_df.iterrows()):
-                            btn_label = f"👁️ {r_row['codigo_produto']} ({r_row['modo_trabalho'][:2]})"
-                            with cols_db[i % 4]:
-                                if st.button(btn_label, key=f"recall_{r_row['criado_em']}", use_container_width=True):
-                                    rec_item = {
-                                        "ficha": r_row['ficha_extraida'],
-                                        "roteiro_original": r_row['roteiro_gerado'],
-                                        "categoria_id": 1,
-                                        "codigo": r_row['codigo_produto'],
-                                        "model_id": r_row['modelo_llm'],
-                                        "custo_brl": r_row['custo_estimado_brl']
-                                    }
-                                    try:
-                                        first_line = r_row['roteiro_gerado'].split('\n')[0]
-                                        if "NW LU" in first_line:
-                                            parts = first_line.split()
-                                            if len(parts) >= 3:
-                                                rec_item["mes"] = parts[2]
-                                    except:
-                                        pass
-                                    if 'roteiros' not in st.session_state:
-                                        st.session_state['roteiros'] = []
-                                    
-                                    if not any(x.get('codigo') == rec_item['codigo'] for x in st.session_state['roteiros']):
-                                        st.session_state['roteiros'].insert(0, rec_item)
-                                        st.session_state['roteiro_ativo_idx'] = 0
-                                        st.rerun()
-                                    else:
-                                        st.info("Este roteiro já está na sua mesa.")
+                        with st.expander(f"📁 {dia.strftime('%d/%m/%Y')}", expanded=False):
+                            cols_db = st.columns(4)
+                            for i, (_, r_row) in enumerate(dia_df.iterrows()):
+                                # Inverte a numeração para que o primeiro (mais antigo do dia) seja #1
+                                n_hist = len(dia_df) - i
+                                btn_label = f"👁️ {r_row['codigo_produto']} ({r_row['modo_trabalho'][:2]})"
+                                with cols_db[i % 4]:
+                                    if st.button(btn_label, key=f"recall_{r_row['criado_em']}", use_container_width=True):
+                                        rec_item = {
+                                            "ficha": r_row['ficha_extraida'],
+                                            "roteiro_original": r_row['roteiro_gerado'],
+                                            "categoria_id": 1,
+                                            "codigo": r_row['codigo_produto'],
+                                            "model_id": r_row['modelo_llm'],
+                                            "custo_brl": r_row['custo_estimado_brl']
+                                        }
+                                        try:
+                                            first_line = r_row['roteiro_gerado'].split('\n')[0]
+                                            if "NW LU" in first_line:
+                                                parts = first_line.split()
+                                                if len(parts) >= 3:
+                                                    rec_item["mes"] = parts[2]
+                                        except:
+                                            pass
+                                        if 'roteiros' not in st.session_state:
+                                            st.session_state['roteiros'] = []
+                                        
+                                        if not any(x.get('codigo') == rec_item['codigo'] for x in st.session_state['roteiros']):
+                                            st.session_state['roteiros'].insert(0, rec_item)
+                                            st.session_state['roteiro_ativo_idx'] = 0
+                                            st.rerun()
+                                        else:
+                                            st.info("Este roteiro já está na sua mesa.")
                 else:
                     st.info("Nenhum histórico recente no banco.")
             except Exception as e:
                 st.error(f"Erro ao carregar histórico: {e}")
-        else:
-            st.info("Conecte o Supabase para ver o histórico do banco de dados.")
 
     # --- CANVA DO ROTEIRO ATIVO (AGORA OCUPANDO TODA A LARGURA) ---
     if 'roteiros' in st.session_state and st.session_state['roteiros']:
@@ -1207,24 +1213,29 @@ if page == "Criar Roteiros":
     
             # O Canva do Roteiro Ativo
             with st.container(border=True):
+                # Chave única por idx e código para garantir atualização ao trocar card
+                editor_key = f"editor_{idx}_{codigo_produto}"
                 
-                # Apenas uma saída editável em tela cheia (sem redundâncias)
-                st.caption("✏️ **Editor Final do Roteiro (Markdown)** - Esta é a versão final que será salva e exportada.")
+                # Força a atualização do texto quando o card ativo muda
+                if f"last_processed_idx" not in st.session_state or st.session_state.get("last_processed_idx") != idx:
+                    st.session_state[editor_key] = item['roteiro_original']
+                    st.session_state["last_processed_idx"] = idx
+
                 edited_val = st.text_area(
                     "Editor",
-                    value=st.session_state.get(f"editor_{idx}", item['roteiro_original']),
+                    value=st.session_state.get(editor_key, item['roteiro_original']),
                     height=450,
-                    key=f"editor_{idx}",
+                    key=editor_key,
                     label_visibility="collapsed"
                 )
             sp_cli = st.session_state.get('supabase_client', None)
                 
-            # Barra de Controle do Roteiro Específico
+            # Barra de Ações (3 colunas iguais)
             st.markdown("<br>", unsafe_allow_html=True)
             
-            col_act1, col_act2 = st.columns([1, 2])
+            col_docx, col_calib, col_ouro = st.columns(3)
             
-            with col_act1:
+            with col_docx:
                 docx_edited_bytes, docx_edited_fn = export_roteiro_docx(
                     edited_val,
                     code=codigo_produto,
@@ -1241,34 +1252,29 @@ if page == "Criar Roteiros":
                     use_container_width=True,
                     type="secondary"
                 )
-                st.caption("💡 Você pode copiar o roteiro diretamente do campo de texto acima.")
                 
-            with col_act2:
-                # Ações Rápidas (Nova Dinâmica de Feedback de Edição)
-                c_fb, c_ouro = st.columns(2)
-                
-                with c_fb:
-                    if st.button("🚀 Enviar Calibragem para a IA", key=f"fino_{idx}", use_container_width=True, type="primary"):
-                        if sp_cli:
-                            st.toast("🧠 Iniciando calibragem...", icon="⏳")
-                            with st.spinner("A IA está analisando suas correções para calibrar o estilo... 🤔"):
-                                try:
-                                    res_c = sp_cli.table("nw_categorias").select("id, nome").execute()
-                                    lista_c = res_c.data if hasattr(res_c, 'data') else []
-                                except:
-                                    lista_c = []
-                                    
-                                calc = _temp_agent.analisar_calibracao(item['roteiro_original'], edited_val, lista_c, codigo_produto)
-                                salvar_calibracao_ouro(sp_cli, calc['categoria_id'], item['roteiro_original'], edited_val, calc['percentual'], calc['aprendizado'], calc['codigo_produto'], titulo_curto, calc.get('modelo_calibragem', 'N/A'))
-                                _auto_salvar_fonetica(sp_cli, calc.get('fonetica_regras', []))
-                                _auto_salvar_estrutura(sp_cli, calc.get('estrutura_regras', []))
-                                _auto_salvar_persona(sp_cli, calc.get('persona_regras', []))
-                        else:
-                            st.error("Conecte o Supabase primeiro.")
-                
-                with c_ouro:
-                    if st.button("🏆 Enviar Ouro", key=f"ouro_{idx}", use_container_width=True, type="secondary"):
-                        salvar_ouro(sp_cli, cat_id_roteiro, titulo_curto, edited_val)
+            with col_calib:
+                if st.button("🚀 Calibrar IA", key=f"fino_{idx}", use_container_width=True, type="primary"):
+                    if sp_cli:
+                        st.toast("🧠 Iniciando calibragem...", icon="⏳")
+                        with st.spinner("A IA está analisando suas correções..."):
+                            try:
+                                res_c = sp_cli.table("nw_categorias").select("id, nome").execute()
+                                lista_c = res_c.data if hasattr(res_c, 'data') else []
+                            except:
+                                lista_c = []
+                                
+                            calc = _temp_agent.analisar_calibracao(item['roteiro_original'], edited_val, lista_c, codigo_produto)
+                            salvar_calibracao_ouro(sp_cli, calc['categoria_id'], item['roteiro_original'], edited_val, calc['percentual'], calc['aprendizado'], calc['codigo_produto'], titulo_curto, calc.get('modelo_calibragem', 'N/A'))
+                            _auto_salvar_fonetica(sp_cli, calc.get('fonetica_regras', []))
+                            _auto_salvar_estrutura(sp_cli, calc.get('estrutura_regras', []))
+                            _auto_salvar_persona(sp_cli, calc.get('persona_regras', []))
+                    else:
+                        st.error("Conecte o Supabase primeiro.")
+            
+            with col_ouro:
+                if st.button("🏆 Enviar Ouro", key=f"ouro_{idx}", use_container_width=True, type="secondary"):
+                    salvar_ouro(sp_cli, cat_id_roteiro, titulo_curto, edited_val)
 
         if st.button("🗑️ Limpar Mesa de Trabalho", use_container_width=True, type="secondary"):
             if 'roteiros' in st.session_state:
@@ -1279,9 +1285,10 @@ if page == "Criar Roteiros":
     else:
         st.markdown(
             """
-            <div style='display: flex; height: 300px; align-items: center; justify-content: center; border: 2px dashed #2A3241; border-radius: 8px; color: #8b92a5; text-align: center; padding: 20px'>
-            Cole os códigos no Inseridor (Command Center) acima e clique em Gerar.<br><br>
-            Os roteiros aparecerão aqui prontos para calibragem, treino da IA ou envio para Ouro!
+            <div style='display: flex; flex-direction: column; height: 250px; align-items: center; justify-content: center; border: 2px dashed #2A3241; border-radius: 12px; color: #8b92a5; text-align: center; padding: 30px'>
+            <div style='font-size: 40px; margin-bottom: 12px;'>✍️</div>
+            <div style='font-size: 16px; font-weight: 600; color: #c9d1e0;'>Nenhum roteiro na mesa</div>
+            <div style='font-size: 13px; margin-top: 6px;'>Abra "Inserir Códigos e Gerar" acima, cole os SKUs e clique em Gerar.</div>
             </div>
             """, 
             unsafe_allow_html=True
@@ -1402,7 +1409,7 @@ elif page == "Treinar IA":
                         try:
                             # Usa qualquer provedor disponível (Puter/OpenRouter/Gemini)
                             # Determina qual model_id usar para instanciar o agente. Novo Default: DeepSeek (OpenRouter)
-                            _calib_model = "gemini-2.0-flash"
+                            _calib_model = "gemini-2.5-flash"
                             # Verifica tanto env quanto secrets para garantir que DeepSeek seja priorizado se houver chave
                             openrouter_key = os.environ.get("OPENROUTER_API_KEY") or st.secrets.get("OPENROUTER_API_KEY")
                             puter_key = os.environ.get("PUTER_API_KEY") or st.secrets.get("PUTER_API_KEY")
@@ -1413,7 +1420,7 @@ elif page == "Treinar IA":
                             elif puter_key:
                                 _calib_model = "puter/x-ai/grok-4-1-fast"
                             elif gemini_key:
-                                _calib_model = "gemini-2.0-flash"
+                                _calib_model = "gemini-2.5-flash"
                             else:
                                 st.error("Nenhuma chave de IA configurada (OpenRouter, Puter ou Gemini).")
                                 _calib_model = None
@@ -1438,9 +1445,31 @@ elif page == "Treinar IA":
                                 estrelas_ui = calc['percentual'] / 20.0
                                 _score_color = '🟢' if estrelas_ui >= 4.0 else ('🟡' if estrelas_ui >= 3.0 else '🔴')
                                 st.success(f"🏆 Salvo como Roteiro Ouro! {_score_color} Qualidade: {estrelas_ui:.1f} ⭐ | Código: {calc['codigo_produto']} | IA: {calc.get('modelo_calibragem', 'N/A')}")
-                                _auto_salvar_fonetica(sp_client, calc.get('fonetica_regras', []))
-                                _auto_salvar_estrutura(sp_client, calc.get('estrutura_regras', []))
-                                _auto_salvar_persona(sp_client, calc.get('persona_regras', []))
+                                n_f = _auto_salvar_fonetica(sp_client, calc.get('fonetica_regras', []))
+                                n_e = _auto_salvar_estrutura(sp_client, calc.get('estrutura_regras', []))
+                                n_p = _auto_salvar_persona(sp_client, calc.get('persona_regras', []))
+
+                                if n_f > 0 or n_e > 0 or n_p > 0:
+                                    with st.expander("📝 Detalhes do Aprendizado (Extração Automática)", expanded=True):
+                                        if n_f > 0:
+                                            st.markdown(f"**🎓 Fonética ({n_f}):**")
+                                            for r in calc['fonetica_regras']:
+                                                st.write(f"- {r['termo_errado']} → {r['termo_corrigido']}")
+                                        if n_e > 0:
+                                            st.markdown(f"**✨ Estrutura ({n_e}):**")
+                                            for r in calc['estrutura_regras']:
+                                                st.write(f"- {r['tipo']}: {r['texto_ouro'][:60]}...")
+                                        if n_p > 0:
+                                            st.markdown(f"**🎭 Persona Lu ({n_p}):**")
+                                            for r in calc['persona_regras']:
+                                                st.write(f"- {r['pilar']}: {r['correcao'][:60]}...")
+                                    st.info("As regras acima foram enviadas para as tabelas de treinamento e serão usadas nos próximos roteiros.")
+                                    import time
+                                    time.sleep(5) # Dá tempo do usuário ler antes do rerun
+                                else:
+                                    st.info("A IA analisou as mudanças, mas não identificou padrões repetíveis para as tabelas de treinamento (apenas ajustes de estilo/contextuais).")
+                                    import time
+                                    time.sleep(3)
                                 st.rerun()
                         except Exception as e:
                             st.error(f"Erro ao salvar calibragem: {e}")
@@ -1616,16 +1645,14 @@ elif page == "Guia de Modelos":
     
     # Categorizando modelos por provedor
     categorias = {
-        "Google (Nativo)": ["gemini-2.0-flash", "gemini-2.0-pro", "gemini-1.5-flash"],
-        "OpenAI": ["openai/gpt-4o-mini"],
-        "Puter (Grok & Elite)": ["puter/x-ai/grok-4-1-fast", "puter/x-ai/grok-2", "puter/meta-llama/llama-3.1-70b-instruct", "puter/claude-3-5-sonnet"],
+        "Google (Nativo)": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"],
+        "Puter (Grok & Elite)": ["puter/x-ai/grok-4-1-fast", "puter/gpt-4o-mini", "puter/meta-llama/llama-3.1-70b-instruct", "puter/claude-3-5-sonnet"],
         "OpenRouter (Especializados)": [
-            "openrouter/deepseek/deepseek-chat-v3-0324:free", 
             "openrouter/deepseek/deepseek-r1-0528:free",
-            "openrouter/google/gemma-3-27b-it:free",
+            "openrouter/google/gemma-3-27b:free",
             "openrouter/meta-llama/llama-4-scout:free"
         ],
-        "Outros (Z.ai & Moonshot)": ["zai/glm-4-flash", "kimi/moonshot-v1-8k"]
+        "Z.ai & Moonshot": ["zai/glm-4.5-flash", "kimi/moonshot-v1-8k"]
     }
     
     # Invertemos o MODELOS_DISPONIVEIS para facilitar a busca pelo nome amigável
@@ -2246,7 +2273,7 @@ elif page == "Assistente Lu":
             message_placeholder = st.empty()
             
             # Re-instantiate agent to ensure it uses the current model_id
-            modelo_id = st.session_state.get('modelo_llm', 'gemini-2.0-flash')
+            modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
             
             try:
                 # Compile Supabase context for RAG
