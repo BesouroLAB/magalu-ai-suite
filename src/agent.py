@@ -539,35 +539,14 @@ class RoteiristaAgent:
 
         user_prompt = f"--- CÓDIGO SUGERIDO ---\n{codigo_original}\n\n--- ROTEIRO ORIGINAL (IA) ---\n{original}\n\n--- ROTEIRO FINAL (HUMANO) ---\n{final}"
 
-        # Tenta múltiplos provedores para garantir a calibragem (Puter → OpenRouter → Gemini)
+        # Tenta múltiplos provedores para garantir a calibragem (OpenRouter [DeepSeek] → Puter [Grok] → Gemini)
+        from openai import OpenAI as OpenAIClient
         
-        # 🟢 OPÇÃO 1: PUTER (Grok 4.1 Fast — Grátis e confiável)
-        api_key_puter = os.environ.get("PUTER_API_KEY")
-        if api_key_puter:
-            try:
-                print("🔄 Tentando calibragem via Puter (grok-4-1-fast)...")
-                from openai import OpenAI as OpenAIClient
-                client = OpenAIClient(api_key=api_key_puter, base_url="https://api.puter.com/puterai/openai/v1/")
-                response = client.chat.completions.create(
-                    model="x-ai/grok-4-1-fast",
-                    messages=[
-                        {"role": "system", "content": sys_prompt},
-                        {"role": "user", "content": user_prompt}
-                    ],
-                    temperature=0.1
-                )
-                res = self._extract_json(response.choices[0].message.content)
-                print("✅ Calibragem realizada via Puter (grok-4-1-fast)")
-                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "Grok 4.1 Fast (via Puter)")
-            except Exception as e:
-                print(f"⚠️ Erro Puter Calibragem: {e}")
-
-        # 🔵 OPÇÃO 2: OPENROUTER (DeepSeek V3 — Grátis)
+        # 🔵 OPÇÃO 1: OPENROUTER (DeepSeek V3 — Grátis e Superior para Lógica)
         api_key_or = os.environ.get("OPENROUTER_API_KEY")
         if api_key_or:
             try:
                 print("🔄 Tentando calibragem via OpenRouter (deepseek-v3)...")
-                from openai import OpenAI as OpenAIClient
                 client = OpenAIClient(api_key=api_key_or, base_url="https://openrouter.ai/api/v1")
                 response = client.chat.completions.create(
                     model="deepseek/deepseek-chat-v3-0324:free",
@@ -582,6 +561,26 @@ class RoteiristaAgent:
                 return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "DeepSeek V3 (via OpenRouter)")
             except Exception as e:
                 print(f"⚠️ Erro OpenRouter Calibragem: {e}")
+
+        # 🟢 OPÇÃO 2: PUTER (Grok 4.1 Fast — Grátis e reserva)
+        api_key_puter = os.environ.get("PUTER_API_KEY")
+        if api_key_puter:
+            try:
+                print("🔄 Tentando calibragem via Puter (grok-4-1-fast)...")
+                client = OpenAIClient(api_key=api_key_puter, base_url="https://api.puter.com/puterai/openai/v1/")
+                response = client.chat.completions.create(
+                    model="x-ai/grok-4-1-fast",
+                    messages=[
+                        {"role": "system", "content": sys_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.1
+                )
+                res = self._extract_json(response.choices[0].message.content)
+                print("✅ Calibragem realizada via Puter (grok-4-1-fast)")
+                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "Grok 4.1 Fast (via Puter)")
+            except Exception as e:
+                print(f"⚠️ Erro Puter Calibragem: {e}")
 
         # 🟡 OPÇÃO 3: GEMINI (último recurso — pode ter key inválida)
         api_key_gemini = os.environ.get("GEMINI_API_KEY")
