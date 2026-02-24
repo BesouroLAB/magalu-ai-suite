@@ -31,37 +31,37 @@ PRICING_USD_PER_1M = {
 USD_TO_BRL = 5.80
 
 MODELOS_DISPONIVEIS = {
-    "⚡ Gemini 2.5 Flash — Rápido e Grátis": "gemini-2.5-flash",
-    "🏆 Gemini 2.5 Pro — Raciocínio Profundo": "gemini-2.5-pro",
-    "🔥 Grok 4.1 Fast — Criativo (Puter)": "puter/x-ai/grok-4-1-fast",
-    "🐋 DeepSeek V3 — Técnico (OpenRouter)": "openrouter/deepseek/deepseek-chat-v3-0324:free",
-    "🤖 GPT-4o Mini — Fluído (OpenAI)": "openai/gpt-4o-mini",
-    "🧠 DeepSeek R1 — Análise (OpenRouter)": "openrouter/deepseek/deepseek-r1-0528:free",
-    "💰 Gemini 1.5 Flash — Econômico": "gemini-1.5-flash",
-    "🔥 Grok 2 — Robusto (Puter)": "puter/x-ai/grok-2",
-    "💎 Gemma 3 27B — PT-BR (OpenRouter)": "openrouter/google/gemma-3-27b-it:free",
-    "🦙 Llama 4 Scout — Versátil (OpenRouter)": "openrouter/meta-llama/llama-4-scout:free",
-    "🇨🇳 GLM-4 Flash — Padrão (Z.ai)": "zai/glm-4-flash",
-    "🌙 Kimi v1 — Coerente (Moonshot)": "kimi/moonshot-v1-8k",
-    "🦙 Llama 3.1 70B — Gigante (Puter)": "puter/meta-llama/llama-3.1-70b-instruct",
-    "🎭 Claude 3.5 Sonnet — Sofisticado (Puter)": "puter/claude-3-5-sonnet",
+    "⚡ Gemini 2.5 Flash [PAGO] — ~R$0,03/roteiro": "gemini-2.5-flash",
+    "🏆 Gemini 2.5 Pro [PAGO] — ~R$0,06/roteiro": "gemini-2.5-pro",
+    "🔥 Grok 4.1 Fast [GRÁTIS] — Criativo (Puter)": "puter/x-ai/grok-4-1-fast",
+    "🐋 DeepSeek V3 [GRÁTIS] — Técnico (OpenRouter)": "openrouter/deepseek/deepseek-chat-v3-0324:free",
+    "🤖 GPT-4o Mini [GRÁTIS] — Fluído (OpenAI)": "openai/gpt-4o-mini",
+    "🧠 DeepSeek R1 [GRÁTIS] — Análise (OpenRouter)": "openrouter/deepseek/deepseek-r1-0528:free",
+    "💰 Gemini 1.5 Flash [GRÁTIS/PAGO] — Super Econômico": "gemini-1.5-flash",
+    "🔥 Grok 2 [GRÁTIS] — Robusto (Puter)": "puter/x-ai/grok-2",
+    "💎 Gemma 3 27B [GRÁTIS] — Multimodal (OpenRouter)": "openrouter/google/gemma-3-27b-it:free",
+    "🦙 Llama 4 Scout [GRÁTIS] — Nova Geração (OpenRouter)": "openrouter/meta-llama/llama-4-scout:free",
+    "🇨🇳 GLM-4 Flash [GRÁTIS] — Ficha Técnica (Z.ai)": "zai/glm-4-flash",
+    "🌙 Kimi v1 [GRÁTIS] — Coerência (Moonshot)": "kimi/moonshot-v1-8k",
+    "🦙 Llama 3.1 70B [GRÁTIS] — Equilibrado (Puter)": "puter/meta-llama/llama-3.1-70b-instruct",
+    "🎭 Claude 3.5 Sonnet [GRÁTIS] — Narrativa Premium (Puter)": "puter/claude-3-5-sonnet",
 }
 
 MODELOS_DESCRICAO = {
-    "gemini-2.5-flash": "O mais rápido do Google. Perfeito para processar grandes lotes de SKUs sem gargalo.",
-    "gemini-2.5-pro": "O cérebro definitivo. Recomendado para roteiros que exigem lógica complexa ou análise profunda.",
-    "gemini-1.5-flash": "Mais econômico e rápido para tarefas que não exigem a complexidade do Pro.",
-    "openai/gpt-4o-mini": "O modelo inteligente e compacto da OpenAI. Excelente para escrita natural e fluida.",
-    "puter/x-ai/grok-4-1-fast": "A IA da xAI focada em sarcasmo controlado e ganchos de redes sociais altamente criativos.",
-    "puter/x-ai/grok-2": "Modelo robusto da xAI para roteiros com personalidade forte e diretrizes rígidas.",
-    "openrouter/deepseek/deepseek-chat-v3-0324:free": "Referência em custo-benefício. IA chinesa de ponta, ótima para descrições técnicas.",
-    "openrouter/deepseek/deepseek-r1-0528:free": "Modelo de raciocínio avançado (Reasoning). Pensa antes de escrever, excelente para análises complexas.",
-    "openrouter/google/gemma-3-27b-it:free": "Modelo open do Google de última geração. 27B de parâmetros, multimodal e ótimo em português.",
-    "openrouter/meta-llama/llama-4-scout:free": "A mais recente IA da Meta. Gigante e versátil, excelente para escrita criativa e técnica.",
-    "zai/glm-4-flash": "A 'joia da coroa' da Z.ai. Rápida e focada em extração fiel de fichas técnicas.",
-    "kimi/moonshot-v1-8k": "Modelo de alto desempenho da Moonshot AI, voltado para precisão e coerência.",
-    "puter/meta-llama/llama-3.1-70b-instruct": "O gigante da Meta. Inteligência de nível GPT-4o em formato aberto e versátil.",
-    "puter/claude-3-5-sonnet": "Mestre da escrita humana. O modelo preferido para roteiros com tom de voz sofisticado.",
+    "gemini-2.5-flash": "[RECOMENDADO] (2025) O equilíbrio perfeito. Extremamente rápido, lida bem com lotes e tem a melhor integração com a persona da Lu. Custo baixíssimo (~R$ 0,03).",
+    "gemini-2.5-pro": "[ELITE] (2025) O modelo mais inteligente. Ideal para produtos complexos ou roteiros que exigem criatividade fora da curva e lógica impecável. Custo (~R$ 0,06).",
+    "gemini-1.5-flash": "[ECONÔMICO] (2024) Uma versão estável e muito rápida se as chaves 2.5 estiverem lentas. Ótimo custo-benefício.",
+    "openai/gpt-4o-mini": "[ESTÁVEL] (2024) Respostas muito diretas e limpas. Excelente para manter o formato NW sem erros de estrutura.",
+    "puter/x-ai/grok-4-1-fast": "[NEGOCIAL/RETIRO] (2025) Excelente para Reels e formatos sociais. Tem um tom mais persuasivo e ganchos de retenção mais fortes.",
+    "puter/x-ai/grok-2": "[ROBUSTO] (2024) Muito bom para seguir regras rígidas sem 'pular' instruções. Segue bem a proibição de humanos nas imagens.",
+    "openrouter/deepseek/deepseek-chat-v3-0324:free": "[TÉCNICO] (2024) Ótimo em extrair detalhes de fichas técnicas densas. Menos 'criativo', mas muito preciso nos dados.",
+    "openrouter/deepseek/deepseek-r1-0528:free": "[RACIOCÍNIO] (2025) Ideal para calibragem. Pensa passo a passo, identificando erros sutis de pronúncia e tom.",
+    "openrouter/google/gemma-3-27b-it:free": "[IMAGEM/VISÃO] (2025) Versão aberta do Google. Surpreendentemente bom em descrever detalhes de fotos do produto.",
+    "openrouter/meta-llama/llama-4-scout:free": "[GIGANTE] (2025) Inteligência de ponta para descrições ricas. Ótimo para quando você quer um texto mais longo e detalhado.",
+    "zai/glm-4-flash": "[PRECISÃO] (2024) IA chinesa focada em não alucinar. Se o produto tem muitos números e medidas, ele é uma ótima escolha.",
+    "kimi/moonshot-v1-8k": "[COERÊNCIA] (2024) Mantém o fio da meada em roteiros longos. Bom para vídeos de Review extensos.",
+    "puter/meta-llama/llama-3.1-70b-instruct": "[EQUILIBRADO] (2024) Inteligência de nível Pro em formato aberto. Versátil para todos os modos de trabalho.",
+    "puter/claude-3-5-sonnet": "[NARRATIVA PREMIUM] (2024) O rei da escrita natural. Se você quer que o roteiro pareça escrito por um redator sênior, use este.",
 }
 PROVIDER_KEY_MAP = {
     "gemini": "GEMINI_API_KEY",
@@ -486,15 +486,15 @@ class RoteiristaAgent:
             "Você é um Editor Sênior de Redação Publicitária e Especialista em Qualidade Magalu.\n"
             "Sua tarefa é realizar uma ANALISE TÉCNICA E CIRÚRGICA da calibragem:\n\n"
             "1. COMPARE o Roteiro Original (IA) com o Roteiro Final (Aprovado pelo Humano).\n"
-            "2. CALCULE o SCORE (%) de aproveitamento real seguindo esta RÉGUA MAGALU:\n"
-            "   - Inicie em 100%.\n"
-            "   - Subtraia 3% por cada palavra alterada ou removida sem mudar o sentido.\n"
-            "   - Subtraia 10% por cada frase inteira reescrita ou removida.\n"
-            "   - Subtraia 20% se houver erro de pronúncia (fonética) ou erro grave de Persona (Lu).\n"
-            "   - Se o SKU/Código foi omitido ou alterado erroneamente: -30%.\n"
-            "   Seja rigoroso e CONSISTENTE: o mesmo nível de edição deve resultar na mesma nota sempre.\n"
+            "2. CALCULE o SCORE (%) de aproveitamento real seguindo esta RÉGUA ORGÂNICA MAGALU:\n"
+            "   - 100%: Perfeito. O humano fez apenas ajustes de formatação, pontuação ou troca de conectivos sem alterar a essência.\n"
+            "   - 85% a 95%: Ajustes de Estilo. O humano melhorou a fluidez, encurtou frases ou trocou jargões por termos mais comerciais.\n"
+            "   - 60% a 80%: Mudança Estrutural. O humano adicionou informações faltantes, reconstruiu a abertura/fechamento ou cortou blocos inteiros.\n"
+            "   - Abaixo de 60%: Erro Grave. A IA errou feio o tom de voz, omitiu funcionalidades vitais ou errou o SKU.\n"
+            "   ATENÇÃO: Termos presentes no CÓDIGO SUGERIDO ou NOME DO PRODUTO (ex: 'Aro 26', 'Grau', 'Index') NÃO SÃO ERROS DA IA, não penalize a nota por eles.\n"
             "3. SÍNTESE DE APRENDIZADO (MEMÓRIA TÉCNICA): Transforme as edições em DIRETRIZES TÁTICAS E IMPERATIVAS DE ESCRITA. "
             "Sua diretriz DEVE ser aplicável a futuros roteiros como uma regra de ouro.\n"
+            "   - REGRA ANTI-ALUCINAÇÃO: É ESTRITAMENTE PROIBIDO listar especificações técnicas do produto como se fossem regras de redação (ex: 'Falar que tem freio a disco'). Foque APENAS no ESTILO de escrita (ex: 'Evitar frases longas', 'Usar tom direto', 'Focar no benefício').\n"
             "   - ERRADO: 'Breno tirou a palavra X e colocou Y.'\n"
             "   - CERTO: '- Focar no benefício emocional do produto em vez da ficha técnica. - Evitar jargões como X. - Iniciar o texto com pergunta direta.'\n"
             "   Seja curto, grosso e imperativo. Use tópicos com '-'.\n"

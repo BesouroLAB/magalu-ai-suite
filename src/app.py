@@ -781,7 +781,19 @@ if page == "Criar Roteiros":
                     use_container_width=True,
                     disabled=["SKU Principal"],
                     hide_index=True,
-                    key="editor_pre_gen"
+                    key="editor_pre_gen",
+                    column_config={
+                        "Outros Códigos (Cor/Voltagem)": st.column_config.TextColumn(
+                            "Outros Códigos (Cor/Voltagem)",
+                            help="Cole SKUs relacionados separados por espaço ou vírgula",
+                            width="large"
+                        ),
+                        "Vídeo do Fornecedor (Link)": st.column_config.LinkColumn(
+                            "Vídeo do Fornecedor (Link)",
+                            help="Insira o link do YouTube ou Drive do fornecedor",
+                            width="large"
+                        )
+                    }
                 )
                 
                 if st.button("🚀 Iniciar Extração e Geração", use_container_width=True, type="primary", disabled=geracao_bloqueada, key="btn_auto"):
@@ -1360,7 +1372,15 @@ elif page == "Treinar IA":
         
         with tab_fb:
             st.markdown("### ⚖️ Calibragem: IA vs Aprovado")
-            st.caption("Compare o que a IA gerou com o que o Breno aprovou. O botão pedirá para a Calibragem calcular a porcentagem de aprovação.")
+            st.caption("Compare o que a IA gerou com o roteiro final aprovado. A Suíte Magalu calculará o nível de aproveitamento e extrairá Diretrizes de Redação automaticamente.")
+            
+            st.info("""
+            **⭐ Como funciona a Nova Régua de Calibragem?**
+            - **4.8 a 5.0 (Quase Perfeito):** O humano fez apenas ajustes finos de estilo, conectivos ou pontuação.
+            - **4.0 a 4.7 (Muito Bom):** Mudanças notáveis de estilo, encurtamento para fluidez ou troca de jargões técnicos.
+            - **3.0 a 3.9 (Regular):** Mudança Estrutural. Adição de infos que faltavam ou reconstrução de blocos inteiros.
+            - **< 3.0 (Ruim):** Erro Grave. A IA errou feio o tom de voz, omitiu funcionalidades vitais ou o SKU.
+            """)
             
             # --- FORMULÁRIO DE ENTRADA ---
             with st.form("form_calibracao", clear_on_submit=True):
@@ -1408,8 +1428,9 @@ elif page == "Treinar IA":
                                     "modelo_calibragem": calc.get('modelo_calibragem', 'N/A')
                                 }
                                 sp_client.table("nw_roteiros_ouro").insert(data).execute()
-                                _score_color = '🟢' if calc['percentual'] >= 80 else ('🟡' if calc['percentual'] >= 50 else '🔴')
-                                st.success(f"🏆 Salvo como Roteiro Ouro! {_score_color} Aproveitamento: {calc['percentual']}% | Código: {calc['codigo_produto']} | IA: {calc.get('modelo_calibragem', 'N/A')}")
+                                estrelas_ui = calc['percentual'] / 20.0
+                                _score_color = '🟢' if estrelas_ui >= 4.0 else ('🟡' if estrelas_ui >= 3.0 else '🔴')
+                                st.success(f"🏆 Salvo como Roteiro Ouro! {_score_color} Qualidade: {estrelas_ui:.1f} ⭐ | Código: {calc['codigo_produto']} | IA: {calc.get('modelo_calibragem', 'N/A')}")
                                 _auto_salvar_fonetica(sp_client, calc.get('fonetica_regras', []))
                                 _auto_salvar_estrutura(sp_client, calc.get('estrutura_regras', []))
                                 _auto_salvar_persona(sp_client, calc.get('persona_regras', []))
@@ -1436,12 +1457,12 @@ elif page == "Treinar IA":
                 
                 if 'nota_percentual' in df_view.columns:
                     df_view['nota_percentual'] = df_view['nota_percentual'].apply(
-                        lambda x: f"{'🟢' if x >= 80 else ('🟡' if x >= 50 else '🔴')} {x}%"
+                        lambda x: f"{'🟢' if x/20.0 >= 4.0 else ('🟡' if x/20.0 >= 3.0 else '🔴')} {x/20.0:.1f} ⭐"
                     )
 
                 rename_map = {
                     'aprendizado': 'Memória da IA (Lição Aprendida)', 
-                    'nota_percentual': 'Score %', 
+                    'nota_percentual': 'Estrelas ⭐', 
                     'codigo_produto': 'SKU', 
                     'modelo_calibragem': 'IA Analista',
                     'criado_em': 'Data'
