@@ -1525,7 +1525,7 @@ elif page == "Treinar IA":
                 
                 if 'nota_percentual' in df_view.columns:
                     df_view['nota_percentual'] = df_view['nota_percentual'].apply(
-                        lambda x: f"{'🟢' if x/20.0 >= 4.0 else ('🟡' if x/20.0 >= 3.0 else '🔴')} {x/20.0:.1f} ⭐"
+                        lambda x: f"{'🟢' if x/20.0 >= 4.0 else ('🟡' if x/20.0 >= 3.0 else '🔴')} {x/20.0:.1f} ⭐ ({int(x)}%)"
                     )
 
                 rename_map = {
