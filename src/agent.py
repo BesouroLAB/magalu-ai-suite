@@ -21,7 +21,7 @@ PRICING_USD_PER_1M = {
     "x-ai/grok-2": {"input": 0.00, "output": 0.00},
     "moonshot-v1-8k": {"input": 0.00, "output": 0.00},
     "glm-4-flash": {"input": 0.00, "output": 0.00},
-    "deepseek/deepseek-chat-v3-0324:free": {"input": 0.00, "output": 0.00},
+    "deepseek/deepseek-r1-0528:free": {"input": 0.00, "output": 0.00},
     "deepseek/deepseek-r1-0528:free": {"input": 0.00, "output": 0.00},
     "google/gemma-3-27b-it:free": {"input": 0.00, "output": 0.00},
     "meta-llama/llama-4-scout:free": {"input": 0.00, "output": 0.00},
@@ -34,7 +34,7 @@ MODELOS_DISPONIVEIS = {
     "⚡ Gemini 2.5 Flash [PAGO] — ~R$0,03/roteiro": "gemini-2.5-flash",
     "🏆 Gemini 2.5 Pro [PAGO] — ~R$0,06/roteiro": "gemini-2.5-pro",
     "🔥 Grok 4.1 Fast [GRÁTIS] — Criativo (Puter)": "puter/x-ai/grok-4-1-fast",
-    "🐋 DeepSeek V3 [GRÁTIS] — Técnico (OpenRouter)": "openrouter/deepseek/deepseek-chat-v3-0324:free",
+    "🐋 DeepSeek R1 [GRÁTIS] — Técnico (OpenRouter)": "openrouter/deepseek/deepseek-r1-0528:free",
     "🤖 GPT-4o Mini [GRÁTIS] — Fluído (OpenAI)": "openai/gpt-4o-mini",
     "🧠 DeepSeek R1 [GRÁTIS] — Análise (OpenRouter)": "openrouter/deepseek/deepseek-r1-0528:free",
     "💰 Gemini 1.5 Flash [GRÁTIS/PAGO] — Super Econômico": "gemini-1.5-flash",
@@ -54,7 +54,7 @@ MODELOS_DESCRICAO = {
     "openai/gpt-4o-mini": "[ESTÁVEL] (2024) Respostas muito diretas e limpas. Excelente para manter o formato NW sem erros de estrutura.",
     "puter/x-ai/grok-4-1-fast": "[NEGOCIAL/RETIRO] (2025) Excelente para Reels e formatos sociais. Tem um tom mais persuasivo e ganchos de retenção mais fortes.",
     "puter/x-ai/grok-2": "[ROBUSTO] (2024) Muito bom para seguir regras rígidas sem 'pular' instruções. Segue bem a proibição de humanos nas imagens.",
-    "openrouter/deepseek/deepseek-chat-v3-0324:free": "[TÉCNICO] (2024) Ótimo em extrair detalhes de fichas técnicas densas. Menos 'criativo', mas muito preciso nos dados.",
+    "openrouter/deepseek/deepseek-r1-0528:free": "Ideal para lógica rigorosa, revisão gramatical avançada e extração de regras complexas, sem as taxas da OpenAI. Menos 'criativo', mas muito preciso nos dados.",
     "openrouter/deepseek/deepseek-r1-0528:free": "[RACIOCÍNIO] (2025) Ideal para calibragem. Pensa passo a passo, identificando erros sutis de pronúncia e tom.",
     "openrouter/google/gemma-3-27b-it:free": "[IMAGEM/VISÃO] (2025) Versão aberta do Google. Surpreendentemente bom em descrever detalhes de fotos do produto.",
     "openrouter/meta-llama/llama-4-scout:free": "[GIGANTE] (2025) Inteligência de ponta para descrições ricas. Ótimo para quando você quer um texto mais longo e detalhado.",
@@ -546,10 +546,10 @@ class RoteiristaAgent:
         api_key_or = os.environ.get("OPENROUTER_API_KEY")
         if api_key_or:
             try:
-                print("🔄 Tentando calibragem via OpenRouter (deepseek-v3)...")
+                print("🔄 Tentando calibragem via OpenRouter (deepseek-r1)...")
                 client = OpenAIClient(api_key=api_key_or, base_url="https://openrouter.ai/api/v1")
                 response = client.chat.completions.create(
-                    model="deepseek/deepseek-chat-v3-0324:free",
+                    model="deepseek/deepseek-r1-0528:free",
                     messages=[
                         {"role": "system", "content": sys_prompt},
                         {"role": "user", "content": user_prompt}
@@ -557,8 +557,8 @@ class RoteiristaAgent:
                     temperature=0.1
                 )
                 res = self._extract_json(response.choices[0].message.content)
-                print("✅ Calibragem realizada via OpenRouter (deepseek-v3)")
-                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "DeepSeek V3 (via OpenRouter)")
+                print("✅ Calibragem realizada via OpenRouter (deepseek-r1)")
+                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "DeepSeek R1 (via OpenRouter)")
             except Exception as e:
                 print(f"⚠️ Erro OpenRouter Calibragem: {e}")
 

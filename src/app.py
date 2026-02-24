@@ -1408,7 +1408,7 @@ elif page == "Treinar IA":
                             gemini_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
 
                             if openrouter_key:
-                                _calib_model = "openrouter/deepseek/deepseek-chat-v3-0324:free"
+                                _calib_model = "openrouter/deepseek/deepseek-r1-0528:free"
                             elif puter_key:
                                 _calib_model = "puter/x-ai/grok-4-1-fast"
                             elif gemini_key:
@@ -2011,9 +2011,10 @@ elif page == "Dashboard":
 
             with col_chart_kb:
                 st.markdown("#### 🧠 Saúde da Base de Conhecimento")
+                total_calib_feitos = len(df_ouro) if not df_ouro.empty else 0
                 kb_data = {
                     "Componente": ["Fonéticas", "Estruturas", "Calibrações", "Roteiros Ouro", "Persona", "Nuances"],
-                    "Registros": [len(df_fon), len(df_est), total_avaliados, total_ouro, len(df_pers), len(df_nuan)]
+                    "Registros": [len(df_fon), len(df_est), total_calib_feitos, total_ouro, len(df_pers), len(df_nuan)]
                 }
                 df_kb = pd.DataFrame(kb_data)
                 fig_kb = px.bar(df_kb, x='Registros', y='Componente', orientation='h', 
