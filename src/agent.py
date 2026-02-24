@@ -615,7 +615,10 @@ class RoteiristaAgent:
         final_cat_id = returned_id if returned_id in valid_ids else fallback_id
         
         import re
-        sku_clean = re.sub(r'\D', '', str(res.get("codigo_produto", codigo_original)))
+        sku_raw = str(res.get("codigo_produto", codigo_original))
+        # Extrai todos os grupos de 7-10 números para lidar com multi-SKUs
+        skus_found = re.findall(r'\d{7,10}', sku_raw)
+        sku_clean = " ".join(skus_found) if skus_found else re.sub(r'\D', '', sku_raw)
         
         return {
             "percentual": int(res.get("percentual", 50)),

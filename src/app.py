@@ -371,9 +371,9 @@ def _auto_salvar_fonetica(sp_client, fonetica_regras):
     for regra in fonetica_regras:
         if not isinstance(regra, dict):
             continue
-        termo_err = regra.get('termo_errado', '').strip()
-        termo_cor = regra.get('termo_corrigido', '').strip()
-        exemplo = regra.get('exemplo', '').strip()
+        termo_err = str(regra.get('termo_errado', '')).strip()
+        termo_cor = str(regra.get('termo_corrigido', '')).strip()
+        exemplo = str(regra.get('exemplo', '')).strip()
         if not termo_err or not termo_cor:
             continue
         
@@ -404,8 +404,8 @@ def _auto_salvar_estrutura(sp_client, estrutura_regras):
     for regra in estrutura_regras:
         if not isinstance(regra, dict):
             continue
-        tipo = regra.get('tipo', '').strip()
-        texto_ouro = regra.get('texto_ouro', '').strip()
+        tipo = str(regra.get('tipo', '')).strip()
+        texto_ouro = str(regra.get('texto_ouro', '')).strip()
         if not tipo or not texto_ouro or tipo not in ('Abertura', 'Fechamento'):
             continue
         
@@ -431,10 +431,10 @@ def _auto_salvar_persona(sp_client, persona_regras):
     for regra in persona_regras:
         if not isinstance(regra, dict):
             continue
-        pilar = regra.get('pilar', '').strip()
-        erro = regra.get('erro', '').strip()
-        correcao = regra.get('correcao', '').strip()
-        lexico = regra.get('lexico', '').strip()
+        pilar = str(regra.get('pilar', '')).strip()
+        erro = str(regra.get('erro', '')).strip()
+        correcao = str(regra.get('correcao', '')).strip()
+        lexico = str(regra.get('lexico', '')).strip()
         if not pilar or not erro:
             continue
         
@@ -1402,11 +1402,16 @@ elif page == "Treinar IA":
                             # Usa qualquer provedor disponível (Puter/OpenRouter/Gemini)
                             # Determina qual model_id usar para instanciar o agente. Novo Default: DeepSeek (OpenRouter)
                             _calib_model = "gemini-2.5-flash"
-                            if os.environ.get("OPENROUTER_API_KEY"):
+                            # Verifica tanto env quanto secrets para garantir que DeepSeek seja priorizado se houver chave
+                            openrouter_key = os.environ.get("OPENROUTER_API_KEY") or st.secrets.get("OPENROUTER_API_KEY")
+                            puter_key = os.environ.get("PUTER_API_KEY") or st.secrets.get("PUTER_API_KEY")
+                            gemini_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
+
+                            if openrouter_key:
                                 _calib_model = "openrouter/deepseek/deepseek-chat-v3-0324:free"
-                            elif os.environ.get("PUTER_API_KEY"):
+                            elif puter_key:
                                 _calib_model = "puter/x-ai/grok-4-1-fast"
-                            elif os.environ.get("GEMINI_API_KEY"):
+                            elif gemini_key:
                                 _calib_model = "gemini-2.5-flash"
                             else:
                                 st.error("Nenhuma chave de IA configurada (OpenRouter, Puter ou Gemini).")
