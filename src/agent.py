@@ -616,8 +616,12 @@ class RoteiristaAgent:
         
         import re
         sku_raw = str(res.get("codigo_produto", codigo_original))
-        # Extrai todos os grupos de 7-10 números para lidar com multi-SKUs
-        skus_found = re.findall(r'\d{7,10}', sku_raw)
+        # SKUs Magalu tem EXATAMENTE 9 dígitos. Priorizamos encontrar esses blocos.
+        skus_found = re.findall(r'\b\d{9}\b', sku_raw)
+        # Se não achar blocos isolados, tenta achar qualquer sequência de 9 dígitos
+        if not skus_found:
+            skus_found = re.findall(r'\d{9}', sku_raw)
+            
         sku_clean = " ".join(skus_found) if skus_found else re.sub(r'\D', '', sku_raw)
         
         return {
