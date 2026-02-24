@@ -1872,6 +1872,9 @@ elif page == "Dashboard":
             
             # --- NOVA LÓGICA: df_fb agora vem de df_ouro (Calibragens) ---
             if not df_ouro.empty:
+                # Primeiro mapeia a categoria em df_ouro
+                df_ouro['categoria'] = df_ouro['categoria_id'].map(cats_dict).fillna("Genérico")
+                
                 df_fb = df_ouro[df_ouro['roteiro_original_ia'].notna()].copy()
                 # Converte nota_percentual (0-100) para labels de sentimento
                 def map_sentimento(p):
@@ -1889,8 +1892,7 @@ elif page == "Dashboard":
                 if not df.empty and 'criado_em' in df.columns:
                     df['criado_em'] = df['criado_em'].apply(convert_to_sp_time)
             
-            if not df_ouro.empty: df_ouro['categoria'] = df_ouro['categoria_id'].map(cats_dict)
-            
+            # A coluna 'categoria' já foi mapeada acima na nova lógica
             total_ouro = len(df_ouro)
             total_historico = len(df_hist_dash)
             
@@ -2194,8 +2196,8 @@ elif page == "Dashboard":
             with tab_feed:
                 if not df_fb.empty:
                     # Colunas do novo sistema de calibragem
-                    cols_feed = ['criado_em', 'estrela', 'categoria', 'modelo_calibragem', 'aprendizado', 'roteiro_original_ia', 'roteiro_perfeito']
-                    st.dataframe(df_fb[cols_feed].sort_values(by='criado_em', ascending=False), use_container_width=True)
+                    available_cols = [c for c in ['criado_em', 'estrela', 'categoria', 'modelo_calibragem', 'aprendizado', 'roteiro_original_ia', 'roteiro_perfeito'] if c in df_fb.columns]
+                    st.dataframe(df_fb[available_cols].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhuma calibração realizada ainda.")
             
