@@ -1400,16 +1400,17 @@ elif page == "Treinar IA":
                         st.toast("🧠 Enviando para a IA analisar...", icon="⏳")
                         try:
                             # Usa qualquer provedor disponível (Puter/OpenRouter/Gemini)
-                            # Determina qual model_id usar para instanciar o agente
+                            # Determina qual model_id usar para instanciar o agente. Novo Default: DeepSeek (OpenRouter)
                             _calib_model = "gemini-2.5-flash"
-                            if not os.environ.get("GEMINI_API_KEY"):
-                                if os.environ.get("PUTER_API_KEY"):
-                                    _calib_model = "puter/x-ai/grok-4-1-fast"
-                                elif os.environ.get("OPENROUTER_API_KEY"):
-                                    _calib_model = "openrouter/deepseek/deepseek-chat-v3-0324:free"
-                                else:
-                                    st.error("Nenhuma chave de IA configurada (Gemini, Puter ou OpenRouter).")
-                                    _calib_model = None
+                            if os.environ.get("OPENROUTER_API_KEY"):
+                                _calib_model = "openrouter/deepseek/deepseek-chat-v3-0324:free"
+                            elif os.environ.get("PUTER_API_KEY"):
+                                _calib_model = "puter/x-ai/grok-4-1-fast"
+                            elif os.environ.get("GEMINI_API_KEY"):
+                                _calib_model = "gemini-2.5-flash"
+                            else:
+                                st.error("Nenhuma chave de IA configurada (OpenRouter, Puter ou Gemini).")
+                                _calib_model = None
                             
                             if _calib_model:
                                 ag = RoteiristaAgent(supabase_client=sp_client, model_id=_calib_model)
