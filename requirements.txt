@@ -1,5 +1,6 @@
 streamlit
 google-genai
+google-generativeai
 python-dotenv
 supabase
 pandas
@@ -8,3 +9,4 @@ requests
 beautifulsoup4
 plotly
 openai
+pytz
