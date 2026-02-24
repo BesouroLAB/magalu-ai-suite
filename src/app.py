@@ -836,8 +836,8 @@ if page == "Criar Roteiros":
                                 ficha_extraida = scrape_with_gemini(code)
                                 
                                 progress.progress(
-                                    (i + 0.5) / len(codigos),
-                                    text=f"✍️ [{code}] Analisando contexto e escrevendo roteiro... ({i+1}/{len(codigos)})"
+                                    (i + 0.5) / total_skus,
+                                    text=f"✍️ [{code}] Analisando contexto e escrevendo roteiro... ({i+1}/{total_skus})"
                                 )
                                 
                                 
@@ -917,8 +917,8 @@ if page == "Criar Roteiros":
                                     pass  # Não bloqueia a geração se o log falhar
                                 
                                 # Delay para evitar 429 Too Many Requests
-                                if i < len(codigos) - 1:
-                                    progress.progress((i + 0.8) / len(codigos), text=f"⏳ [{code}] Cota de segurança... Aguardando 5s.")
+                                if i < total_skus - 1:
+                                    progress.progress((i + 0.8) / total_skus, text=f"⏳ [{code}] Cota de segurança... Aguardando 5s.")
                                     time.sleep(5)
                             
                             progress.progress(1.0, text="✅ Lote Concluído com Sucesso!")
