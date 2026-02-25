@@ -1170,6 +1170,13 @@ if page == "Criar Roteiros":
             codigo_card = r_item.get("codigo", "...")
             num_tag = f"#{r_item.get('global_num', '?')}"
             modelo_tag = r_item.get("model_id", "").split("/")[-1][:12]
+            
+            # Tenta pegar o nome do produto da ficha
+            ficha_raw = r_item.get('ficha', '')
+            ficha_str = ficha_raw.get('text', str(ficha_raw)) if isinstance(ficha_raw, dict) else str(ficha_raw)
+            linhas_f = ficha_str.split('\n')
+            nome_p_card = linhas_f[0][:40].strip() if linhas_f and len(linhas_f[0]) > 2 else "Produto"
+            
             custo = r_item.get("custo_brl", 0)
             tag_custo = "Grátis" if custo == 0 else f"R$ {custo:.4f}"
             is_active = st.session_state.get("roteiro_ativo_idx", 0) == idx
@@ -1180,7 +1187,8 @@ if page == "Criar Roteiros":
                     st.session_state["roteiro_ativo_idx"] = idx
                     st.rerun()
             with btn_col_info:
-                st.markdown(f"**{num_tag} - NW {codigo_card}** | {modelo_tag.upper()} | {tag_custo}")
+                st.markdown(f"**{num_tag} - {codigo_card}** | *{nome_p_card}*")
+                st.caption(f"🧠 {modelo_tag.upper()} | {tag_custo}")
     # --- HISTÓRICO DO BANCO (Expandível, separado) ---
     if 'supabase_client' in st.session_state:
         with st.expander("📜 Histórico do Banco de Dados", expanded=False):
