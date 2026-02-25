@@ -62,9 +62,9 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None) -> dict:
             temperature=0.0
         )
         
-        # gemini-2.5-flash suporta search grounding nativamente
+        # gemini-3-flash-preview suporta search grounding nativamente de forma ultrarrápida e barata
         response = client.models.generate_content(
-            model='gemini-2.5-flash', 
+            model='gemini-3-flash-preview', 
             contents=prompt,
             config=config
         )

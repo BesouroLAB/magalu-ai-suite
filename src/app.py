@@ -350,7 +350,7 @@ def salvar_persona(sp_client, pilar, texto_ia, texto_humano, lexico, erro):
             "lexico_sugerido": lexico,
             "erro_cometido": erro
         }
-        res = sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}treinamento_persona_lu").insert(data).execute()
+        res = sp_client.table("nw_treinamento_persona_lu").insert(data).execute()
         if hasattr(res, 'data') and len(res.data) > 0:
             st.success("💃 Feedback de Persona enviado para a base!")
             return True
@@ -371,7 +371,7 @@ def salvar_fonetica(sp_client, termo_err, termo_cor, exemplo_rot):
             "termo_corrigido": termo_cor,
             "exemplo_no_roteiro": exemplo_rot
         }
-        res = sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}treinamento_fonetica").insert(data).execute()
+        res = sp_client.table("nw_treinamento_fonetica").insert(data).execute()
         if hasattr(res, 'data') and len(res.data) > 0:
             st.success("🗣️ Nova regra de Fonética cadastrada!")
             return True
@@ -398,12 +398,11 @@ def _auto_salvar_fonetica(sp_client, fonetica_regras):
             continue
         
         try:
-            prefix = st.session_state.get('table_prefix', 'nw_')
-            existing = sp_client.table(f"{prefix}treinamento_fonetica").select("id").eq("termo_errado", termo_err).execute()
+            existing = sp_client.table("nw_treinamento_fonetica").select("id").eq("termo_errado", termo_err).execute()
             if hasattr(existing, 'data') and len(existing.data) > 0:
                 continue
             
-            sp_client.table(f"{prefix}treinamento_fonetica").insert({
+            sp_client.table("nw_treinamento_fonetica").insert({
                 "termo_errado": termo_err,
                 "termo_corrigido": termo_cor,
                 "exemplo_no_roteiro": exemplo
@@ -465,8 +464,7 @@ def _auto_salvar_persona(sp_client, persona_regras):
             continue
         
         try:
-            prefix = st.session_state.get('table_prefix', 'nw_')
-            sp_client.table(f"{prefix}treinamento_persona_lu").insert({
+            sp_client.table("nw_treinamento_persona_lu").insert({
                 "pilar_persona": pilar,
                 "texto_gerado_ia": erro,
                 "texto_corrigido_humano": correcao,
@@ -595,34 +593,56 @@ def modal_resultado_calibragem(calc, sp_cli, roteiro_ia, roteiro_humano, titulo_
         """, unsafe_allow_html=True)
 
     # 1. Feedback / Aprendizado
-    with st.expander("📝 Lições Técnicas de Redação", expanded=True):
+    with st.expander("📝 Lições Técnicas de Redação (Roteiros Ouro)", expanded=True):
         st.write(calc['aprendizado'])
+
+    st.markdown("#### 🗃️ Detalhamento por Tabela")
 
     # 2. Persona
     p_regras = calc.get('persona_regras', [])
     if p_regras:
-        with st.expander(f"💃 Persona da Lu ({len(p_regras)})", expanded=False):
-            for r in p_regras:
-                st.info(f"**Pilar:** {r.get('pilar')}\n\n**O que mudou:** {r.get('correcao')}")
+        for r in p_regras:
+            st.info(f"💃 **Tabela: `nw_treinamento_persona_lu`**\n- **pilar_persona**: {r.get('pilar')}\n- **texto_gerado_ia**: {r.get('erro')}\n- **texto_corrigido_humano**: {r.get('correcao')}\n- **lexico_sugerido**: {r.get('lexico')}")
+    else:
+        st.info("💃 **Persona:** Não houve mudanças. Nenhuma regra de tom/vocabulário adicionada.")
 
-    # 3. Fonética
+    # 3. Estrutura
+    e_regras = calc.get('estrutura_regras', [])
+    if e_regras:
+        for r in e_regras:
+            st.success(f"🏗️ **Tabela: `{st.session_state.get('table_prefix', 'nw_')}treinamento_estruturas`**\n- **tipo_estrutura**: {r.get('tipo')}\n- **texto_ouro**: {r.get('texto_ouro')}")
+    else:
+        st.success("🏗️ **Estruturas:** Não houve mudanças em Ganchos ou CTAs.")
+
+    # 4. Fonética
     f_regras = calc.get('fonetica_regras', [])
     if f_regras:
-        with st.expander(f"🗣️ Fonética ({len(f_regras)})", expanded=False):
-            for r in f_regras:
-                st.warning(f"**Termo:** {r.get('termo_errado')} → **{r.get('termo_corrigido')}**\n\n*Ex: {r.get('exemplo', '')}*")
-
-                st.success(f"**{r.get('tipo')}:** \n\n{r.get('texto_ouro')}")
+        for r in f_regras:
+            st.warning(f"🗣️ **Tabela: `nw_treinamento_fonetica`**\n- **termo_errado**: {r.get('termo_errado')}\n- **termo_corrigido**: {r.get('termo_corrigido')}\n- **exemplo_no_roteiro**: {r.get('exemplo', '')}")
+    else:
+        st.warning("🗣️ **Fonética:** Não houve mudanças ou novas pronúncias.")
 
     # 5. Imagens
     i_regras = calc.get('imagens_regras', [])
     if i_regras:
-        with st.expander(f"📸 Calibragem Visual ({len(i_regras)})", expanded=False):
-            for r in i_regras:
-                st.markdown(f"**Antes:** `{r.get('antes')}`\n\n**Depois:** `{r.get('depois')}`\n\n*Motivo: {r.get('motivo', '')}*")
+        for r in i_regras:
+            st.markdown(f"""
+            <div style='background-color: #2e1065; padding: 15px; border-radius: 8px; border-left: 5px solid #8b5cf6; margin-bottom: 10px; color: #c4b5fd;'>
+                📸 <b>Tabela: <code>{st.session_state.get('table_prefix', 'nw_')}treinamento_imagens</code></b><br/><br/>
+                <b><code>descricao_ia</code>:</b> {r.get('antes')}<br/>
+                <b><code>descricao_humano</code>:</b> {r.get('depois')}<br/>
+                <b><code>aprendizado</code>:</b> {r.get('motivo')}
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+        <div style='background-color: #2e1065; padding: 15px; border-radius: 8px; border-left: 5px solid #8b5cf6; margin-bottom: 10px; color: #c4b5fd;'>
+            📸 <b>Imagens:</b> Não houve mudanças nas descrições visuais.
+        </div>
+        """, unsafe_allow_html=True)
 
     st.divider()
-    st.caption("Ao confirmar, a IA alimentará simultaneamente as tabelas de **Roteiros Ouro, Persona, Fonética e Imagens** com os dados acima.")
+    st.caption("Ao confirmar, a IA alimentará simultaneamente as tabelas acima.")
     
     if st.button("🚀 Confirmar e Gravar Todas as Lições", type="primary", use_container_width=True):
         # Salva Feedback Ouro (Aba Feedback)
@@ -1783,8 +1803,8 @@ elif page == "Treinar IA":
         try:
             prefix = st.session_state.get('table_prefix', 'nw_')
             res_est = sp_client.table(f"{prefix}treinamento_estruturas").select("*").execute()
-            res_fon = sp_client.table(f"{prefix}treinamento_fonetica").select("*").execute()
-            res_pers = sp_client.table(f"{prefix}treinamento_persona_lu").select("*").execute()
+            res_fon = sp_client.table("nw_treinamento_fonetica").select("*").execute()
+            res_pers = sp_client.table("nw_treinamento_persona_lu").select("*").execute()
             res_ouro = sp_client.table(f"{prefix}roteiros_ouro").select("*").execute()
             res_cats = sp_client.table("nw_categorias").select("*").execute()
             res_nuan = sp_client.table(f"{prefix}treinamento_nuances").select("*").execute()
