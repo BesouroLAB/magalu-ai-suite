@@ -699,9 +699,9 @@ with st.sidebar:
         st.rerun()
 
     st.markdown("""
-        <div style='margin-top: 40px; padding: 20px 10px; border-top: 1px solid rgba(255,255,255,0.05); text-align: center; background: rgba(0,0,0,0.2); border-radius: 0 0 15px 15px;'>
-            <p style='font-size: 11px; color: #8b92a5; margin: 0;'>Desenvolvido por <br><b style="color:#f0f0f0">Tiago Fernandes</b> | <a href='https://besourolab.com.br' target='_blank' style='color: #0086ff; text-decoration: none; font-weight:700;'>BesouroLAB</a></p>
-            <p style='font-size: 9px; color: #5c677d; margin-top: 8px; letter-spacing: 0.5px;'>TODOS OS DIREITOS RESERVADOS © 2026</p>
+        <div style='margin-top: 50px; padding: 15px 5px; border-top: 1px solid rgba(255,255,255,0.03); text-align: center;'>
+            <p style='font-size: 9px; color: #4a5568; margin: 0; opacity: 0.7; font-weight: 300;'>Desenvolvido por <a href='https://besourolab.com.br' target='_blank' style='color: #4a5568; text-decoration: underline; opacity: 0.8;'>Tiago Fernandes | BesouroLAB</a></p>
+            <p style='font-size: 8px; color: #2d3748; margin-top: 4px; letter-spacing: 0.5px; opacity: 0.5;'>TODOS OS DIREITOS RESERVADOS © 2026</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -1180,7 +1180,7 @@ if page == "Criar Roteiros":
                     st.session_state["roteiro_ativo_idx"] = idx
                     st.rerun()
             with btn_col_info:
-                st.markdown(f"**{num_tag} - NW {codigo_card}** | {tag_custo}")
+                st.markdown(f"**{num_tag} - NW {codigo_card}** | {modelo_tag.upper()} | {tag_custo}")
     # --- HISTÓRICO DO BANCO (Expandível, separado) ---
     if 'supabase_client' in st.session_state:
         with st.expander("📜 Histórico do Banco de Dados", expanded=False):
@@ -1285,7 +1285,8 @@ if page == "Criar Roteiros":
                     <p style='margin: 5px 0 0 0; font-size: 13px; color: #8b92a5;'>{titulo_curto}</p>
                 </div>
                 <div style='text-align: right;'>
-                    <span style='background: rgba(0, 134, 255, 0.1); color: #0086ff; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;'>{item.get('model_id', 'LLM')} | {tag_custo}</span>
+                    <span style='background: rgba(0, 134, 255, 0.1); color: #0086ff; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;'>🧠 {item.get('model_id', 'Desconhecido')}</span>
+                    <div style='margin-top: 5px; font-size: 11px; color: #10b981; font-weight: 700;'>{tag_custo}</div>
                     <div style='margin-top: 5px; font-size: 10px; color: #4a5568;'>{tokens_text}</div>
                 </div>
             </div>
@@ -1472,19 +1473,19 @@ elif page == "Treinar IA":
             
             # --- FORMULÁRIO DE ENTRADA ---
             with st.form("form_calibracao", clear_on_submit=True):
-                col_ia, col_breno = st.columns(2)
+                col_ia, col_humano = st.columns(2)
                 with col_ia:
                     st.markdown("**🤖 ANTES (Roteiro da IA)**")
                     roteiro_ia_input = st.text_area("Cole aqui o roteiro original gerado pela IA:", height=200, key="calib_ia")
-                with col_breno:
+                with col_humano:
                     st.markdown("**✅ DEPOIS (Aprovado pelo Humano)**")
-                    roteiro_breno_input = st.text_area("Cole aqui a versão final aprovada:", height=200, key="calib_breno")
+                    roteiro_humano_input = st.text_area("Cole aqui a versão final aprovada:", height=200, key="calib_humano")
                 
                 # A IA identificará a categoria automaticamente via analisar_calibracao
                 
                 submitted = st.form_submit_button("⚖️ Executar Calibragem e Salvar em Ouro", type="primary", use_container_width=True)
                 if submitted:
-                    if roteiro_ia_input.strip() and roteiro_breno_input.strip():
+                    if roteiro_ia_input.strip() and roteiro_humano_input.strip():
                         st.toast("🧠 Enviando para a IA analisar...", icon="⏳")
                         try:
                             # Usa qualquer provedor disponível (Puter/OpenRouter/Gemini)
@@ -1509,12 +1510,12 @@ elif page == "Treinar IA":
                                 ag = RoteiristaAgent(supabase_client=sp_client, model_id=_calib_model)
                                 with st.spinner("🧠 Analisando a calibragem para identificar lições aprendidas..."):
                                     cats_list_manual = df_cats[['id', 'nome']].to_dict('records') if not df_cats.empty else []
-                                    calc = ag.analisar_calibracao(roteiro_ia_input, roteiro_breno_input, cats_list_manual)
+                                    calc = ag.analisar_calibracao(roteiro_ia_input, roteiro_humano_input, cats_list_manual)
                                     
                                 data = {
                                     "categoria_id": calc['categoria_id'],
                                     "roteiro_original_ia": roteiro_ia_input,
-                                    "roteiro_perfeito": roteiro_breno_input,
+                                    "roteiro_perfeito": roteiro_humano_input,
                                     "nota_percentual": calc['percentual'],
                                     "aprendizado": calc['aprendizado'],
                                     "codigo_produto": calc['codigo_produto'],
@@ -1715,14 +1716,9 @@ elif page == "Guia de Modelos":
     
     # Categorizando modelos por provedor
     categorias = {
-        "Google (Nativo)": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"],
-        "Puter (Grok & Elite)": ["puter/x-ai/grok-4-1-fast", "puter/gpt-4o-mini", "puter/meta-llama/llama-3.1-70b-instruct", "puter/claude-3-5-sonnet"],
-        "OpenRouter (Especializados)": [
-            "openrouter/deepseek/deepseek-r1-0528:free",
-            "openrouter/google/gemma-3-27b:free",
-            "openrouter/meta-llama/llama-4-scout:free"
-        ],
-        "Z.ai & Moonshot": ["zai/glm-4.5-flash", "kimi/moonshot-v1-8k"]
+        "Google (Desempenho & Custo)": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"],
+        "Puter / x-AI (Criatividade Premium)": ["puter/x-ai/grok-4-1-fast", "puter/gpt-4o-mini"],
+        "Z.ai (Precisão Técnica)": ["zai/glm-4.5-flash"]
     }
     
     # Invertemos o MODELOS_DISPONIVEIS para facilitar a busca pelo nome amigável
@@ -1764,28 +1760,27 @@ elif page == "Como Funciona":
         with st.container(border=True):
             st.markdown("### 🛍️ O que é a Magalu AI Suite?")
             st.markdown("""
-                A **Magalu AI Suite** é uma plataforma *state-of-the-art* desenvolvida para automatizar e elevar a qualidade da 
-                criação de roteiros de produtos. Ela não apenas gera textos, mas **aprende** com o estilo humano para 
+                A **Magalu AI Suite** é o resultado de uma parceria intensa entre o desenvolvedor **Tiago Fernandes** e sua **IA Copiloto**. 
+                Juntos, construímos uma plataforma *state-of-the-art* para automatizar e elevar a qualidade da 
+                criação de roteiros. Ela não apenas gera textos, mas **aprende** continuamente com o estilo humano para 
                 personificar a 'Lu' de forma autêntica e persuasiva.
             """)
             
-            st.markdown("### ⚙️ Como funciona?")
+            st.markdown("### ⚙️ Como o sistema opera?")
             st.markdown("""
-                1. **Extração Inteligente**: Utilizamos o motor *Crawl4AI* e busca dinâmica no Google para capturar fichas técnicas 
-                sempre atualizadas, contornando bloqueios de bots e garantindo precisão nos SKUs.
-                2. **Geração Multimodelo**: O sistema escolhe entre os melhores LLMs do mercado (**Grok 4.1 Fast**, **Gemini 2.5**, **GPT-4o**) 
-                para redigir o roteiro seguindo o 'Estilo Breno' e a 'Persona da Lu'.
-                3. **Loop de Calibragem**: Sempre que um humano edita um roteiro, a IA analisa a diferença entre o original 
-                e o final, extraindo diretrizes de escrita, fonética e ganchos iniciais automaticamente.
+                O ecossistema é baseado em uma **Arquitetura de Três Camadas** (Ingestão, Inteligência e Persistência) projetada para escalabilidade:
+                
+                1. **Motor de Ingestão (Scraper 2.0)**: Diferente de scrapers comuns, utilizamos **Google Search Grounding** via Gemini 2.5 Flash. O sistema realiza buscas dinâmicas em tempo real (Search-to-Context), filtrando dados brutos do site oficial Magalu e eliminando 100% dos bloqueios de bot/captcha que interrompiam a produção legada.
+                2. **Orquestrador de IA (Roteirista Agent)**: Uma camada lógica que seleciona dinamicamente entre modelos como **Grok 4.1 Fast**, **Gemini 2.5 Pro** ou **GPT-4o Mini**. O roteiro é gerado em multi-step: análise técnica -> aplicação de persona -> verificação fonética automática.
+                3. **Loop de Treinamento Autônomo**: Através da **Calibragem**, o sistema realiza um *Diff-Analysis* entre a saída da IA e a edição final do Tiago. As diferenças são convertidas em Regras de Ouro Imperativas (JSON) e salvas no Supabase, alimentando o contexto das próximas gerações (RAG).
             """)
             
-            st.markdown("### 🚀 Evolução e Progresso")
+            st.markdown("### 🚀 Evolução do Projeto")
             st.info("""
-                **v1.0 (Início):** Geração básica de texto para vídeos de produtos.  
-                **v1.5 (Persona):** Integração profunda com a voz da Lu e regras de redação proprietárias.  
-                **v2.0 (Cosmic Premium):** Redesign completo para estética 'Galactic Dark' e glassmorphism.  
-                **v2.5 (Scraper 2.0):** Migração para Pure Google Context, eliminando erros de captura.  
-                **v2.8 (Calibragem Auto):** Implementação de extração automática de padrões nas edições humanas.
+                **v1.0 - Fundação:** Estabelecimento do core em Python e integração inicial com Supabase para persistência de roteiros.  
+                **v2.0 - UI & Persona:** Saída do layout padrão para o design 'Galactic Dark'. Implementação do motor de Persona da Lu com diretrizes de tom de voz.  
+                **v2.5 - Grounding:** Substituição do scraping direto por busca semântica via Google SDK v2, resolvendo a instabilidade na captura de fichas técnicas.  
+                **v2.8 - Calibragem:** Lançamento do módulo de aprendizado autônomo. A IA passou a extrair fonética e estruturas de abertura/fechamento das edições humanas de forma proativa.
             """)
 
     with col_doc2:
