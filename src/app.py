@@ -518,6 +518,10 @@ def salvar_nuance(sp_client, frase, analise, exemplo):
 with st.sidebar:
     # --- Verificação de Status (antes de renderizar) ---
     api_key_env = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
+    if api_key_env and not os.environ.get("GEMINI_API_KEY"):
+        os.environ["GEMINI_API_KEY"] = api_key_env
+    if api_key_env and not os.environ.get("GOOGLE_API_KEY"):
+        os.environ["GOOGLE_API_KEY"] = api_key_env
     puter_key_env = os.environ.get("PUTER_API_KEY") or st.secrets.get("PUTER_API_KEY")
     openai_key_env = os.environ.get("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
     openrouter_key_env = os.environ.get("OPENROUTER_API_KEY") or st.secrets.get("OPENROUTER_API_KEY")
@@ -669,6 +673,37 @@ with st.sidebar:
     if st.button("⚙️ Configurações", use_container_width=True, type="primary" if is_config_active else "secondary"):
         st.session_state['page'] = "Configurações"
         st.rerun()
+
+    # --- LINK DE DOCUMENTAÇÃO (Como Funciona) ---
+    # Custom CSS para o botão de documentação ser azul mais claro (estilo link)
+    st.markdown("""
+    <style>
+        /* Target the specific Documentation button by position or state */
+        div[data-testid="stSidebar"] div.stButton:nth-last-child(2) button {
+            background-color: transparent !important;
+            color: #339dff !important;
+            border: 1px solid rgba(51, 157, 255, 0.2) !important;
+            font-size: 0.85rem !important;
+            margin-top: 10px !important;
+        }
+        div[data-testid="stSidebar"] div.stButton:nth-last-child(2) button:hover {
+            background-color: rgba(51, 157, 255, 0.1) !important;
+            border-color: #339dff !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    is_doc_active = st.session_state['page'] == "Como Funciona"
+    if st.button("📖 Como Funciona", use_container_width=True, key="btn_doc"):
+        st.session_state['page'] = "Como Funciona"
+        st.rerun()
+
+    st.markdown("""
+        <div style='margin-top: 40px; padding: 20px 10px; border-top: 1px solid rgba(255,255,255,0.05); text-align: center; background: rgba(0,0,0,0.2); border-radius: 0 0 15px 15px;'>
+            <p style='font-size: 11px; color: #8b92a5; margin: 0;'>Desenvolvido por <br><b style="color:#f0f0f0">Tiago Fernandes</b> | <a href='https://besourolab.com.br' target='_blank' style='color: #0086ff; text-decoration: none; font-weight:700;'>BesouroLAB</a></p>
+            <p style='font-size: 9px; color: #5c677d; margin-top: 8px; letter-spacing: 0.5px;'>TODOS OS DIREITOS RESERVADOS © 2026</p>
+        </div>
+    """, unsafe_allow_html=True)
 
     page = st.session_state['page']
 
@@ -867,8 +902,8 @@ if page == "Criar Roteiros":
                             total_skus = len(df_edited)
                             for i, row in df_edited.iterrows():
                                 code = str(row['SKU Principal']).strip()
-                                sub_skus = str(row['Outros Códigos (Cor/Voltagem)']).strip()
-                                video_url = str(row['Vídeo do Fornecedor (Link)']).strip()
+                                val_sub = row['Outros Códigos (Cor/Voltagem)']; sub_skus = str(val_sub).strip() if pd.notna(val_sub) and str(val_sub).lower() != 'nan' else ''
+                                val_vid = row['Vídeo do Fornecedor (Link)']; video_url = str(val_vid).strip() if pd.notna(val_vid) and str(val_vid).lower() != 'nan' else ''
                                 
                                 import time
                                 
@@ -878,7 +913,8 @@ if page == "Criar Roteiros":
                                 )
                                 
                                 # 1. Gemini extrai dados do produto via URL
-                                ficha_extraida = scrape_with_gemini(code)
+                                gemini_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
+                                ficha_extraida = scrape_with_gemini(code, api_key=gemini_key)
                                 
                                 progress.progress(
                                     (i + 0.5) / total_skus,
@@ -1125,24 +1161,26 @@ if page == "Criar Roteiros":
     if 'roteiros' in st.session_state and st.session_state['roteiros']:
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Cards horizontais de seleção
-        n_roteiros = len(st.session_state['roteiros'])
-        cols_sessao = st.columns(min(4, n_roteiros))
-        for idx, r_item in enumerate(st.session_state['roteiros']):
+        st.markdown("### 📋 Mesa de Trabalho")
+        
+        # Lista simplificada por SKU
+        st.info("💡 Selecione um produto para editar abaixo.")
+        
+        for idx, r_item in enumerate(st.session_state["roteiros"]):
+            codigo_card = r_item.get("codigo", "...")
             num_tag = f"#{r_item.get('global_num', '?')}"
-            codigo_card = r_item.get('codigo', '...')
-            modelo_tag = r_item.get('model_id', '').split('/')[-1][:12]
-            is_active = st.session_state.get('roteiro_ativo_idx', 0) == idx
-            with cols_sessao[idx % len(cols_sessao)]:
-                if st.button(
-                    f"{codigo_card}\n{modelo_tag}",
-                    key=f"session_btn_{idx}",
-                    use_container_width=True,
-                    type="primary" if is_active else "secondary"
-                ):
-                    st.session_state['roteiro_ativo_idx'] = idx
+            modelo_tag = r_item.get("model_id", "").split("/")[-1][:12]
+            custo = r_item.get("custo_brl", 0)
+            tag_custo = "Grátis" if custo == 0 else f"R$ {custo:.4f}"
+            is_active = st.session_state.get("roteiro_ativo_idx", 0) == idx
+            
+            btn_col_sel, btn_col_info = st.columns([1, 5])
+            with btn_col_sel:
+                if st.button(f"✏️ Selecionar", key=f"sel_{idx}", use_container_width=True, type="primary" if is_active else "secondary"):
+                    st.session_state["roteiro_ativo_idx"] = idx
                     st.rerun()
-
+            with btn_col_info:
+                st.markdown(f"**{num_tag} - NW {codigo_card}** | {tag_custo}")
     # --- HISTÓRICO DO BANCO (Expandível, separado) ---
     if 'supabase_client' in st.session_state:
         with st.expander("📜 Histórico do Banco de Dados", expanded=False):
@@ -1267,7 +1305,7 @@ if page == "Criar Roteiros":
                     "Editor",
                     value=st.session_state.get(editor_key, item['roteiro_original']),
                     height=450,
-                    key=editor_key,
+                    key=f"text_area_{idx}_{codigo_produto}",
                     label_visibility="collapsed"
                 )
             sp_cli = st.session_state.get('supabase_client', None)
@@ -1712,6 +1750,64 @@ elif page == "Guia de Modelos":
                 </div>
                 """, unsafe_allow_html=True)
         st.write("")
+
+# --- PÁGINA: COMO FUNCIONA (DOCUMENTAÇÃO) ---
+elif page == "Como Funciona":
+    st.subheader("📖 Documentação: Magalu AI Suite")
+    st.markdown("Entenda a inteligência por trás da ferramenta, as tecnologias que a sustentam e nossa jornada de evolução.")
+    
+    st.divider()
+    
+    col_doc1, col_doc2 = st.columns([2, 1])
+    
+    with col_doc1:
+        with st.container(border=True):
+            st.markdown("### 🛍️ O que é a Magalu AI Suite?")
+            st.markdown("""
+                A **Magalu AI Suite** é uma plataforma *state-of-the-art* desenvolvida para automatizar e elevar a qualidade da 
+                criação de roteiros de produtos. Ela não apenas gera textos, mas **aprende** com o estilo humano para 
+                personificar a 'Lu' de forma autêntica e persuasiva.
+            """)
+            
+            st.markdown("### ⚙️ Como funciona?")
+            st.markdown("""
+                1. **Extração Inteligente**: Utilizamos o motor *Crawl4AI* e busca dinâmica no Google para capturar fichas técnicas 
+                sempre atualizadas, contornando bloqueios de bots e garantindo precisão nos SKUs.
+                2. **Geração Multimodelo**: O sistema escolhe entre os melhores LLMs do mercado (**Grok 4.1 Fast**, **Gemini 2.5**, **GPT-4o**) 
+                para redigir o roteiro seguindo o 'Estilo Breno' e a 'Persona da Lu'.
+                3. **Loop de Calibragem**: Sempre que um humano edita um roteiro, a IA analisa a diferença entre o original 
+                e o final, extraindo diretrizes de escrita, fonética e ganchos iniciais automaticamente.
+            """)
+            
+            st.markdown("### 🚀 Evolução e Progresso")
+            st.info("""
+                **v1.0 (Início):** Geração básica de texto para vídeos de produtos.  
+                **v1.5 (Persona):** Integração profunda com a voz da Lu e regras de redação proprietárias.  
+                **v2.0 (Cosmic Premium):** Redesign completo para estética 'Galactic Dark' e glassmorphism.  
+                **v2.5 (Scraper 2.0):** Migração para Pure Google Context, eliminando erros de captura.  
+                **v2.8 (Calibragem Auto):** Implementação de extração automática de padrões nas edições humanas.
+            """)
+
+    with col_doc2:
+        st.markdown("### 🛠️ Tecnologias Usadas")
+        tech_list = [
+            ("Python 3.11", "Linguagem core e processamento de dados"),
+            ("Streamlit", "Interface reativa e UX premium"),
+            ("Supabase", "Banco de Dados relacional e Realtime"),
+            ("Google GenAI", "Mente analítica e visão computacional"),
+            ("Puter AI", "Redação criativa via Grok 4.1 Fast"),
+            ("OpenRouter", "Fallback e raciocínio lógico")
+        ]
+        
+        for t_name, t_desc in tech_list:
+            st.markdown(f"**{t_name}**")
+            st.caption(t_desc)
+            st.write("")
+        
+        st.divider()
+        st.markdown("### 📞 Suporte & Feedback")
+        st.markdown("Dúvidas ou sugestões? Entre em contato com o laboratório de IA.")
+        st.link_button("BesouroLAB Website", "https://besourolab.com.br", use_container_width=True)
 
 # --- PÁGINA: CONFIGURAÇÕES ---
 elif page == "Configurações":

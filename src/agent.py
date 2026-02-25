@@ -28,33 +28,21 @@ PRICING_USD_PER_1M = {
 USD_TO_BRL = 5.80
 
 MODELOS_DISPONIVEIS = {
-    "💰 Gemini 2.5 Flash-Lite [PAGO] — ~R$0,01/roteiro": "gemini-2.5-flash-lite",
-    "⚡ Gemini 2.5 Flash [PAGO] — ~R$0,03/roteiro": "gemini-2.5-flash",
-    "🏆 Gemini 2.5 Pro [PAGO] — ~R$0,06/roteiro": "gemini-2.5-pro",
+    "💰 Gemini 2.5 Flash-Lite [PAGO] — ~R$0,005/roteiro": "gemini-2.5-flash-lite",
+    "⚡ Gemini 2.5 Flash [PAGO] — ~R$0,04/roteiro": "gemini-2.5-flash",
+    "🏆 Gemini 2.5 Pro [PAGO] — ~R$0,19/roteiro": "gemini-2.5-pro",
     "🔥 Grok 4.1 Fast [GRÁTIS] — Criativo (Puter)": "puter/x-ai/grok-4-1-fast",
-    "🐋 DeepSeek R1 [GRÁTIS] — Raciocínio (OpenRouter)": "openrouter/deepseek/deepseek-r1-0528:free",
     "🤖 GPT-4o Mini [GRÁTIS] — Fluído (Puter)": "puter/gpt-4o-mini",
-    "💎 Gemma 3 27B [GRÁTIS] — Multimodal (OpenRouter)": "openrouter/google/gemma-3-27b:free",
-    "🦙 Llama 4 Scout [GRÁTIS] — Nova Geração (OpenRouter)": "openrouter/meta-llama/llama-4-scout:free",
-    "🇨🇳 GLM-4.5 Flash [GRÁTIS] — Ficha Técnica (Z.ai)": "zai/glm-4.5-flash",
-    "🌙 Kimi v1 [GRÁTIS] — Coerência (Moonshot)": "kimi/moonshot-v1-8k",
-    "🦙 Llama 3.1 70B [GRÁTIS] — Equilibrado (Puter)": "puter/meta-llama/llama-3.1-70b-instruct",
-    "🎭 Claude 3.5 Sonnet [GRÁTIS] — Narrativa Premium (Puter)": "puter/claude-3-5-sonnet",
+    "🇨🇳 GLM-4.5 Flash [GRÁTIS] — Ficha Técnica (Z.ai)": "zai/glm-4.5-flash"
 }
 
 MODELOS_DESCRICAO = {
-    "gemini-2.5-flash": "[RECOMENDADO] (2025) O equilíbrio perfeito. Extremamente rápido, lida bem com lotes e tem a melhor integração com a persona da Lu. Custo baixíssimo (~R$ 0,03).",
-    "gemini-2.5-pro": "[ELITE] (2025) O modelo mais inteligente. Ideal para produtos complexos ou roteiros que exigem criatividade fora da curva e lógica impecável. Custo (~R$ 0,06).",
-    "gemini-2.5-flash-lite": "[ECONÔMICO] (2025) O mais barato da família 2.5. Ultra-rápido, ótimo para lotes grandes. ~R$ 0,01 por roteiro.",
-    "puter/gpt-4o-mini": "[ESTÁVEL] (2024) Respostas muito diretas e limpas. Excelente para manter o formato NW sem erros de estrutura. Gratuito via Puter.",
-    "puter/x-ai/grok-4-1-fast": "[NEGOCIAL/CRIATIVO] (2025) Excelente para Reels e formatos sociais. Tom persuasivo e ganchos de retenção fortes.",
-    "openrouter/deepseek/deepseek-r1-0528:free": "[RACIOCÍNIO] (2025) Ideal para calibragem. Pensa passo a passo, identificando erros sutis de pronúncia e tom.",
-    "openrouter/google/gemma-3-27b:free": "[MULTIMODAL] (2025) Versão aberta do Google. Surpreendentemente bom em descrever detalhes de fotos do produto.",
-    "openrouter/meta-llama/llama-4-scout:free": "[GIGANTE] (2025) Inteligência de ponta para descrições ricas. Ótimo para quando você quer um texto mais longo e detalhado.",
-    "zai/glm-4.5-flash": "[PRECISÃO] (2025) IA chinesa focada em não alucinar. Se o produto tem muitos números e medidas, ele é uma ótima escolha.",
-    "kimi/moonshot-v1-8k": "[COERÊNCIA] (2024) Mantém o fio da meada em roteiros longos. Bom para vídeos de Review extensos.",
-    "puter/meta-llama/llama-3.1-70b-instruct": "[EQUILIBRADO] (2024) Inteligência de nível Pro em formato aberto. Versátil para todos os modos de trabalho.",
-    "puter/claude-3-5-sonnet": "[NARRATIVA PREMIUM] (2024) O rei da escrita natural. Se você quer que o roteiro pareça escrito por um redator sênior, use este.",
+    "gemini-2.5-flash": "[O CERTINHO] (2025) Nível de detalhamento altíssimo, não deixa passar nada da ficha. Pode soar mais técnico. Custo: ~R$ 0,04.",
+    "gemini-2.5-pro": "[A ELITE] (2025) Inteligência superior para entender direção de arte e contextos complexos. Textos sofisticados. Custo alto: ~R$ 0,19.",
+    "gemini-2.5-flash-lite": "[CUSTO-BENEFÍCIO] (2025) Barato e rápido. Ótimo com fonética e resume bem as cenas sem perder a essência. Custo: ~R$ 0,005.",
+    "puter/gpt-4o-mini": "[O DESOBEDIENTE] (2024) Bom nos benefícios, mas costuma quebrar regras de cabeçalho e errar pronúncias. Use como estepe.",
+    "puter/x-ai/grok-4-1-fast": "[O VENCEDOR / O HUMANO] (2025) O meio termo perfeito. Transforma dados frios em textos diretos, dinâmicos e naturais para a Lu. Prioridade gratuita.",
+    "zai/glm-4.5-flash": "[LENTO E PRECISO] (2025) Não alucina. Excelente para fichas ultra-técnicas (ferramentas), mas a sua lentidão inviabiliza lotes grandes."
 }
 PROVIDER_KEY_MAP = {
     "gemini": "GEMINI_API_KEY",
@@ -362,18 +350,17 @@ class RoteiristaAgent:
         # INJEÇÃO DAS TÁTICAS NW LU (Mês e Cena Obrigatória)
         if "NW" in modo_trabalho:
             data_str = data_roteiro if data_roteiro else "[DATA_ATUAL]"
-            prod_str = nome_produto if nome_produto else "[NOME_DO_PRODUTO_AQUI]"
             cod_str = codigo if codigo else "[CÓDIGO_AQUI]"
             
-            sub_skus_str = f" (Variações/Cores: {sub_skus})" if sub_skus else ""
-            video_ref_str = f"\n   Vídeo Base do Fornecedor: {video_url} (Sugira cortes deste vídeo para as imagens quando aplicável)" if video_url else ""
+            sub_skus_str = f" {sub_skus}" if (sub_skus and str(sub_skus).lower() != 'nan') else ""
+            video_ref_str = f"\n   {video_url}" if (video_url and str(video_url).lower() != 'nan') else ""
             
             diretriz_modo += (
                 f"\n\n🚨 REGRA ABSOLUTA DE FORMATAÇÃO E ESTRUTURA (NW LU):\n"
                 f"1. O TEXTO DEVE COMEÇAR COM O CABEÇALHO EXATAMENTE NO FORMATO:\n"
                 f"   Cliente: Magalu\n"
                 f"   Roteirista: Tiago Fernandes - Data: {data_str}\n"
-                f"   Produto: NW LU {mes} {cod_str} {prod_str}{sub_skus_str}{video_ref_str}\n"
+                f"   Produto: NW LU {mes} {cod_str}{sub_skus_str} [INSERIR NOME RESUMIDO DO PRODUTO AQUI - REMOVA CÓDIGOS E MANTENHA SÓ O NOME ENXUTO]{video_ref_str}\n"
                 f"2. A CENA 1 (Primeira cena do vídeo) DEVE OBRIGATORIAMENTE mostrar a 'Lu' em ação, interagindo com o produto ou apresentando-o.\n"
                 f"3. A partir da CENA 2, CORTE para imagens do produto. REGRA CRÍTICA DE IMAGEM: É ESTRITAMENTE PROIBIDO sugerir ações humanas nas Colunas de Imagem (ex: 'mão segurando o celular', 'pessoa bebendo café', 'cliente usando'). O vídeo NW é feito APENAS com fotos estáticas do fornecedor, animações gráficas (GCs) e recortes do vídeo oficial. IMAGENS 100% LIMPAS DE HUMANOS."
             )
@@ -397,8 +384,11 @@ class RoteiristaAgent:
             f"4. Imite fielmente o estilo dos exemplos APROVADOS.\n"
             f"5. Use 'pra' no lugar de 'para'. Coloque a marca entre vírgulas.\n"
             f"6. **ENRIQUECIMENTO DE CONTEXTO:** Para produtos mundialmente conhecidos, adicione detalhes técnicos ou curiosidades RELEVANTES que não estejam na ficha, MAS sem alongar o roteiro desnecessariamente.\n"
-            f"7. **REGRA DE REFERÊNCIA:** Se usar conhecimento interno (item 6) ou dados de 'FONTE EXTERNA', adicione OBRIGATORIAMENTE uma nota com o link oficial no rodapé do roteiro.\n"
-            f"8. **PROIBIÇÃO DE SCRIPTS HIPOTÉTICOS:** Se o contexto do produto for insuficiente ou tiver mensagem de erro, NÃO gere roteiro hipotético. Responda APENAS: 'ERRO: Dados insuficientes do produto para geração automática.'"
+            f"7. **REGRA FONTE EXTERNA (CRÍTICA):** Se o input contiver uma linha 'FONTE EXTERNA: [URL]', você DEVE OBRIGATORIAMENTE adicionar ao final do seu roteiro uma linha vazia seguida de: 'Fonte Externa: [URL]'.\n"
+            f"8. **PROIBIÇÃO DE REDUNDÂNCIA (MUITO IMPORTANTE):** O roteiro deve ser direto e dinâmico. NÃO REPITA o mesmo assunto, benefício ou característica técnica em parágrafos separados de forma desnecessária. Cada cena/fala deve trazer uma informação NOVA.\n"
+            f"9. **COMPLETUDE OBJETIVA:** Seja dinâmico, mas NÃO omita em hipótese alguma acessórios vitais ou diferenciais presentes na Ficha Técnica (ex: maletas, cabos extras, proteções). Transforme todos esses dados úteis em benefícios para o cliente, sem enrolação.\n"
+            f"10. **PRONÚNCIA DE ESTRANGEIRISMOS:** Sempre que houver nomes de marcas estrangeiras, tecnologias (Core i7, QLED, OLED, Magsafe) ou palavras difíceis, preveja como um brasileiro falaria e insira a pronúncia em parênteses. Exemplo: OPPO (ó-pô), Reno14 (rê-no quatorze).\n"
+            f"11. **PROIBIÇÃO DE SCRIPTS HIPOTÉTICOS:** Se o contexto do produto for insuficiente, NÃO gere roteiro. Responda: 'ERRO: Dados insuficientes do produto para geração automática.'"
         )
 
         if self.client_gemini:
@@ -493,15 +483,15 @@ class RoteiristaAgent:
             "   - 60% a 80%: Mudança Estrutural. O humano adicionou informações faltantes, reconstruiu a abertura/fechamento ou cortou blocos inteiros.\n"
             "   - Abaixo de 60%: Erro Grave. A IA errou feio o tom de voz, omitiu funcionalidades vitais ou errou o SKU.\n"
             "   ATENÇÃO: Termos presentes no CÓDIGO SUGERIDO ou NOME DO PRODUTO (ex: 'Aro 26', 'Grau', 'Index') NÃO SÃO ERROS DA IA, não penalize a nota por eles.\n"
-            "3. SÍNTESE DE APRENDIZADO (MEMÓRIA TÉCNICA): Transforme as edições em DIRETRIZES TÁTICAS E IMPERATIVAS DE ESCRITA, INCLUINDO SEMPRE UM EXEMPLO PRÁTICO do que foi mudado.\n"
-            "   Sua diretriz DEVE ser aplicável a futuros roteiros como uma regra de ouro.\n"
-            "   - REGRA ANTI-ALUCINAÇÃO: É ESTRITAMENTE PROIBIDO listar especificações técnicas do produto como se fossem regras de redação (ex: 'Falar que tem freio a disco'). Foque APENAS no ESTILO de escrita.\n"
-            "   - REGRA DE LOCALIZAÇÃO E CONTEXTO: Se o humano CORTOU ou ADICIONOU um bloco de texto, explique O QUE era, POR QUE cortou e ONDE (em qual cena exata isso ocorreu). \n"
-            "     * O roteiro possui uma estrutura lógica (ex: Cena 1 - Abertura, Cena 3 - Features, Penúltima cena - Conexões/Bateria, Fechamento). Mapeie a alteração para a cena correspondente.\n"
-            "     * Ex: 'Na penúltima cena, cortou redundância sobre cansaço visual pois a tecnologia Frost Free ou Flicker-Free já havia sido explicada na primeira metade'.\n"
-            "   - ERRADO: 'Breno tirou a palavra X e colocou Y.'\n"
-            "   - CERTO: '- Focar no benefício emocional em vez da ficha técnica (Ex: Trocou \"Possui painel IPS\" por \"Cores vivas de qualquer ângulo\"). - Iniciar o texto com sujeito explícito (Ex: \"Ela tem\" em vez de \"Tem\").'\n"
-            "   Seja curto, grosso e imperativo, mas SEMPRE DÊ EXEMPLOS nas próprias frases. Use tópicos com '-'.\n"
+            "3. SÍNTESE DE APRENDIZADO (MEMÓRIA TÉCNICA): Transforme as edições do humano em DIRETRIZES TÁTICAS UNIVERSAIS para uma futura IA Redatora.\n"
+            "   A diretriz DEVE ser escrita como uma regra de copywriting comercial, não como uma descrição do que aconteceu no produto X ou Y.\n"
+            "   - REGRA ANTI-ALUCINAÇÃO E GENERALIZAÇÃO: É ESTRITAMENTE PROIBIDO citar especificações do produto (ex: '85W de potência', 'tela de 6 polegadas') na REGRA EM SI. O produto deve aparecer APENAS dentro de parênteses como o exemplo prático.\n"
+            "   - COMECE COM VERBOS IMPERATIVOS: 'Integrar', 'Eliminar', 'Simplificar', 'Encurtar', 'Adotar', 'Reordenar', 'Focar'.\n"
+            "   - ERRADO: 'Eliminou 85W de potência mantendo 3 velocidades na cena 1'. (Muito específico, inútil para outros produtos).\n"
+            "   - CERTO: '- Remover especificações técnicas iniciais como potência para priorizar features funcionais e benefícios práticos. (Ex: Na abertura, eliminou \"85W de potência\" mantendo \"3 velocidades\").'\n"
+            "   - ERRADO: 'Tirou vários modos de funcionamento e colocou várias funções'.\n"
+            "   - CERTO: '- Simplificar vocabulário técnico para termos mais fluidos e comerciais na introdução de features. (Ex: Na cena 2, trocar \"vários modos de funcionamento\" por \"várias funções\").'\n"
+            "   Seja curto, grosso e imperativo, mas SEMPRE DÊ O EXEMPLO DO PRODUTO ATUAL DENTRO DE (Ex: ...). Use tópicos com '-'.\n"
             "4. EXTRAIA O CÓDIGO DO PRODUTO (SKU): Procure no texto por sequências numéricas ou o código fornecido.\n"
             "5. CATEGORIZE (CRÍTICO): Escolha a melhor categoria da lista abaixo baseada na FUNÇÃO PRINCIPAL DO PRODUTO. "
             "Não se confunda com funcionalidades extras (ex: um monitor gamer com alto-falante é 'Informatica / Gamer', e NUNCA 'Áudio'). "
@@ -510,10 +500,10 @@ class RoteiristaAgent:
             "extraia como regras no campo 'fonetica_regras'. Cada regra tem: "
             "'termo_errado' (a versão sem pronúncia se o humano adicionou, ou a versão com pronúncia ruim), 'termo_corrigido' (a versão final que o humano deixou, ex: Flicker-Free (flíker frí)), "
             "'exemplo' (frase de contexto). Importante: Capturar casos onde o humano removeu o parênteses de pronúncia para deixar o texto mais limpo, E TAMBÉM quando o humano adicionou uma pronúncia essencial que a IA esqueceu. Se NÃO houver correções, retorne [].\n"
-            "7. ESTRUTURAS (AUTO-EXTRAÇÃO): Se o humano MUDOU a ABERTURA (primeira frase) ou o FECHAMENTO (última frase), "
-            "extraia o texto APROVADO PELO HUMANO no campo 'estrutura_regras'. Cada regra tem: "
-            "'tipo' ('Abertura' ou 'Fechamento') e 'texto_ouro' (a frase exata aprovada pelo humano). "
-            "Se NÃO houve mudança na abertura/fechamento, retorne lista vazia [].\n"
+            "7. ESTRUTURAS (AUTO-EXTRAÇÃO CRÍTICA): EXTRAIA OBRIGATORIAMENTE a Abertura (a primeira fala/cena da Lu) e o Fechamento (a última fala/cena da Lu) presentes no ROTEIRO FINAL (HUMANO), mesmo que o humano tenha feito poucas mudanças no texto original da IA. "
+            "Coloque no campo 'estrutura_regras'. Cada regra tem: "
+            "'tipo' ('Abertura' ou 'Fechamento') e 'texto_ouro' (a frase exata). "
+            "Exceção: retorne uma lista vazia [] APENAS se o Roteiro Final não possuir nenhum texto.\n"
             "8. PERSONA LU (AUTO-EXTRAÇÃO): Se o humano corrigiu o TOM DE VOZ, ESTILO ou VOCABULÁRIO da Lu, "
             "extraia como regras no campo 'persona_regras'. Cada regra tem: "
             "'pilar' (tom, vocabulário, gancho, emoção, clareza), 'erro' (o que a IA fez de errado), "
