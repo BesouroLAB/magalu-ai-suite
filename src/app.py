@@ -9,6 +9,7 @@ import pytz
 import uuid
 from dotenv import load_dotenv
 from supabase import create_client, Client
+import difflib
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from src.agent import RoteiristaAgent, MODELOS_DISPONIVEIS, MODELOS_DESCRICAO, PROVIDER_KEY_MAP
@@ -591,6 +592,32 @@ def modal_resultado_calibragem(calc, sp_cli, roteiro_ia, roteiro_humano, titulo_
             <div style='font-size: 1rem; color: #c9d1e0; line-height: 1.5;'>"{resumo}"</div>
         </div>
         """, unsafe_allow_html=True)
+
+    # 0.1 Visual Diff
+    with st.expander("🔍 Ver Comparação de Alterações (Visual Diff)", expanded=False):
+        html_diff = difflib.HtmlDiff().make_table(
+            roteiro_ia.splitlines(),
+            roteiro_humano.splitlines(),
+            fromdesc="🤖 IA ORIGINAL",
+            todesc="✍️ SUA EDIÇÃO",
+            context=True,
+            numlines=2
+        )
+        
+        # Estilização para o Diff encaixar no modo Dark do Magalu
+        diff_css = """
+        <style>
+            table.diff {font-family: 'Inter', sans-serif; border: none; background: #050e1d; width: 100%; border-radius: 8px; overflow: hidden; font-size: 13px;}
+            .diff_header {background-color: #1e293b; color: #94a3b8; font-weight: bold; padding: 5px; text-transform: uppercase; letter-spacing: 1px;}
+            .diff_next {display: none;}
+            .diff_add {background-color: #064e3b; color: #34d399; font-weight: bold; padding: 2px 4px;}
+            .diff_chg {background-color: #1e293b; color: #fbbf24; font-weight: bold; padding: 2px 4px;}
+            .diff_sub {background-color: #7f1d1d; color: #f87171; font-weight: bold; text-decoration: line-through; padding: 2px 4px;}
+            td {padding: 4px 8px !important; border-bottom: 1px solid #1e293b !important;}
+            .diff_next a {display: none;}
+        </style>
+        """
+        st.markdown(diff_css + html_diff, unsafe_allow_html=True)
 
     # 1. Feedback / Aprendizado
     with st.expander("📝 Lições Técnicas de Redação (Roteiros Ouro)", expanded=True):
