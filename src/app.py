@@ -898,6 +898,7 @@ if page == "Criar Roteiros":
                             base_count = get_total_script_count(st.session_state.get('supabase_client'))
                             
                             progress = st.progress(0, text="Iniciando extração...")
+                            think_placeholder = st.empty()
                             
                             total_skus = len(df_edited)
                             for i, row in df_edited.iterrows():
@@ -909,8 +910,9 @@ if page == "Criar Roteiros":
                                 
                                 progress.progress(
                                     (i) / total_skus,
-                                    text=f"🔍 [{code}] Buscando página na Magalu... ({i+1}/{total_skus})"
+                                    text=f"🔍 [{code}] Buscando no Google Search... ({i+1}/{total_skus})"
                                 )
+                                think_placeholder.markdown(f"💭 *IA Pensando: '🔍 Investigando base da Magalu para o código {code}...'*")
                                 
                                 # 1. Gemini extrai dados do produto via URL
                                 gemini_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
@@ -920,6 +922,7 @@ if page == "Criar Roteiros":
                                     (i + 0.5) / total_skus,
                                     text=f"✍️ [{code}] Analisando contexto e escrevendo roteiro... ({i+1}/{total_skus})"
                                 )
+                                think_placeholder.markdown(f"💭 *IA Pensando: '🧠 Decodificando ficha técnica, aplicando Persona da Lu e regras fonéticas aprendidas para {code}...'*")
                                 
                                 
                                 # 2. Gera o roteiro com os dados extraídos (retorna dict)
@@ -979,6 +982,7 @@ if page == "Criar Roteiros":
                                     (i + 1) / total_skus,
                                     text=f"✅ [{code}] Roteiro finalizado! ({i+1}/{total_skus})"
                                 )
+                                think_placeholder.markdown(f"💭 *IA Pensando: '✅ Roteiro de {code} estruturado e validado. Próximo!'*")
                                 
                                 # Auto-log no histórico (silencioso) com tracking de custo
                                 try:
@@ -1092,11 +1096,14 @@ if page == "Criar Roteiros":
                                 # Busca a base do histórico para numeração
                                 base_count = get_total_script_count(st.session_state.get('supabase_client'))
                                 
+                                think_placeholder_man = st.empty()
                                 for i, item_man in enumerate(fichas_validas):
                                     ficha = item_man["ficha"]
                                     code = item_man["sku"]
                                     # Extrai nome do produto da ficha manual (primeira linha)
                                     nome_p_man = ficha.split('\n')[0].strip() if ficha else "Produto"
+                                    
+                                    think_placeholder_man.markdown(f"💭 *IA Pensando: '✍️ Redigindo roteiro para {code} com base na ficha manual fornecida...'*")
                                     
                                     resultado = agent.gerar_roteiro(
                                         ficha, 
@@ -1140,6 +1147,8 @@ if page == "Criar Roteiros":
                                             }).execute()
                                     except Exception:
                                         pass
+                                    
+                                    think_placeholder_man.markdown(f"💭 *IA Pensando: '✅ Roteiro manual de {code} finalizado e salvo em mesa.'*")
 
                                     # Delay de segurança extra
                                     if i < len(fichas_validas) - 1:
@@ -1347,18 +1356,22 @@ if page == "Criar Roteiros":
                 if st.button("🚀 Calibrar IA", key=f"fino_{idx}", use_container_width=True, type="primary"):
                     if sp_cli:
                         st.toast("🧠 Iniciando calibragem...", icon="⏳")
+                        think_calib = st.empty()
                         with st.spinner("A IA está analisando suas correções..."):
                             try:
+                                think_calib.markdown("💭 *IA Pensando: '🧐 Comparando roteiro original com sua edição para detectar padrões...'*")
                                 res_c = sp_cli.table("nw_categorias").select("id, nome").execute()
                                 lista_c = res_c.data if hasattr(res_c, 'data') else []
                             except:
                                 lista_c = []
                                 
                             calc = _temp_agent.analisar_calibracao(item['roteiro_original'], edited_val, lista_c, codigo_produto)
+                            think_calib.markdown("💭 *IA Pensando: '🎓 Lições aprendidas! Extraindo regras fonéticas e de persona...'*")
                             salvar_calibracao_ouro(sp_cli, calc['categoria_id'], item['roteiro_original'], edited_val, calc['percentual'], calc['aprendizado'], calc['codigo_produto'], titulo_curto, calc.get('modelo_calibragem', 'N/A'))
                             _auto_salvar_fonetica(sp_cli, calc.get('fonetica_regras', []))
                             _auto_salvar_estrutura(sp_cli, calc.get('estrutura_regras', []))
                             _auto_salvar_persona(sp_cli, calc.get('persona_regras', []))
+                            think_calib.markdown("💭 *IA Pensando: '✅ Calibragem concluída. Estou mais inteligente agora!'*")
                     else:
                         st.error("Conecte o Supabase primeiro.")
             
@@ -1496,6 +1509,7 @@ elif page == "Treinar IA":
                 if submitted:
                     if roteiro_ia_input.strip() and roteiro_humano_input.strip():
                         st.toast("🧠 Enviando para a IA analisar...", icon="⏳")
+                        think_hub = st.empty()
                         try:
                             # Usa qualquer provedor disponível (Puter/OpenRouter/Gemini)
                             # Determina qual model_id usar para instanciar o agente. Novo Default: DeepSeek (OpenRouter)
@@ -1517,10 +1531,12 @@ elif page == "Treinar IA":
                             
                             if _calib_model:
                                 ag = RoteiristaAgent(supabase_client=sp_client, model_id=_calib_model)
+                                think_hub.markdown("💭 *IA Pensando: '🧐 Analisando as nuances da sua edição comparada ao original...'*")
                                 with st.spinner("🧠 Analisando a calibragem para identificar lições aprendidas..."):
                                     cats_list_manual = df_cats[['id', 'nome']].to_dict('records') if not df_cats.empty else []
                                     calc = ag.analisar_calibracao(roteiro_ia_input, roteiro_humano_input, cats_list_manual)
                                     
+                                think_hub.markdown("💭 *IA Pensando: '🎓 Lição aprendida! Salvando novas regras de escrita no banco...'*")
                                 data = {
                                     "categoria_id": calc['categoria_id'],
                                     "roteiro_original_ia": roteiro_ia_input,
@@ -1534,6 +1550,7 @@ elif page == "Treinar IA":
                                 sp_client.table("nw_roteiros_ouro").insert(data).execute()
                                 estrelas_ui = calc['percentual'] / 20.0
                                 _score_color = '🟢' if estrelas_ui >= 4.0 else ('🟡' if estrelas_ui >= 3.0 else '🔴')
+                                think_hub.markdown("💭 *IA Pensando: '✅ Calibragem manual concluída com sucesso. Pronta para os próximos!'*")
                                 st.success(f"🏆 Salvo como Roteiro Ouro! {_score_color} Qualidade: {estrelas_ui:.1f} ⭐ | Código: {calc['codigo_produto']} | IA: {calc.get('modelo_calibragem', 'N/A')}")
                                 n_f = _auto_salvar_fonetica(sp_client, calc.get('fonetica_regras', []))
                                 n_e = _auto_salvar_estrutura(sp_client, calc.get('estrutura_regras', []))

@@ -132,6 +132,11 @@ def _parse_roteiro(roteiro_text: str) -> list[dict]:
 
 def generate_filename(code: str, product_name: str, selected_month: str = "MAR", model_id: str = "") -> str:
     """Gera nome do arquivo no padrão: NW LU {selected_month} {code} {product_name} [{model}].docx"""
+    # Garante que o código tenha 9 dígitos (preenche com 0 à direita se necessário)
+    clean_code = str(code).strip()
+    if clean_code and len(clean_code) < 9:
+        clean_code = clean_code.ljust(9, '0')
+
     # Limpa caracteres inválidos para nome de arquivo
     clean_name = re.sub(r'[<>:"/\\|?*]', '', product_name)
     clean_name = clean_name[:80].strip()  # Limita tamanho
@@ -142,7 +147,7 @@ def generate_filename(code: str, product_name: str, selected_month: str = "MAR",
         model_tag = model_id.split('/')[-1].upper()
         model_tag = f" [{model_tag}]"
 
-    return f"NW LU {selected_month} {code} {clean_name}{model_tag}.docx"
+    return f"NW LU {selected_month} {clean_code} {clean_name}{model_tag}.docx"
 
 def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "", selected_month: str = "MAR", selected_date: str = None, model_id: str = "") -> tuple[bytes, str]:
     """
