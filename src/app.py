@@ -579,9 +579,55 @@ def salvar_nuance(sp_client, frase, analise, exemplo):
 
 
 
+@st.dialog("🔍 Comparação Visual de Alterações")
+def modal_visual_diff(original, final):
+    # Normalização básica para evitar diffs de "espaço em branco" ou quebras de linha diferentes
+    text_ia = [l.strip() for l in original.splitlines()]
+    text_hum = [l.strip() for l in final.splitlines()]
+
+    html_diff = difflib.HtmlDiff().make_table(
+        text_ia,
+        text_hum,
+        fromdesc="🤖 IA ORIGINAL",
+        todesc="✍️ SUA EDIÇÃO",
+        context=True,
+        numlines=2
+    )
+    
+    # CSS Refinado para Modal Centrado e Escuro
+    diff_css = """
+    <style>
+        .diff_container { width: 100%; display: flex; justify-content: center; }
+        table.diff {
+            font-family: 'Inter', sans-serif; 
+            border: none; 
+            background: #020710; 
+            width: 100%; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            font-size: 11px;
+            border-collapse: collapse;
+        }
+        .diff_header { background-color: #1e293b; color: #94a3b8; font-weight: bold; padding: 10px; text-transform: uppercase; text-align: center; }
+        .diff_add { background-color: #064e3b; color: #34d399; font-weight: bold; }
+        .diff_chg { background-color: #1e293b; color: #fbbf24; font-weight: bold; }
+        .diff_sub { background-color: #7f1d1d; color: #f87171; font-weight: bold; text-decoration: line-through; }
+        td { padding: 6px 12px !important; border: 1px solid #1e293b !important; vertical-align: top; }
+        .diff_next { display: none; }
+    </style>
+    """
+    st.markdown(diff_css + f"<div class='diff_container'>{html_diff}</div>", unsafe_allow_html=True)
+    if st.button("Fechar Comparação", use_container_width=True):
+        st.rerun()
+
 @st.dialog("🧠 Resultado da Calibragem")
 def modal_resultado_calibragem(calc, sp_cli, roteiro_ia, roteiro_humano, titulo_curto="", codigo_p=""):
-    st.markdown(f"### Aproveitamento Total: **{calc['percentual']}%**")
+    col_t1, col_t2 = st.columns([3, 1])
+    with col_t1:
+        st.markdown(f"### Aproveitamento Total: **{calc['percentual']}%**")
+    with col_t2:
+        if st.button("🔍 Ver Diff", use_container_width=True):
+            modal_visual_diff(roteiro_ia, roteiro_humano)
     
     # 0. Resumo Estratégico (Meta-Análise)
     resumo = calc.get('resumo_estrategico', '')
@@ -592,32 +638,6 @@ def modal_resultado_calibragem(calc, sp_cli, roteiro_ia, roteiro_humano, titulo_
             <div style='font-size: 1rem; color: #c9d1e0; line-height: 1.5;'>"{resumo}"</div>
         </div>
         """, unsafe_allow_html=True)
-
-    # 0.1 Visual Diff
-    with st.expander("🔍 Ver Comparação de Alterações (Visual Diff)", expanded=False):
-        html_diff = difflib.HtmlDiff().make_table(
-            roteiro_ia.splitlines(),
-            roteiro_humano.splitlines(),
-            fromdesc="🤖 IA ORIGINAL",
-            todesc="✍️ SUA EDIÇÃO",
-            context=True,
-            numlines=2
-        )
-        
-        # Estilização para o Diff encaixar no modo Dark do Magalu
-        diff_css = """
-        <style>
-            table.diff {font-family: 'Inter', sans-serif; border: none; background: #050e1d; width: 100%; border-radius: 8px; overflow: hidden; font-size: 13px;}
-            .diff_header {background-color: #1e293b; color: #94a3b8; font-weight: bold; padding: 5px; text-transform: uppercase; letter-spacing: 1px;}
-            .diff_next {display: none;}
-            .diff_add {background-color: #064e3b; color: #34d399; font-weight: bold; padding: 2px 4px;}
-            .diff_chg {background-color: #1e293b; color: #fbbf24; font-weight: bold; padding: 2px 4px;}
-            .diff_sub {background-color: #7f1d1d; color: #f87171; font-weight: bold; text-decoration: line-through; padding: 2px 4px;}
-            td {padding: 4px 8px !important; border-bottom: 1px solid #1e293b !important;}
-            .diff_next a {display: none;}
-        </style>
-        """
-        st.markdown(diff_css + html_diff, unsafe_allow_html=True)
 
     # 1. Feedback / Aprendizado
     with st.expander("📝 Lições Técnicas de Redação (Roteiros Ouro)", expanded=True):
