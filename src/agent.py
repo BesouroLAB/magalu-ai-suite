@@ -141,9 +141,6 @@ class RoteiristaAgent:
         )
         # Ouro e Calibragem agora são 100% dinâmicos via Supabase
         self.few_shot_examples = [] 
-        
-        # Carrega documentos de contexto (.md) da KB
-        self.context_docs = self._load_all_md_from_kb()
 
     def _load_file(self, filepath, fallback):
         try:
@@ -159,19 +156,6 @@ class RoteiristaAgent:
         except (FileNotFoundError, json.JSONDecodeError):
             return fallback
 
-    def _load_all_md_from_kb(self):
-        """Carrega todos os .md da pasta kb/ como contexto estratégico."""
-        docs = []
-        kb_path = os.path.join(PROJECT_ROOT, "kb")
-        for md_file in glob.glob(os.path.join(kb_path, "*.md")):
-            try:
-                with open(md_file, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                    # Limita cada doc a 4000 chars para não estourar o contexto
-                    docs.append(content[:4000])
-            except Exception:
-                pass
-        return docs
 
     def _fetch_supabase_context(self):
         """Busca aprendizado dinâmico no Supabase."""
@@ -246,20 +230,13 @@ class RoteiristaAgent:
         if self.system_prompt:
             parts.append(self.system_prompt)
 
-        # 2. Contexto estratégico do mercado brasileiro e persona Lu
-        if self.context_docs:
-            parts.append("\n**CONTEXTO ESTRATÉGICO (MERCADO BRASILEIRO E PERSONA LU):**")
-            parts.append("Use este conhecimento para adaptar o tom e as referências do roteiro:")
-            for doc in self.context_docs:
-                parts.append(doc)
-
-        # 3. Dicionário de fonética (Estático)
+        # 2. Dicionário de fonética (Estático)
         if self.phonetics:
             parts.append("\n**DICIONÁRIO DE FONÉTICA BASE (PADRÃO):**")
             for sigla, pronuncia in self.phonetics.items():
                 parts.append(f"- {sigla} -> ({pronuncia})")
 
-        # 4. Few-Shot Learning (Estático)
+        # 3. Few-Shot Learning (Estático)
         if self.few_shot_examples:
             parts.append("\n**EXEMPLOS HISTÓRICOS DE REFERÊNCIA:**")
             for ex in self.few_shot_examples:
