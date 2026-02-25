@@ -2117,8 +2117,10 @@ elif page == "Dashboard":
             if not df_ouro.empty and 'nota_percentual' in df_ouro.columns:
                 taxa_m = df_ouro['nota_percentual'].mean()
                 taxa_aprovacao = float(taxa_m) if pd.notna(taxa_m) else 0.0
+                media_estrelas = taxa_aprovacao / 20.0
             else:
                 taxa_aprovacao = 0.0
+                media_estrelas = 0.0
             
             total_ouro = len(df_ouro)
             total_historico = len(df_hist_dash)
@@ -2130,29 +2132,35 @@ elif page == "Dashboard":
             
             # Cálculo de Cor Dinâmica para o Score (0=Vermelho, 100=Verde)
             def get_score_color(val):
-                if val >= 80: return "#10b981" # Verde
-                if val >= 50: return "#f59e0b" # Laranja/Amarelo
+                if val >= 90: return "#10b981" # Verde Brilhante
+                if val >= 75: return "#34d399" # Verde Água
+                if val >= 60: return "#f59e0b" # Amarelo/Laranja
+                if val >= 40: return "#fb923c" # Laranja Escuro
                 return "#ef4444" # Vermelho
             
             score_color = get_score_color(taxa_aprovacao)
 
             st.markdown(f"""
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px;">
                     <div class="metric-card-premium">
-                        <div class="metric-label">📝 Roteiros Gerados</div>
+                        <div class="metric-label">📝 Volume Produzido</div>
                         <div class="metric-value">{total_historico}</div>
+                        <div style="font-size: 10px; color: #8b92a5; margin-top: 5px;">Roteiros totais</div>
                     </div>
                     <div class="metric-card-premium">
-                        <div class="metric-label">💰 Custo Total</div>
-                        <div class="metric-value" style="color: #10b981 !important;">R$ {custo_total_dash:,.2f}</div>
+                        <div class="metric-label">⭐ Média de Estrelas</div>
+                        <div class="metric-value" style="color: #fcd34d !important;">{media_estrelas:.2f}</div>
+                        <div style="font-size: 10px; color: #8b92a5; margin-top: 5px;">Qualidade técnica</div>
                     </div>
                     <div class="metric-card-premium">
-                        <div class="metric-label">🏆 Roteiros Ouro</div>
-                        <div class="metric-value" style="color: #f59e0b !important;">{total_ouro}</div>
-                    </div>
-                    <div class="metric-card-premium">
-                        <div class="metric-label">🎯 Taxa Aprovação</div>
+                        <div class="metric-label">🎯 Precisão da IA</div>
                         <div class="metric-value" style="color: {score_color} !important;">{taxa_aprovacao:.1f}%</div>
+                        <div style="font-size: 10px; color: #8b92a5; margin-top: 5px;">Taxa de aproveitamento</div>
+                    </div>
+                    <div class="metric-card-premium">
+                        <div class="metric-label">💰 Investimento</div>
+                        <div class="metric-value">R$ {custo_total_dash:,.2f}</div>
+                        <div style="font-size: 10px; color: #8b92a5; margin-top: 5px;">Custo acumulado</div>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
@@ -2169,26 +2177,27 @@ elif page == "Dashboard":
             col_gauge, col_chart_kb = st.columns([1, 2])
             
             with col_gauge:
-                st.markdown("#### 🎯 Performance da IA")
+                st.markdown("#### 🚀 Velocímetro de Performance")
                 fig_gauge = go.Figure(go.Indicator(
                     mode = "gauge+number",
                     value = taxa_aprovacao,
                     domain = {'x': [0, 1], 'y': [0, 1]},
-                    title = {'text': "Aprovação (%)", 'font': {'size': 18}},
+                    number = {'suffix': "%", 'font': {'size': 24, 'color': score_color}},
                     gauge = {
-                        'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "white"},
-                        'bar': {'color': "#0086ff"},
+                        'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "silver", 'tickmode': "linear", 'dtick': 10},
+                        'bar': {'color': "white", 'thickness': 0.15},
                         'bgcolor': "rgba(0,0,0,0)",
-                        'borderwidth': 2,
-                        'bordercolor': "rgba(255,255,255,0.1)",
+                        'borderwidth': 0,
                         'steps': [
-                            {'range': [0, 50], 'color': 'rgba(239, 68, 68, 0.1)'},
-                            {'range': [50, 80], 'color': 'rgba(245, 158, 11, 0.1)'},
-                            {'range': [80, 100], 'color': 'rgba(16, 185, 129, 0.1)'}
+                            {'range': [0, 20], 'color': '#ef4444'},   # Vermelho
+                            {'range': [20, 40], 'color': '#f97316'},  # Laranja
+                            {'range': [40, 60], 'color': '#f59e0b'},  # Amarelo
+                            {'range': [60, 80], 'color': '#84cc16'},  # Lima
+                            {'range': [80, 100], 'color': '#10b981'}  # Verde
                         ],
                         'threshold': {
-                            'line': {'color': "white", 'width': 3},
-                            'thickness': 0.75,
+                            'line': {'color': "white", 'width': 4},
+                            'thickness': 0.8,
                             'value': taxa_aprovacao
                         }
                     }
@@ -2198,7 +2207,7 @@ elif page == "Dashboard":
                     paper_bgcolor="rgba(0,0,0,0)",
                     plot_bgcolor="rgba(0,0,0,0)",
                     height=280,
-                    margin=dict(l=30, r=30, t=50, b=20)
+                    margin=dict(l=30, r=30, t=30, b=10)
                 )
                 st.plotly_chart(fig_gauge, use_container_width=True)
 
@@ -2233,26 +2242,53 @@ elif page == "Dashboard":
             col_prod, col_modo, col_aval = st.columns(3)
             
             with col_prod:
-                st.markdown("#### 📈 Evolução de Produção")
+                st.markdown("#### 📈 Evolução de Produção & Qualidade")
                 if not df_hist_dash.empty and 'criado_em' in df_hist_dash.columns:
+                    # Preparação de dados de volume
                     df_timeline = df_hist_dash.copy()
                     df_timeline['data'] = pd.to_datetime(df_timeline['criado_em']).dt.date
-                    chart_data = df_timeline.groupby('data').size().reset_index(name='Quantidade')
+                    vol_data = df_timeline.groupby('data').size().reset_index(name='Volume')
                     
-                    fig_prod = px.line(chart_data, x='data', y='Quantidade', 
-                                     render_mode='svg', markers=True)
-                    fig_prod.update_traces(line_color='#0086ff', line_width=4, 
-                                         marker=dict(size=10, line=dict(width=2, color='white')))
-                    fig_prod.update_layout(
+                    # Preparação de dados de qualidade (se houver ouro)
+                    if not df_ouro.empty:
+                        df_q = df_ouro.copy()
+                        df_q['data'] = pd.to_datetime(df_q['criado_em']).dt.date
+                        qual_data = df_q.groupby('data')['nota_percentual'].mean().reset_index(name='Qualidade')
+                        chart_merged = pd.merge(vol_data, qual_data, on='data', how='left').fillna(0)
+                    else:
+                        chart_merged = vol_data
+                        chart_merged['Qualidade'] = 0
+                    
+                    # Gráfico Combinado
+                    fig_evol = go.Figure()
+                    
+                    # Barras de Volume
+                    fig_evol.add_trace(go.Bar(
+                        x=chart_merged['data'], y=chart_merged['Volume'],
+                        name="Volume", marker_color='rgba(0, 134, 255, 0.3)',
+                        yaxis='y'
+                    ))
+                    
+                    # Linha de Qualidade
+                    fig_evol.add_trace(go.Scatter(
+                        x=chart_merged['data'], y=chart_merged['Qualidade'],
+                        name="Qualidade (%)", mode='lines+markers',
+                        line=dict(color='#10b981', width=3),
+                        marker=dict(size=8, color='#10b981', line=dict(width=2, color='white')),
+                        yaxis='y2'
+                    ))
+                    
+                    fig_evol.update_layout(
                         template="plotly_dark",
                         paper_bgcolor="rgba(0,0,0,0)",
                         plot_bgcolor="rgba(0,0,0,0)",
                         height=350,
-                        margin=dict(l=20, r=20, t=30, b=20),
-                        xaxis=dict(showgrid=False, title=None),
-                        yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.05)', title=None)
+                        margin=dict(l=10, r=10, t=30, b=20),
+                        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                        yaxis=dict(title="Volume (UN)", showgrid=False),
+                        yaxis2=dict(title="Qualidade (%)", overlaying='y', side='right', range=[0, 105], showgrid=True, gridcolor='rgba(255,255,255,0.05)')
                     )
-                    st.plotly_chart(fig_prod, use_container_width=True)
+                    st.plotly_chart(fig_evol, use_container_width=True)
                 else:
                     st.info("Sem dados de produção ainda.")
             
