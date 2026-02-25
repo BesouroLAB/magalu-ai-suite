@@ -100,31 +100,31 @@ def _parse_roteiro(roteiro_text: str) -> list[dict]:
     for line in lines:
         stripped = line.strip()
 
+        # Limpa markdown bold da linha para análise de tipo
+        analysis_line = stripped.strip("*").strip()
+
         if not stripped:
             blocks.append({"type": "empty"})
-        elif stripped.startswith("Cliente:"):
-            blocks.append({"type": "header", "text": stripped})
-        elif stripped.startswith("Roteirista:"):
-            blocks.append({"type": "header", "text": stripped})
-        elif stripped.startswith("Produto:"):
-            blocks.append({"type": "header", "text": stripped})
+        elif analysis_line.startswith("Cliente:"):
+            blocks.append({"type": "header", "text": analysis_line})
+        elif analysis_line.startswith("Roteirista:"):
+            blocks.append({"type": "header", "text": analysis_line})
+        elif analysis_line.startswith("Produto:"):
+            blocks.append({"type": "header", "text": analysis_line})
         elif stripped.startswith("____"):
             blocks.append({"type": "separator"})
-        elif stripped.startswith("Imagem:"):
-            blocks.append({"type": "imagem", "text": stripped})
-        elif stripped.startswith("Lettering:"):
-            blocks.append({"type": "lettering", "text": stripped})
-        elif stripped.startswith("- "):
-            blocks.append({"type": "locucao", "text": stripped})
+        elif analysis_line.startswith("Imagem:"):
+            blocks.append({"type": "imagem", "text": analysis_line})
+        elif analysis_line.startswith("Lettering:"):
+            blocks.append({"type": "lettering", "text": analysis_line})
+        elif analysis_line.startswith("- "):
+            blocks.append({"type": "locucao", "text": analysis_line})
         elif stripped.startswith("**") and stripped.endswith("**"):
-            # Markdown bold — remover asteriscos
-            clean = stripped.strip("*").strip()
-            if clean.startswith("- "):
-                blocks.append({"type": "locucao", "text": clean})
-            else:
-                blocks.append({"type": "locucao", "text": f"- {clean}"})
+            # Se for apenas bold e não foi pego acima como header/imagem etc
+            clean = analysis_line
+            blocks.append({"type": "locucao", "text": f"- {clean}"})
         else:
-            # Linhas genéricas — tratar como parte do corpo
+            # Linhas genéricas
             blocks.append({"type": "text", "text": stripped})
 
     return blocks

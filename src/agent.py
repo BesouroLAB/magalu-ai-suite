@@ -350,7 +350,10 @@ class RoteiristaAgent:
         # INJEÇÃO DAS TÁTICAS NW LU (Mês e Cena Obrigatória)
         if "NW" in modo_trabalho:
             data_str = data_roteiro if data_roteiro else "[DATA_ATUAL]"
-            cod_str = codigo if codigo else "[CÓDIGO_AQUI]"
+            # Garante que o código tenha 9 dígitos (preenche com 0 à direita)
+            cod_str = str(codigo).strip() if codigo else "[CÓDIGO_AQUI]"
+            if cod_str.isdigit() and len(cod_str) < 9:
+                cod_str = cod_str.ljust(9, '0')
             
             sub_skus_str = f" {sub_skus}" if (sub_skus and str(sub_skus).lower() != 'nan') else ""
             video_ref_str = f"\n   {video_url}" if (video_url and str(video_url).lower() != 'nan') else ""
