@@ -130,15 +130,21 @@ def _parse_roteiro(roteiro_text: str) -> list[dict]:
     return blocks
 
 
-def generate_filename(code: str, product_name: str, selected_month: str = "MAR") -> str:
-    """Gera nome do arquivo no padrão: NW LU {selected_month} {code} {product_name}.docx"""
+def generate_filename(code: str, product_name: str, selected_month: str = "MAR", model_id: str = "") -> str:
+    """Gera nome do arquivo no padrão: NW LU {selected_month} {code} {product_name} [{model}].docx"""
     # Limpa caracteres inválidos para nome de arquivo
     clean_name = re.sub(r'[<>:"/\\|?*]', '', product_name)
-    clean_name = clean_name[:80]  # Limita tamanho
+    clean_name = clean_name[:80].strip()  # Limita tamanho
 
-    return f"NW LU {selected_month} {code} {clean_name}.docx"
+    # Simplifica o nome do modelo (ex: puter/x-ai/grok-4-1-fast -> grok-4-1-fast)
+    model_tag = ""
+    if model_id:
+        model_tag = model_id.split('/')[-1].upper()
+        model_tag = f" [{model_tag}]"
 
-def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "", selected_month: str = "MAR", selected_date: str = None) -> tuple[bytes, str]:
+    return f"NW LU {selected_month} {code} {clean_name}{model_tag}.docx"
+
+def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "", selected_month: str = "MAR", selected_date: str = None, model_id: str = "") -> tuple[bytes, str]:
     """
     Gera um documento Word (.docx) com a formatação de referência.
 
@@ -205,7 +211,7 @@ def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "
     doc.save(buffer)
     buffer.seek(0)
 
-    filename = generate_filename(code, product_name, selected_month)
+    filename = generate_filename(code, product_name, selected_month, model_id)
 
     return buffer.getvalue(), filename
 
@@ -270,7 +276,8 @@ def export_all_roteiros_zip(roteiros: list, selected_month: str = "MAR", selecte
                 code=item.get('codigo', ''),
                 product_name='', # Será extraído do texto do roteiro
                 selected_month=selected_month,
-                selected_date=selected_date
+                selected_date=selected_date,
+                model_id=item.get('model_id', '')
             )
             # Garante que o nome do arquivo seja único dentro do ZIP se houver duplicatas
             zip_file.writestr(filename, doc_bytes)

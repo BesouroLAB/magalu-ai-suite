@@ -1330,7 +1330,8 @@ if page == "Criar Roteiros":
                     code=codigo_produto,
                     product_name=titulo_curto,
                     selected_month=item.get('mes', st.session_state.get('mes_global', 'FEV')),
-                    selected_date=st.session_state.get('data_roteiro_global')
+                    selected_date=st.session_state.get('data_roteiro_global'),
+                    model_id=item.get('model_id', '')
                 )
                 st.download_button(
                     label="📥 Baixar DOCX",
