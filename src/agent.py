@@ -8,11 +8,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 PROJECT_ROOT = os.path.join(os.path.dirname(__file__), '..')
-
 # Tabela de preços por 1M tokens (USD)
 PRICING_USD_PER_1M = {
-    "gemini-2.5-flash": {"input": 0.70, "output": 2.10},
-    "gemini-2.5-pro":   {"input": 3.50, "output": 10.50},
+    "gemini-3.1-pro-preview":   {"input": 3.50, "output": 10.50},
+    "gemini-3-flash-preview":   {"input": 0.70, "output": 2.10},
     "gemini-2.5-flash-lite": {"input": 0.10, "output": 0.40},
     # Modelos gratuitos (via Puter, OpenRouter, Z.ai, Kimi)
     "gpt-4o-mini": {"input": 0.00, "output": 0.00},
@@ -28,17 +27,17 @@ PRICING_USD_PER_1M = {
 USD_TO_BRL = 5.80
 
 MODELOS_DISPONIVEIS = {
+    "🚀 Gemini 3 Flash Preview [PAGO] — ~R$0,02/roteiro": "gemini-3-flash-preview",
+    "👑 Gemini 3.1 Pro Preview [PAGO] — ~R$0,19/roteiro": "gemini-3.1-pro-preview",
     "💰 Gemini 2.5 Flash-Lite [PAGO] — ~R$0,005/roteiro": "gemini-2.5-flash-lite",
-    "⚡ Gemini 2.5 Flash [PAGO] — ~R$0,04/roteiro": "gemini-2.5-flash",
-    "🏆 Gemini 2.5 Pro [PAGO] — ~R$0,19/roteiro": "gemini-2.5-pro",
     "🔥 Grok 4.1 Fast [GRÁTIS] — Criativo (Puter)": "puter/x-ai/grok-4-1-fast",
     "🤖 GPT-4o Mini [GRÁTIS] — Fluído (Puter)": "puter/gpt-4o-mini",
     "🇨🇳 GLM-4.5 Flash [GRÁTIS] — Ficha Técnica (Z.ai)": "zai/glm-4.5-flash"
 }
 
 MODELOS_DESCRICAO = {
-    "gemini-2.5-flash": "[O CERTINHO] (2025) Nível de detalhamento altíssimo, não deixa passar nada da ficha. Pode soar mais técnico. Custo: ~R$ 0,04.",
-    "gemini-2.5-pro": "[A ELITE] (2025) Inteligência superior para entender direção de arte e contextos complexos. Textos sofisticados. Custo alto: ~R$ 0,19.",
+    "gemini-3.1-pro-preview": "[O SUPERIOR] (Fev/2026) Inteligência de ponta absoluta. Melhor estruturação, obediência de formatação e raciocínio hiper avançado. Perfeito para 3D. Custo: ~R$ 0,19.",
+    "gemini-3-flash-preview": "[O ÁGIL] (Dez/2025) Rápido e muito preciso na interpretação. Versão ultra-otimizada. Custo: ~R$ 0,02.",
     "gemini-2.5-flash-lite": "[CUSTO-BENEFÍCIO] (2025) Barato e rápido. Ótimo com fonética e resume bem as cenas sem perder a essência. Custo: ~R$ 0,005.",
     "puter/gpt-4o-mini": "[O DESOBEDIENTE] (2024) Bom nos benefícios, mas costuma quebrar regras de cabeçalho e errar pronúncias. Use como estepe.",
     "puter/x-ai/grok-4-1-fast": "[O VENCEDOR / O HUMANO] (2025) O meio termo perfeito. Transforma dados frios em textos diretos, dinâmicos e naturais para a Lu. Prioridade gratuita.",
@@ -55,13 +54,14 @@ PROVIDER_KEY_MAP = {
 
 def calcular_custo_brl(model_id, tokens_in, tokens_out):
     """Calcula o custo estimado em BRL com base nos tokens consumidos."""
-    pricing = PRICING_USD_PER_1M.get(model_id, PRICING_USD_PER_1M["gemini-2.5-flash"])
+    pricing = PRICING_USD_PER_1M.get(model_id, PRICING_USD_PER_1M["gemini-3-flash-preview"])
     custo_usd = (tokens_in / 1_000_000 * pricing["input"]) + (tokens_out / 1_000_000 * pricing["output"])
     return round(custo_usd * USD_TO_BRL, 6)
 
 class RoteiristaAgent:
-    def __init__(self, supabase_client=None, model_id="gemini-2.5-flash"):
+    def __init__(self, supabase_client=None, model_id="gemini-3-flash-preview", table_prefix="nw_"):
         self.model_id = model_id
+        self.table_prefix = table_prefix
         self.supabase = supabase_client
         self.client_gemini = None
         self.client_openai = None
@@ -181,20 +181,20 @@ class RoteiristaAgent:
         
         try:
             # 1. Roteiros Ouro (O "Norte" da Redação - Exemplos de Elite)
-            res_ouro = self.supabase.table("nw_roteiros_ouro").select("*").order('criado_em', desc=True).limit(5).execute()
+            res_ouro = self.supabase.table(f"{self.table_prefix}roteiros_ouro").select("*").order('criado_em', desc=True).limit(5).execute()
             if res_ouro.data:
                 sb_parts.append("\n**REFERÊNCIAS DE ELITE (ESTE É O PADRÃO OURO A SER SEGUIDO):**")
                 for r in res_ouro.data:
                     sb_parts.append(f"- Produto: {r['titulo_produto']}\n  Roteiro Perfeito (Target): {r['roteiro_perfeito']}")
 
-            # 2. Ajustes de Persona
+            # 2. Ajustes de Persona (SHARED)
             res_pers = self.supabase.table("nw_treinamento_persona_lu").select("*").limit(5).execute()
             if res_pers.data:
                 sb_parts.append("\n**AJUSTES DE PERSONA (LIÇÕES APRENDIDAS):**")
                 for p in res_pers.data:
                     sb_parts.append(f"- Pilar: {p['pilar_persona']}\n  Erro Anterior: {p['erro_cometido']}\n  Correção Master: {p['texto_corrigido_humano']}")
 
-            # 3. Novas Regras Fonéticas
+            # 3. Novas Regras Fonéticas (SHARED ACROSS MODES)
             res_fon = self.supabase.table("nw_treinamento_fonetica").select("*").execute()
             if res_fon.data:
                 sb_parts.append("\n**NOVAS REGRAS DE FONÉTICA (OBRIGATÓRIO):**")
@@ -202,14 +202,14 @@ class RoteiristaAgent:
                     sb_parts.append(f"- {f['termo_errado']} -> ({f['termo_corrigido']})")
                     
             # 4. Estruturas Aprovadas (Aberturas e Fechamentos/CTAs)
-            res_est = self.supabase.table("nw_treinamento_estruturas").select("*").execute()
+            res_est = self.supabase.table(f"{self.table_prefix}treinamento_estruturas").select("*").execute()
             if res_est.data:
                 sb_parts.append("\n**ESTRUTURAS APROVADAS PARA INSPIRAÇÃO (HOOKS E CTAs):**")
                 for est in res_est.data:
                     sb_parts.append(f"- [{est['tipo_estrutura']}] {est['texto_ouro']}")
                     
             # 5. Nuances de Linguagem (O que evitar e como melhorar)
-            res_nuan = self.supabase.table("nw_treinamento_nuances").select("*").limit(5).order('criado_em', desc=True).execute()
+            res_nuan = self.supabase.table(f"{self.table_prefix}treinamento_nuances").select("*").limit(5).order('criado_em', desc=True).execute()
             if res_nuan.data:
                 sb_parts.append("\n**NUANCES E REFINAMENTO DE ESTILO (LIÇÕES DE REDAÇÃO):**")
                 for n in res_nuan.data:
@@ -219,15 +219,22 @@ class RoteiristaAgent:
                     sb_parts.append(refinamento)
 
             # 6. Memória de Calibragem (Lições Recentes da Calibragem)
-            res_fb = self.supabase.table("nw_roteiros_ouro").select("aprendizado").neq("aprendizado", "null").order('criado_em', desc=True).limit(8).execute()
+            res_fb = self.supabase.table(f"{self.table_prefix}roteiros_ouro").select("aprendizado").neq("aprendizado", "null").order('criado_em', desc=True).limit(8).execute()
             if res_fb.data:
                 valid_mems = [f for f in res_fb.data if f.get('aprendizado') and f['aprendizado'].strip()]
                 if valid_mems:
                     sb_parts.append("\n**LIÇÕES RECENTES DA CALIBRAGEM (NÃO REPITA ESTES ERROS):**")
                     for fb in valid_mems:
                         sb_parts.append(f"- {fb['aprendizado']}")
+
+            # 7. Calibragem Visual (Descrição de Imagens)
+            res_img = self.supabase.table(f"{self.table_prefix}treinamento_imagens").select("*").limit(5).order('criado_em', desc=True).execute()
+            if res_img.data:
+                sb_parts.append("\n**DIRETRIZES VISUAIS (COMO DESCREVER IMAGENS):**")
+                for img in res_img.data:
+                    sb_parts.append(f"- EVITE: '{img['descricao_ia']}'\n  USE PREFERENCIALMENTE: '{img['descricao_humano']}'\n  MOTIVO: {img['aprendizado']}")
         except Exception as e:
-            print(f"Erro ao buscar contexto no Supabase: {e}")
+            print(f"Error fetching Supabase context: {e}")
             
         return "\n".join(sb_parts)
 
@@ -293,10 +300,10 @@ class RoteiristaAgent:
                     messages=[{"role": "user", "content": prompt}],
                     temperature=0.3
                 )
-                print("✅ Memória de calibragem gerada via Puter (grok-4-1-fast)")
+                print("[OK] Memoria de calibragem gerada via Puter (grok-4-1-fast)")
                 return response.choices[0].message.content.replace('\n', ' ').strip()
             except Exception as e:
-                print(f"⚠️ Erro Puter Memória: {e}")
+                print(f"[ERROR] Erro Puter Memoria: {e}")
 
         # 🔵 OPÇÃO 2: OPENROUTER (DeepSeek R1 — Grátis)
         api_key_or = os.environ.get("OPENROUTER_API_KEY")
@@ -309,26 +316,26 @@ class RoteiristaAgent:
                     messages=[{"role": "user", "content": prompt}],
                     temperature=0.3
                 )
-                print("✅ Memória de calibragem gerada via OpenRouter (deepseek-r1)")
+                print("[OK] Memoria de calibragem gerada via OpenRouter (deepseek-r1)")
                 return response.choices[0].message.content.replace('\n', ' ').strip()
             except Exception as e:
-                print(f"⚠️ Erro OpenRouter Memória: {e}")
+                print(f"[ERROR] Erro OpenRouter Memoria: {e}")
 
         # 🟡 OPÇÃO 3: GEMINI (se a key funcionar)
         api_key_gemini = os.environ.get("GEMINI_API_KEY")
         if api_key_gemini:
             try:
                 from google.genai import types
-                client = genai.Client(api_key=api_key_gemini)
+                client = genai_v1.Client(api_key=api_key_gemini)
                 response = client.models.generate_content(
-                    model='gemini-2.5-flash',
+                    model='gemini-3-flash-preview',
                     contents=prompt,
                     config=types.GenerateContentConfig(temperature=0.3)
                 )
-                print("✅ Memória de calibragem gerada via Gemini (2.5-flash)")
+                print("[OK] Memoria de calibragem gerada via Gemini (3-flash-preview)")
                 return response.text.replace('\n', ' ').strip()
             except Exception as e:
-                print(f"⚠️ Erro Gemini Memória: {e}")
+                print(f"[ERROR] Erro Gemini Memoria: {e}")
 
         return "Erro: Nenhum provedor disponível para gerar memória de calibragem."
 
@@ -360,10 +367,10 @@ class RoteiristaAgent:
             
             diretriz_modo += (
                 f"\n\n🚨 REGRA ABSOLUTA DE FORMATAÇÃO E ESTRUTURA (NW LU):\n"
-                f"1. O TEXTO DEVE COMEÇAR COM O CABEÇALHO EXATAMENTE NO FORMATO:\n"
+                f"1. O TEXTO DEVE COMEÇAR COM O CABEÇALHO EXATAMENTE ABAIXO (PROIBIDO COPIAR A DATA OU MÊS DOS EXEMPLOS, USE EXATAMENTE O QUE ESTÁ AQUI):\n"
                 f"   Cliente: Magalu\n"
                 f"   Roteirista: Tiago Fernandes - Data: {data_str}\n"
-                f"   Produto: NW LU {mes} {cod_str}{sub_skus_str} [INSERIR NOME RESUMIDO DO PRODUTO AQUI - REMOVA CÓDIGOS E MANTENHA SÓ O NOME ENXUTO]{video_ref_str}\n"
+                f"   Produto: NW LU {mes} {cod_str}{sub_skus_str} [INSERIR NOME RESUMIDO DO PRODUTO AQUI]{video_ref_str}\n"
                 f"2. A CENA 1 (Primeira cena do vídeo) DEVE OBRIGATORIAMENTE mostrar a 'Lu' em ação, interagindo com o produto ou apresentando-o.\n"
                 f"3. A partir da CENA 2, CORTE para imagens do produto. REGRA CRÍTICA DE IMAGEM: É ESTRITAMENTE PROIBIDO sugerir ações humanas nas Colunas de Imagem (ex: 'mão segurando o celular', 'pessoa bebendo café', 'cliente usando'). O vídeo NW é feito APENAS com fotos estáticas do fornecedor, animações gráficas (GCs) e recortes do vídeo oficial. IMAGENS 100% LIMPAS DE HUMANOS."
             )
@@ -371,9 +378,13 @@ class RoteiristaAgent:
         if "SOCIAL" in modo_trabalho:
             diretriz_modo = f"ATENÇÃO: Este formato é para SOCIAL (Reels/TikTok). O roteiro deve ser EXTREMAMENTE curto, dinâmico e focado em retenção nos primeiros 3 segundos."
         elif "3D" in modo_trabalho:
-            diretriz_modo = f"ATENÇÃO: Este formato é para 3D. Foque muito em descrever as texturas, cores exatas, reflexos e ângulos importantes para o time de modelagem."
+            diretriz_modo += (
+                f"\n\nATENÇÃO: Este formato é para VÍDEO 3D. O estilo de vídeo será feito APENAS com cenas 3D autorais da Magalu. "
+                f"Por isso, o roteiro PRECISA ter uma sequência LÓGICA natural, fluida e contínua. NÃO pode ficar 'picotado' "
+                f"como o tradicional NewWeb.\nFoque muito em descrever as texturas, cores exatas, reflexos e ângulos de câmera importantes para o time de modelagem."
+            )
         elif "Review" in modo_trabalho:
-            diretriz_modo = f"ATENÇÃO: Este formato é um REVIEW. Foque em prós, contras, uso prático diário e uma opinião direta para quem vai gravar no estúdio."
+            diretriz_modo += f"\n\nATENÇÃO: Este formato é um REVIEW. Foque em prós, contras, uso prático diário e uma opinião direta para quem vai gravar no estúdio."
 
         final_prompt = (
             f"{context}\n\n"
@@ -389,9 +400,10 @@ class RoteiristaAgent:
             f"6. **ENRIQUECIMENTO DE CONTEXTO:** Para produtos mundialmente conhecidos, adicione detalhes técnicos ou curiosidades RELEVANTES que não estejam na ficha, MAS sem alongar o roteiro desnecessariamente.\n"
             f"7. **REGRA FONTE EXTERNA (CRÍTICA):** Se o input contiver uma linha 'FONTE EXTERNA: [URL]', você DEVE OBRIGATORIAMENTE adicionar ao final do seu roteiro uma linha vazia seguida de: 'Fonte Externa: [URL]'.\n"
             f"8. **PROIBIÇÃO DE REDUNDÂNCIA (MUITO IMPORTANTE):** O roteiro deve ser direto e dinâmico. NÃO REPITA o mesmo assunto, benefício ou característica técnica em parágrafos separados de forma desnecessária. Cada cena/fala deve trazer uma informação NOVA.\n"
-            f"9. **COMPLETUDE OBJETIVA:** Seja dinâmico, mas NÃO omita em hipótese alguma acessórios vitais ou diferenciais presentes na Ficha Técnica (ex: maletas, cabos extras, proteções). Transforme todos esses dados úteis em benefícios para o cliente, sem enrolação.\n"
-            f"10. **PRONÚNCIA DE ESTRANGEIRISMOS:** Sempre que houver nomes de marcas estrangeiras, tecnologias (Core i7, QLED, OLED, Magsafe) ou palavras difíceis, preveja como um brasileiro falaria e insira a pronúncia em parênteses. Exemplo: OPPO (ó-pô), Reno14 (rê-no quatorze).\n"
-            f"11. **PROIBIÇÃO DE SCRIPTS HIPOTÉTICOS:** Se o contexto do produto for insuficiente, NÃO gere roteiro. Responda: 'ERRO: Dados insuficientes do produto para geração automática.'"
+            f"9. **COMPLETUDE OBJETIVA E SAÚDE:** Seja dinâmico, mas NÃO omita em hipótese alguma diferenciais invisíveis vitais para o consumidor presentes na Ficha Técnica (ex: proteção antiácaro/antimofo/antifungo, antibacteriano, acessórios extras). Transforme essas características essenciais em benefícios claros para a saúde e usabilidade do cliente, sem enrolação.\n"
+            f"10. **REGRA DA COMPOSIÇÃO E KITS (ACESSÓRIOS):** Se o produto for um conjunto, kit ou cozinha completa, você DEVE listar explicitamente as peças principais que o compõem (ex: balcão, aéreo, nicho, paneleiro) exatamente como constam no campo 'Composição' ou na descrição, não apenas diga 'é uma cozinha'.\n"
+            f"11. **PRONÚNCIA DE ESTRANGEIRISMOS:** Sempre que houver nomes de marcas estrangeiras, tecnologias (Core i7, QLED, OLED, Magsafe) ou palavras difíceis, preveja como um brasileiro falaria e insira a pronúncia em parênteses. Exemplo: OPPO (ó-pô), Reno14 (rê-no quatorze).\n"
+            f"12. **PROIBIÇÃO DE SCRIPTS HIPOTÉTICOS:** Se o contexto do produto for insuficiente, NÃO gere roteiro. Responda: 'ERRO: Dados insuficientes do produto para geração automática.'"
         )
 
         if self.client_gemini:
@@ -431,6 +443,32 @@ class RoteiristaAgent:
         
         else:
             raise Exception("Nenhum cliente LLM configurado válido.")
+
+        # --- POST-PROCESSING ENFORCEMENT ---
+        # Força o cabeçalho correto ignorando as alucinações de cópia de exemplos do LLM
+        if "NW" in modo_trabalho:
+            try:
+                import re
+                linhas = roteiro.split('\n')
+                for i, linha in enumerate(linhas):
+                    if "Cliente: Magalu" in linha.replace('*', ''):
+                        data_s = data_roteiro if data_roteiro else "[DATA_ATUAL]"
+                        cod_s = str(codigo).strip() if codigo else "[CÓDIGO_AQUI]"
+                        if cod_s.isdigit() and len(cod_s) < 9: cod_s = cod_s.ljust(9, '0')
+                        sub_s = f" {sub_skus}" if (sub_skus and str(sub_skus).lower() != 'nan') else ""
+                        vid_s = f"\n   {video_url}" if (video_url and str(video_url).lower() != 'nan') else ""
+                        
+                        linhas[i] = "Cliente: Magalu"
+                        if i + 1 < len(linhas):
+                            linhas[i+1] = f"Roteirista: Tiago Fernandes - Data: {data_s}"
+                        if i + 2 < len(linhas):
+                            prod_str = linhas[i+2].replace('**', '').replace('Produto:', '').strip()
+                            nome_purificado = re.sub(r'^(NW\s*(3D)?\s*LU\s*[A-Z]{3}\s*\d+\s+)', '', prod_str)
+                            linhas[i+2] = f"Produto: NW LU {mes} {cod_s}{sub_s} {nome_purificado}{vid_s}"
+                        roteiro = "\n".join(linhas)
+                        break
+            except Exception as e:
+                print(f"[WARN] Error enforcing header: {e}")
 
         custo_brl = calcular_custo_brl(self.model_id, tokens_in, tokens_out)
 
@@ -503,15 +541,18 @@ class RoteiristaAgent:
             "extraia como regras no campo 'fonetica_regras'. Cada regra tem: "
             "'termo_errado' (a versão sem pronúncia se o humano adicionou, ou a versão com pronúncia ruim), 'termo_corrigido' (a versão final que o humano deixou, ex: Flicker-Free (flíker frí)), "
             "'exemplo' (frase de contexto). Importante: Capturar casos onde o humano removeu o parênteses de pronúncia para deixar o texto mais limpo, E TAMBÉM quando o humano adicionou uma pronúncia essencial que a IA esqueceu. Se NÃO houver correções, retorne [].\n"
-            "7. ESTRUTURAS (AUTO-EXTRAÇÃO CRÍTICA): EXTRAIA OBRIGATORIAMENTE a Abertura (a primeira fala/cena da Lu) e o Fechamento (a última fala/cena da Lu) presentes no ROTEIRO FINAL (HUMANO), mesmo que o humano tenha feito poucas mudanças no texto original da IA. "
+            "7. ESTRUTURAS (GANCHOS E CTAS): EXTRAIA OBRIGATORIAMENTE a Abertura (o Gancho inicial / primeira fala da Lu) e o Fechamento (o CTA final / última fala da Lu) presentes no ROTEIRO FINAL (HUMANO). "
+            "Isso é CRÍTICO para termos uma biblioteca de 'Hooks' e 'Call to Actions' aprovados. "
             "Coloque no campo 'estrutura_regras'. Cada regra tem: "
-            "'tipo' ('Abertura' ou 'Fechamento') e 'texto_ouro' (a frase exata). "
-            "Exceção: retorne uma lista vazia [] APENAS se o Roteiro Final não possuir nenhum texto.\n"
+            "'tipo' ('Abertura' ou 'Fechamento') e 'texto_ouro' (a frase exata encontrada no roteiro final).\n"
             "8. PERSONA LU (AUTO-EXTRAÇÃO): Se o humano corrigiu o TOM DE VOZ, ESTILO ou VOCABULÁRIO da Lu, "
             "extraia como regras no campo 'persona_regras'. Cada regra tem: "
             "'pilar' (tom, vocabulário, gancho, emoção, clareza), 'erro' (o que a IA fez de errado), "
             "'correcao' (como o humano corrigiu) e 'lexico' (palavras-chave ou termos preferíveis identificados na correção). "
-            "Se NÃO houver correções de persona, retorne lista vazia [].\n\n"
+            "Se NÃO houver correções de persona, retorne lista vazia [].\n"
+            "9. RESUMO ESTRATÉGICO (META-ANÁLISE): No campo 'resumo_estrategico', escreva um parágrafo curto sintetizando a 'Direção Criativa' que o humano está tomando. "
+            "Ex: 'O humano busca um tom mais consultivo e menos vendedor, priorizando a economia doméstica e removendo superlativos artificiais.'\n"
+            "10. DESCRIÇÃO DE IMAGENS (VISUAL): Se o humano corrigiu as instruções de 'Imagem:' (ex: mudou de 'close no botão' para 'detalhe da textura'), extraia isso em 'imagens_regras'.\n\n"
             "LISTA DE CATEGORIAS DISPONÍVEIS:\n"
             f"{cat_str}\n\n"
             "🚨 REGRA CRÍTICA DE FORMATAÇÃO DE SAÍDA:\n"
@@ -519,71 +560,30 @@ class RoteiristaAgent:
             "- NENHUM TEXTO ANTES OU DEPOIS DO JSON.\n"
             "- SEM PENSAMENTOS (tags <think> são proibidas na resposta final).\n"
             "- NÃO use blocos de código markdown (```json ... ```).\n"
-            "- Inicie OBRIGATORIAMENTE com { e termine OBRIGATORIAMENTE com }.\n\n"
+            "- Inicie OBRIGATORIAMENTE with { e termine OBRIGATORIAMENTE with }.\n\n"
             "Formato exato:\n"
             "{\n"
             "  \"percentual\": <inteiro 0-100>,\n"
             "  \"aprendizado\": \"<diretrizes táticas de escrita em tópicos>\",\n"
+            "  \"resumo_estrategico\": \"<análise da tendência criativa detectada>\",\n"
             "  \"categoria_id\": <id numérico da melhor categoria>,\n"
             "  \"codigo_produto\": \"<código encontrado no texto ou o original>\",\n"
             "  \"fonetica_regras\": [{\"termo_errado\": \"...\", \"termo_corrigido\": \"...\", \"exemplo\": \"...\"}],\n"
             "  \"estrutura_regras\": [{\"tipo\": \"Abertura\", \"texto_ouro\": \"...\"}],\n"
-            "  \"persona_regras\": [{\"pilar\": \"...\", \"erro\": \"...\", \"correcao\": \"...\", \"lexico\": \"...\"}]\n"
+            "  \"persona_regras\": [{\"pilar\": \"...\", \"erro\": \"...\", \"correcao\": \"...\", \"lexico\": \"...\"}],\n"
+            "  \"imagens_regras\": [{\"antes\": \"...\", \"depois\": \"...\", \"motivo\": \"...\"}]\n"
             "}"
         )
 
         user_prompt = f"--- CÓDIGO SUGERIDO ---\n{codigo_original}\n\n--- ROTEIRO ORIGINAL (IA) ---\n{original}\n\n--- ROTEIRO FINAL (HUMANO) ---\n{final}"
 
-        # Tenta múltiplos provedores para garantir a calibragem (Puter [Grok] → OpenRouter [DeepSeek] → Gemini)
-        from openai import OpenAI as OpenAIClient
-        
-        # 🟢 OPÇÃO 1: PUTER (Grok 4.1 Fast — Grátis, Rápido e Melhor em JSON)
-        api_key_puter = os.environ.get("PUTER_API_KEY")
-        if api_key_puter:
-            try:
-                print("🔄 Tentando calibragem via Puter (grok-4-1-fast)...")
-                client = OpenAIClient(api_key=api_key_puter, base_url="https://api.puter.com/puterai/openai/v1/")
-                response = client.chat.completions.create(
-                    model="x-ai/grok-4-1-fast",
-                    messages=[
-                        {"role": "system", "content": sys_prompt},
-                        {"role": "user", "content": user_prompt}
-                    ],
-                    temperature=0.1
-                )
-                res = self._extract_json(response.choices[0].message.content)
-                print("✅ Calibragem realizada via Puter (grok-4-1-fast)")
-                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "Grok 4.1 Fast (via Puter)")
-            except Exception as e:
-                print(f"⚠️ Erro Puter Calibragem: {e}")
-
-        # 🔵 OPÇÃO 2: OPENROUTER (DeepSeek R1 — Fallback para Raciocínio)
-        api_key_or = os.environ.get("OPENROUTER_API_KEY")
-        if api_key_or:
-            try:
-                print("🔄 Tentando calibragem via OpenRouter (deepseek-r1)...")
-                client = OpenAIClient(api_key=api_key_or, base_url="https://openrouter.ai/api/v1")
-                response = client.chat.completions.create(
-                    model="deepseek/deepseek-r1-0528:free",
-                    messages=[
-                        {"role": "system", "content": sys_prompt},
-                        {"role": "user", "content": user_prompt}
-                    ],
-                    temperature=0.1
-                )
-                res = self._extract_json(response.choices[0].message.content)
-                print("✅ Calibragem realizada via OpenRouter (deepseek-r1)")
-                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "DeepSeek R1 (via OpenRouter)")
-            except Exception as e:
-                print(f"⚠️ Erro OpenRouter Calibragem: {e}")
-
-        # 🟡 OPÇÃO 3: GEMINI (último recurso — via SDK v1 Estável)
+        # Usar Gemini 3 Flash Preview como mestre absoluto de Calibragem para todos os cenários
         api_key_gemini = os.environ.get("GEMINI_API_KEY")
         if api_key_gemini:
             try:
-                print("🔄 Tentando calibragem via Gemini (2.5-flash)...")
+                print("[TRY] Tentando calibragem via Gemini (3-flash-preview)...")
                 genai_v1.configure(api_key=api_key_gemini)
-                model_v1 = genai_v1.GenerativeModel('gemini-2.5-flash')
+                model_v1 = genai_v1.GenerativeModel('gemini-3-flash-preview')
                 
                 # Prompt de sistema + usuário combinados (v1)
                 full_prompt = f"{sys_prompt}\n\n{user_prompt}"
@@ -595,20 +595,26 @@ class RoteiristaAgent:
                     )
                 )
                 res = self._extract_json(response.text)
-                print("✅ Calibragem realizada via Gemini (2.5-flash)")
-                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "Gemini 2.5 Flash (via Google)")
+                print("[OK] Calibragem realizada via Gemini (3-flash-preview)")
+                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "Gemini 3 Flash Preview (via Google)")
             except Exception as e:
-                print(f"⚠️ Erro Gemini Calibragem: {e}")
+                print(f"[ERROR] Erro Gemini Calibragem: {e}")
 
-        print("❌ FALHA TOTAL: Nenhum provedor de IA conseguiu realizar a calibragem.")
+        print("[CRITICAL ERROR] FALHA TOTAL: Nenhum provedor de IA conseguiu realizar a calibragem.")
         return {"percentual": 50, "aprendizado": "Erro: Nenhum provedor de IA disponível para calibragem.", "categoria_id": fallback_id, "codigo_produto": codigo_original, "modelo_calibragem": "N/A", "fonetica_regras": [], "estrutura_regras": [], "persona_regras": []}
 
     def _process_calib_res(self, res, fallback_id, categories_list, codigo_original, modelo_calibragem="N/A"):
         """Helper para processar e validar o JSON retornado pelos provedores."""
         # Validação rigorosa do ID de categoria
-        returned_id = int(res.get("categoria_id", fallback_id))
+        returned_id = int(res.get("categoria_id", fallback_id)) if str(res.get("categoria_id")).isdigit() else fallback_id
         valid_ids = [c['id'] for c in categories_list] if categories_list else []
-        final_cat_id = returned_id if returned_id in valid_ids else fallback_id
+        
+        # Se for 1 (antigo default errado) força pra Genérico (77) ou o primeiro válido
+        if returned_id == 1 and 1 not in valid_ids:
+            final_cat_id = 77 if 77 in valid_ids else (valid_ids[0] if valid_ids else fallback_id)
+        else:
+            final_cat_id = returned_id if returned_id in valid_ids else fallback_id
+
         
         import re
         sku_raw = str(res.get("codigo_produto", codigo_original))
@@ -684,3 +690,65 @@ class RoteiristaAgent:
                 
         except Exception as e:
             return f"Desculpe, tive um problema técnico ao conectar com a IA ({self.model_id}): {e}"
+
+    def otimizar_roteiros(self, roteiros_textos: list, codigo: str, nome_produto: str, ficha_tecnica: str = None) -> dict:
+        """
+        Sintetiza de 2 a 5 roteiros selecionados escolhendo os melhores ganchos, argumentos e fechamentos,
+        mantendo o tom de voz da marca e o formato estrito NW LU.
+        """
+        # Formata os roteiros para o prompt
+        roteiros_formatados = ""
+        for i, roteiro in enumerate(roteiros_textos):
+            roteiros_formatados += f"--- VERSÃO {i + 1} ---\n{roteiro}\n\n"
+            
+        sys_prompt = (
+            "Você é o Diretor de Criação Sênior da Magalu. Especialista em juntar boas ideias.\n"
+            "Eu vou te apresentar algumas versões de roteiros gerados por diferentes IAs para o mesmo produto.\n"
+            "Sua tarefa: Sintetize o MÁXIMO da capacidade publicitária dessas versões, RETORNANDO UM ÚNICO ROTEIRO DEFINITIVO QUE SEJA A 'MELHOR VERSÃO'.\n\n"
+            "DIRETRIZES DE SÍNTESE:\n"
+            "- ABERTURA IMPACTANTE: Escolha o gancho (hook) inicial mais forte e criativo entre as versões.\n"
+            "- ARGUMENTAÇÃO SÓLIDA: Pegue a melhor explicação técnica e os benefícios mais persuasivos de cada um.\n"
+            "- FECHAMENTO AFIADO: Escolha a melhor CTA e fechamento em tom de voz 'Lu do Magalu'.\n"
+            "- FLUIDEZ E RITMO: O texto final deve soar natural, sem retalhos.\n"
+            "- COMPARAÇÃO COM A FICHA TÉCNICA: Verifique a ficha técnica fornecida e garanta que nenhuma informação vital (acessórios, voltagem, característica principal) foi esquecida pelas outras IAs.\n"
+            "- REGRA DE CABEÇALHO: O roteiro final DEVE preservar a estrutura EXATA de cabeçalho NW LU (Cliente, Roteirista, Data, Produto). NUNCA use negrito (**) no cabeçalho.\n\n"
+            "Se você não encontrar a ficha técnica, confie apenas nas informações dadas pelas versões."
+        )
+
+        ficha_prompt = f"--- FICHA TÉCNICA ORIGINAL ---\n{ficha_tecnica}\n\n" if ficha_tecnica else ""
+        user_prompt = f"Código: {codigo}\nProduto: {nome_produto}\n\n{ficha_prompt}{roteiros_formatados}\n\nPor favor, retorne O ROTEIRO DEFINITIVO (MELHOR VERSÃO) seguindo a formatação padrão NW LU. Sem preâmbulos, texto direto."
+
+        contents = [
+            sys_prompt,
+            user_prompt
+        ]
+
+        if self.client_gemini:
+            response = self.client_gemini.generate_content(contents)
+            roteiro = response.text
+            tokens_in = len(str(contents)) // 4
+            tokens_out = len(roteiro) // 4
+        elif self.client_openai:
+            messages = [
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": user_prompt}
+            ]
+            response = self.client_openai.chat.completions.create(
+                model=self.model_id,
+                messages=messages
+            )
+            roteiro = response.choices[0].message.content
+            tokens_in = response.usage.prompt_tokens if hasattr(response, 'usage') else 0
+            tokens_out = response.usage.completion_tokens if hasattr(response, 'usage') else 0
+        else:
+            raise Exception("Nenhum cliente LLM configurado válido.")
+
+        custo_brl = calcular_custo_brl(self.model_id, tokens_in, tokens_out)
+
+        return {
+            "roteiro": roteiro,
+            "model_id": f"{self.model_id} (Otimizado)",
+            "tokens_in": tokens_in,
+            "tokens_out": tokens_out,
+            "custo_brl": custo_brl
+        }
