@@ -1859,66 +1859,23 @@ elif page == "Treinar IA":
             st.error(f"Erro ao carregar dados do hub: {e}")
             df_est = df_fon = df_pers = df_ouro = df_cats = df_nuan = df_img = pd.DataFrame()
 
-        tab_nuan, tab_fb, tab_est, tab_img, tab_pers, tab_fon, tab_ouro, tab_cat = st.tabs(["🧠 Nuances", "⚖️ Calibragem", "💬 Ganchos & CTAs", "📸 Imagens", "💃 Persona", "🗣️ Fonética", "🏆 Roteiros Ouro", "📂 Categorias"])
-        
-        with tab_nuan:
-            st.markdown("### 🧠 Treinamento de Nuances e Construção")
-            st.caption("Ajude a IA a entender as sutilezas da língua portuguesa e a evitar construções artificiais.")
-            
-            with st.form("form_nuance", clear_on_submit=True):
-                n_frase = st.text_area("Frase gerada pela IA (O que evitar):", placeholder="Ex: 'Este produto possui uma característica de cor azul que é muito legal.'")
-                n_analise = st.text_area("Análise Crítica (Por que é ruim?):", placeholder="Ex: 'Construção redundante e pobre. O uso de 'possui' com 'característica de' soa burocrático. 'Muito legal' é genérico.'")
-                n_exemplo = st.text_area("Exemplo Ouro (Como seria o ideal?):", placeholder="Ex: 'Com um tom azul vibrante, ele se destaca pelo design moderno.'")
-                
-                if st.form_submit_button("📥 Registrar Nuance", type="primary", use_container_width=True):
-                    if n_frase.strip() and n_analise.strip():
-                        salvar_nuance(sp_client, n_frase, n_analise, n_exemplo)
-                        st.rerun()
-                    else:
-                        st.warning("Preencha pelo menos a frase da IA e a análise crítica.")
-            
-            st.divider()
-            if not df_nuan.empty:
-                st.markdown("#### 📋 Nuances Registradas")
-                st.dataframe(df_nuan[['criado_em', 'frase_ia', 'analise_critica', 'exemplo_ouro']], use_container_width=True)
-            else:
-                st.info("Nenhuma nuance registrada ainda.")
-        
-        with tab_cat:
-            st.markdown("### 📂 Gestão de Categorias e Tom de Voz")
-            st.caption("A IA usa o 'Tom de Voz' de cada categoria para adaptar a linguagem do roteiro.")
-            
-            with st.form("form_nova_cat", clear_on_submit=True):
-                c_nome = st.text_input("Nome da Categoria (Ex: Eletrodomésticos, Beleza)")
-                c_tom = st.text_area("Tom de Voz / Diretrizes", placeholder="Ex: Linguagem alegre, empolgada, focada em praticidade do dia a dia...")
-                if st.form_submit_button("➕ Cadastrar Nova Categoria", type="primary"):
-                    if c_nome.strip() and c_tom.strip():
-                        sp_client.table("nw_categorias").insert({"nome": c_nome, "tom_de_voz": c_tom}).execute()
-                        st.success(f"Categoria '{c_nome}' criada com sucesso!")
-                        st.rerun()
-                    else:
-                        st.warning("Preencha nome e tom de voz.")
-            
-            st.divider()
-            if not df_cats.empty:
-                cols_to_show = ['id', 'nome', 'tom_de_voz']
-                if 'criado_em' in df_cats.columns:
-                    cols_to_show.append('criado_em')
-                st.dataframe(df_cats[cols_to_show], use_container_width=True)
-            else:
-                st.info("Nenhuma categoria encontrada.")
+        tab_fb, tab_nuan, tab_est, tab_img, tab_pers, tab_fon, tab_ouro, tab_cat = st.tabs(["⚖️ Calibragem", "🧠 Nuances", "💬 Ganchos & CTAs", "📸 Imagens", "💃 Persona", "🗣️ Fonética", "🏆 Roteiros Ouro", "📂 Categorias"])
         
         with tab_fb:
             st.markdown("### ⚖️ Calibragem: IA vs Aprovado")
             st.caption("Compare o que a IA gerou com o roteiro final aprovado. A Suíte Magalu calculará o nível de aproveitamento e extrairá Diretrizes de Redação automaticamente.")
             
-            st.info("""
-            **⭐ Como funciona a Nova Régua de Calibragem?**
-            - **4.8 a 5.0 (Quase Perfeito):** O humano fez apenas ajustes finos de estilo, conectivos ou pontuação.
-            - **4.0 a 4.7 (Muito Bom):** Mudanças notáveis de estilo, encurtamento para fluidez ou troca de jargões técnicos.
-            - **3.0 a 3.9 (Regular):** Mudança Estrutural. Adição de infos que faltavam ou reconstrução de blocos inteiros.
-            - **< 3.0 (Ruim):** Erro Grave. A IA errou feio o tom de voz, omitiu funcionalidades vitais ou o SKU.
-            """)
+            st.markdown("""
+            <div style='background-color: rgba(0, 134, 255, 0.1); padding: 15px; border-radius: 8px; border-left: 5px solid #0084ff; margin-bottom: 20px;'>
+                <p style='font-size: 0.9rem; font-weight: 600; color: #0084ff; margin-bottom: 8px;'>⭐ Como funciona a Nova Régua de Calibragem?</p>
+                <ul style='font-size: 0.82rem; color: #8b92a5; list-style-type: none; padding-left: 0; margin-bottom: 0; line-height: 1.5;'>
+                    <li>• <b>4.8 a 5.0 (Quase Perfeito):</b> O humano fez apenas ajustes finos de estilo, conectivos ou pontuação.</li>
+                    <li>• <b>4.0 a 4.7 (Muito Bom):</b> Mudanças notáveis de estilo, encurtamento para fluidez ou troca de jargões técnicos.</li>
+                    <li>• <b>3.0 a 3.9 (Regular):</b> Mudança Estrutural. Adição de infos que faltavam ou reconstrução de blocos inteiros.</li>
+                    <li>• <b>< 3.0 (Ruim):</b> Erro Grave. A IA errou feio o tom de voz, omitiu funcionalidades vitais ou o SKU.</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
             
             # --- FORMULÁRIO DE ENTRADA ---
             with st.form("form_calibracao", clear_on_submit=True):
@@ -2012,6 +1969,29 @@ elif page == "Treinar IA":
                 st.dataframe(df_view, use_container_width=True)
             else:
                 st.info("Nenhuma calibragem ouro registrada ainda.")
+        
+        with tab_nuan:
+            st.markdown("### 🧠 Treinamento de Nuances e Construção")
+            st.caption("Ajude a IA a entender as sutilezas da língua portuguesa e a evitar construções artificiais.")
+            
+            with st.form("form_nuance", clear_on_submit=True):
+                n_frase = st.text_area("Frase gerada pela IA (O que evitar):", placeholder="Ex: 'Este produto possui uma característica de cor azul que é muito legal.'")
+                n_analise = st.text_area("Análise Crítica (Por que é ruim?):", placeholder="Ex: 'Construção redundante e pobre. O uso de 'possui' com 'característica de' soa burocrático. 'Muito legal' é genérico.'")
+                n_exemplo = st.text_area("Exemplo Ouro (Como seria o ideal?):", placeholder="Ex: 'Com um tom azul vibrante, ele se destaca pelo design moderno.'")
+                
+                if st.form_submit_button("📥 Registrar Nuance", type="primary", use_container_width=True):
+                    if n_frase.strip() and n_analise.strip():
+                        salvar_nuance(sp_client, n_frase, n_analise, n_exemplo)
+                        st.rerun()
+                    else:
+                        st.warning("Preencha pelo menos a frase da IA e a análise crítica.")
+            
+            st.divider()
+            if not df_nuan.empty:
+                st.markdown("#### 📋 Nuances Registradas")
+                st.dataframe(df_nuan[['criado_em', 'frase_ia', 'analise_critica', 'exemplo_ouro']], use_container_width=True)
+            else:
+                st.info("Nenhuma nuance registrada ainda.")
                 
         with tab_est:
             st.markdown("### 💬 Ganchos e Fechamentos (\"Hooks & CTAs\")")
@@ -2188,6 +2168,30 @@ elif page == "Treinar IA":
                         st.code(jsonld_product, language="json")
             else:
                 st.info("Nenhum roteiro ouro cadastrado ainda.")
+
+        with tab_cat:
+            st.markdown("### 📂 Gestão de Categorias e Tom de Voz")
+            st.caption("A IA usa o 'Tom de Voz' de cada categoria para adaptar a linguagem do roteiro.")
+            
+            with st.form("form_nova_cat", clear_on_submit=True):
+                c_nome = st.text_input("Nome da Categoria (Ex: Eletrodomésticos, Beleza)")
+                c_tom = st.text_area("Tom de Voz / Diretrizes", placeholder="Ex: Linguagem alegre, empolgada, focada em praticidade do dia a dia...")
+                if st.form_submit_button("➕ Cadastrar Nova Categoria", type="primary"):
+                    if c_nome.strip() and c_tom.strip():
+                        sp_client.table("nw_categorias").insert({"nome": c_nome, "tom_de_voz": c_tom}).execute()
+                        st.success(f"Categoria '{c_nome}' criada com sucesso!")
+                        st.rerun()
+                    else:
+                        st.warning("Preencha nome e tom de voz.")
+            
+            st.divider()
+            if not df_cats.empty:
+                cols_to_show = ['id', 'nome', 'tom_de_voz']
+                if 'criado_em' in df_cats.columns:
+                    cols_to_show.append('criado_em')
+                st.dataframe(df_cats[cols_to_show], use_container_width=True)
+            else:
+                st.info("Nenhuma categoria encontrada.")
 
 # --- PÁGINA: GUIA DE MODELOS ---
 elif page == "Guia de Modelos":

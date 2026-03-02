@@ -531,15 +531,15 @@ class RoteiristaAgent:
             "3. EXTRAIA O CÓDIGO DO PRODUTO (SKU): Procure no texto ou use o sugerido.\n"
             "4. CATEGORIZE: Escolha o ID correto da lista abaixo.\n\n"
             "🔴 REGRA DE EXTRAÇÃO LITERAL (PARA OS ARRAYS DE REGRAS ABAIXO):\n"
-            "   É ESTRITAMENTE PROIBIDO inserir análises, resumos ou explicações nos campos: 'antes', 'depois', 'erro', 'correcao', 'texto_ouro', 'termo_errado', 'termo_corrigido'.\n"
-            "   Eles DEVEM ser um COPY/PASTE EXATO (Substring Literal) do respectivo roteiro.\n"
-            "   Exemplo CERTO: \"erro\": \"O painel analógico\", \"correcao\": \"O painel é super fácil, sabe?\"\n"
-            "   Exemplo ERRADO: \"erro\": \"IA usou tom descritivo\", \"correcao\": \"Humano adicionou interjeição\".\n\n"
+            "   É ESTRITAMENTE PROIBIDO inserir análises, resumos ou explicações nos campos: 'antes', 'depois', 'erro', 'correcao', 'texto_ouro', 'termo_errado', 'termo_corrigido', 'lexico'.\n"
+            "   Eles DEVEM ser um COPY/PASTE EXATO (Substring Literal) do respectivo roteiro, EXCETO o campo 'lexico' que deve conter apenas a lista de palavras ou gírias sugeridas pelo humano (ex: 'sabe?, Ah, e..., completinha, viu?').\n"
+            "   Exemplo CERTO: \"erro\": \"O painel analógico\", \"correcao\": \"O painel é super fácil, sabe?\", \"lexico\": \"sabe?, viu?\"\n"
+            "   Exemplo ERRADO: \"lexico\": \"Substituição de X por Y\".\n\n"
             "5. FONÉTICA (AUTO-EXTRAÇÃO): Mapeie termos com pronúncia. 'termo_errado' = texto IA exato. 'termo_corrigido' = texto Humano exato.\n"
-            "6. ESTRUTURAS (HOOKS E CTAs): 'texto_ouro' DEVE ser a frase exata contendo o hook ou fechamento aprovado no Humano.\n"
+            "6. ESTRUTURAS (HOOKS E CTAs): Extraia o 'texto_ia' (frase original rejeitada) e o 'texto_ouro' (frase exata aprovada pelo humano).\n"
             "7. PERSONA LU (AUTO-EXTRAÇÃO): Identifique no DIFF mudanças de tom/gírias. 'erro' = Frase EXATA do Roteiro IA. 'correcao' = Frase EXATA do Roteiro Humano.\n"
             "8. RESUMO ESTRATÉGICO: Sintetize a intenção do editor.\n"
-            "9. IMAGENS (VISUAL - ALERTA MÁXIMO): Compare cada linha 'Imagem:'. 'antes' = Texto APÓS 'Imagem:' no Roteiro IA. 'depois' = Texto APÓS 'Imagem:' no Roteiro Humano. O campo 'motivo' é o ÚNICO lugar para explicar a razão da mudança.\n"
+            "9. IMAGENS (VISUAL - ALERTA MÁXIMO): Compare cada linha 'Imagem:'. 'antes' = Texto APÓS 'Imagem:' no Roteiro IA. 'depois' = Texto APÓS 'Imagem:' no Roteiro Humano. O campo 'motivo' deve explicar a RAZÃO TÁTICA E TÉCNICA da mudança (ex: 'O humano trocou 'X' por 'Y' para enfatizar a textura do produto e dar mais zoom na peça, removendo elementos de cenário que distraiam').\n"
             "LISTA DE CATEGORIAS DISPONÍVEIS:\n"
             f"{cat_str}\n\n"
             "🚨 REGRA CRÍTICA DE FORMATAÇÃO DE SAÍDA:\n"
@@ -551,9 +551,9 @@ class RoteiristaAgent:
             "  \"categoria_id\": <id numérico da melhor categoria>,\n"
             "  \"codigo_produto\": \"<código encontrado no texto ou o original>\",\n"
             "  \"fonetica_regras\": [{\"termo_errado\": \"...\", \"termo_corrigido\": \"...\", \"exemplo\": \"...\"}],\n"
-            "  \"estrutura_regras\": [{\"tipo\": \"Abertura\", \"texto_ouro\": \"...\"}],\n"
-            "  \"persona_regras\": [{\"pilar\": \"...\", \"erro\": \"...\", \"correcao\": \"...\", \"lexico\": \"...\"}],\n"
-            "  \"imagens_regras\": [{\"antes\": \"...\", \"depois\": \"...\", \"motivo\": \"...\"}]\n"
+            "  \"estrutura_regras\": [{\"tipo\": \"Abertura\", \"texto_ia\": \"<frase original rejeitada>\", \"texto_ouro\": \"<frase aprovada final>\"}],\n"
+            "  \"persona_regras\": [{\"pilar\": \"...\", \"erro\": \"...\", \"correcao\": \"...\", \"lexico\": \"palavra1, expressao2\"}],\n"
+            "  \"imagens_regras\": [{\"antes\": \"...\", \"depois\": \"...\", \"motivo\": \"<razão tática detalhada da mudança para aprendizado>\"}]\n"
             "}"
         )
 
@@ -613,13 +613,14 @@ class RoteiristaAgent:
                 # Prompt de sistema + usuário combinados
                 full_prompt = f"{sys_prompt}\n\n{user_prompt}"
                 
-                response = client_v2.models.generate_content(
-                    model='gemini-3-flash-preview',
-                    contents=full_prompt,
-                    config={'temperature': 0.1},
-                    request_options={'timeout': 150}
-                )
-                res = self._extract_json(response.text)
+                try:
+                    res_text = response.text
+                except Exception as e:
+                    # Se Gemini bloqueou, capturamos o erro e retornamos fallback
+                    print(f"[RECOVERED ERROR] Gemini Calibracao Blocked: {e}")
+                    return {"percentual": 50, "aprendizado": "Filtro de segurança do Gemini bloqueou a análise. Tente outro modelo.", "categoria_id": fallback_id}
+
+                res = self._extract_json(res_text)
                 print("[OK] Calibragem realizada via Gemini (3-flash-preview)")
                 return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "Gemini 3 Flash Preview (Google)")
             except Exception as e:
