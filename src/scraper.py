@@ -54,7 +54,8 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None) -> dict:
 
     try:
         os.environ.setdefault("GOOGLE_API_KEY", api_key)
-        client = genai.Client(api_key=api_key)
+        client = genai.Client(api_key=api_key, http_options={'timeout': 150000})
+        result_text = None
         
         # O novo SDK v2 exige o uso de GoogleSearch em vez de GoogleSearchRetrieval
         config = GenerateContentConfig(
@@ -69,14 +70,52 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None) -> dict:
             config=config
         )
         
-        result_text = response.text if hasattr(response, "text") else None
+        def get_text_safe(resp):
+            try:
+                if resp and hasattr(resp, 'text'):
+                    return resp.text
+                return None
+            except:
+                return None
+
+        result_text = get_text_safe(response)
         
+        if not result_text or len(result_text.strip()) < 50 or "ERRO:" in result_text:
+            print(f"[SCRAPER] Grounding falhou para {code}. Tentando Prompt Direto sem Tools...")
+            # Fallback 1: Prompt Direto sem Tools (Grounding as vezes bloqueia por segurança)
+            response_fallback = client.models.generate_content(
+                model='gemini-3-flash-preview',
+                contents=f"Extraia a ficha técnica do produto Magalu código {code}. Se não souber, retorne apenas 'FALHA_TOTAL'.",
+            )
+            result_text = get_text_safe(response_fallback)
+
+        if (not result_text or "FALHA_TOTAL" in result_text) and input_val.startswith("http"):
+            print(f"[SCRAPER] Prompt Direto falhou. Tentando extração via URL Context...")
+            # Fallback 2: URL Context (Simulado via requests se possível, ou apenas avisando)
+            try:
+                import requests
+                from bs4 import BeautifulSoup
+                headers = {"User-Agent": "Mozilla/5.0"}
+                resp = requests.get(input_val, headers=headers, timeout=10)
+                if resp.status_code == 200:
+                    soup = BeautifulSoup(resp.text, 'html.parser')
+                    # Pega o texto principal
+                    text_content = soup.get_text(separator='\n')
+                    # Resume com IA
+                    res_url = client.models.generate_content(
+                        model='gemini-3-flash-preview',
+                        contents=f"Resuma os dados técnicos deste produto Magalu a partir do conteúdo bruto abaixo:\n\n{text_content[:15000]}"
+                    )
+                    result_text = get_text_safe(res_url)
+            except Exception as e:
+                print(f"[SCRAPER] Erro no Fallback URL: {e}")
+
         if not result_text or len(result_text.strip()) < 50:
-            result_text = f"⚠️ Não foi possível extrair dados para o SKU {code} via Google Search Retrieval. Cole a ficha manualmente."
+             result_text = f"⚠️ EXTRAÇÃO AUTOMÁTICA FALHOU: Não conseguimos resgatar dados para o SKU {code}. Por favor, cole a ficha técnica manualmente no campo de entrada."
 
         return {"text": result_text, "images": []}
     except Exception as e:
-        return {"text": f"❌ Erro no Scraper GenAI: {str(e)}", "images": []}
+        return {"text": f"❌ Erro Crítico no Scraper: {str(e)}", "images": []}
 
 def parse_codes(raw_input: str) -> list[str]:
     """Parseia códigos separados por vírgula, espaço ou nova linha."""
