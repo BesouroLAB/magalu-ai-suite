@@ -383,10 +383,9 @@ def salvar_persona(sp_client, pilar, texto_ia, texto_humano, lexico, erro):
     try:
         data = {
             "pilar_persona": pilar,
-            "texto_gerado_ia": texto_ia,
+            "texto_gerado_ia": erro,
             "texto_corrigido_humano": texto_humano,
             "lexico_sugerido": lexico,
-            "erro_cometido": erro,
             "criado_em": get_now_sp().isoformat()
         }
         res = sp_client.table("nw_treinamento_persona_lu").insert(data).execute()
@@ -472,9 +471,10 @@ def _auto_salvar_estrutura(sp_client, estrutura_regras):
         
         # Normalização para o padrão do banco
         if "Abertura" in tipo: tipo = "Abertura (Gancho)"
-        if "Fechamento" in tipo or "CTA" in tipo: tipo = "Fechamento (CTA)"
+        elif "Fechamento" in tipo or "CTA" in tipo: tipo = "Fechamento (CTA)"
+        else: tipo = "Desenvolvimento (Venda)"
         
-        if not texto_ouro or tipo not in ('Abertura (Gancho)', 'Fechamento (CTA)'):
+        if not texto_ouro or tipo not in ('Abertura (Gancho)', 'Fechamento (CTA)', 'Desenvolvimento (Venda)'):
             continue
         
         try:
@@ -2867,7 +2867,7 @@ elif page == "Dashboard":
             
             # === SEÇÃO 4: TABELAS DETALHADAS ===
             st.markdown("### 📋 Dados Detalhados")
-            tab_hist, tab_ouro, tab_feed, tab_nuan, tab_img_dash, tab_pers, tab_fon = st.tabs(["💵 Histórico In-Depth", "🏆 Roteiros Ouro", "⚖️ Feedbacks", "🧠 Nuances", "📸 Imagens", "💃 Persona", "🗣️ Fonética"])
+            tab_hist, tab_ouro, tab_feed, tab_est_dash, tab_nuan, tab_img_dash, tab_pers, tab_fon = st.tabs(["💵 Histórico", "🏆 Roteiros Ouro", "⚖️ Feedbacks", "🏗️ Estruturas", "🧠 Nuances", "📸 Imagens", "💃 Persona", "🗣️ Fonética"])
             
             with tab_hist:
                 if not df_hist_dash.empty:
@@ -2893,6 +2893,16 @@ elif page == "Dashboard":
                     st.dataframe(df_show_hist[col_order].sort_values(by='Data Geração', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhum histórico de produção registrado.")
+            
+            with tab_est_dash:
+                if not df_est.empty:
+                    df_e = df_est.copy()
+                    if 'criado_em' in df_e.columns:
+                        df_e['criado_em'] = pd.to_datetime(df_e['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%Y %H:%M')
+                    available_cols = [c for c in ['criado_em', 'tipo_estrutura', 'texto_ia_rejeitado', 'texto_ouro'] if c in df_e.columns]
+                    st.dataframe(df_e[available_cols].sort_values(by='criado_em', ascending=False), use_container_width=True)
+                else:
+                    st.info("Nenhuma estrutura cadastrada.")
             
             with tab_nuan:
                 if not df_nuan.empty:
@@ -2939,7 +2949,7 @@ elif page == "Dashboard":
                     df_p = df_pers.copy()
                     if 'criado_em' in df_p.columns:
                         df_p['criado_em'] = pd.to_datetime(df_p['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%Y %H:%M')
-                    st.dataframe(df_p[['criado_em', 'pilar_persona', 'erro_cometido', 'texto_corrigido_humano', 'lexico_sugerido']].sort_values(by='criado_em', ascending=False), use_container_width=True)
+                    st.dataframe(df_p[['criado_em', 'pilar_persona', 'texto_gerado_ia', 'texto_corrigido_humano', 'lexico_sugerido']].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhum ajuste de persona cadastrado.")
                     
