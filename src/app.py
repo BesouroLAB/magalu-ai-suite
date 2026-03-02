@@ -466,6 +466,7 @@ def _auto_salvar_estrutura(sp_client, estrutura_regras):
             continue
         tipo = str(regra.get('tipo', '')).strip()
         texto_ouro = str(regra.get('texto_ouro', '')).strip()
+        texto_ia = str(regra.get('antes', '')).strip() # Pegamos o 'antes' se existir
         
         # Normalização para o padrão do banco
         if "Abertura" in tipo: tipo = "Abertura (Gancho)"
@@ -477,7 +478,8 @@ def _auto_salvar_estrutura(sp_client, estrutura_regras):
         try:
             sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}treinamento_estruturas").insert({
                 "tipo_estrutura": tipo,
-                "texto_ouro": texto_ouro
+                "texto_ouro": texto_ouro,
+                "texto_ia_rejeitado": texto_ia
             }).execute()
             count += 1
         except Exception as e:
@@ -508,8 +510,7 @@ def _auto_salvar_persona(sp_client, persona_regras):
                 "pilar_persona": pilar,
                 "texto_gerado_ia": erro,
                 "texto_corrigido_humano": correcao,
-                "lexico_sugerido": lexico,
-                "erro_cometido": erro
+                "lexico_sugerido": lexico
             }).execute()
             count += 1
         except Exception as e:
@@ -576,7 +577,7 @@ def salvar_imagem(sp_client, sku, ia_desc, hum_desc, motivo):
         return False
 
 
-def salvar_estrutura(sp_client, tipo, texto):
+def salvar_estrutura(sp_client, tipo, texto, texto_ia=""):
     if not sp_client:
         st.error("Supabase não conectado.")
         return False
@@ -584,6 +585,7 @@ def salvar_estrutura(sp_client, tipo, texto):
         data = {
             "tipo_estrutura": tipo,
             "texto_ouro": texto,
+            "texto_ia_rejeitado": texto_ia,
             "criado_em": get_now_sp().isoformat()
         }
         res = sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}treinamento_estruturas").insert(data).execute()
@@ -2028,7 +2030,10 @@ elif page == "Treinar IA":
                     
             st.divider()
             if not df_est.empty:
-                st.dataframe(df_est[['criado_em', 'tipo_estrutura', 'texto_ouro']], use_container_width=True)
+                cols_display = ['criado_em', 'tipo_estrutura', 'texto_ouro']
+                if 'texto_ia_rejeitado' in df_est.columns:
+                    cols_display.append('texto_ia_rejeitado')
+                st.dataframe(df_est[cols_display], use_container_width=True)
             else:
                 st.info("Nenhuma estrutura cadastrada ainda.")
 
