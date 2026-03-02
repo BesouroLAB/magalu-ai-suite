@@ -466,7 +466,8 @@ def _auto_salvar_estrutura(sp_client, estrutura_regras):
             continue
         tipo = str(regra.get('tipo', '')).strip()
         texto_ouro = str(regra.get('texto_ouro', '')).strip()
-        texto_ia = str(regra.get('antes', '')).strip() # Pegamos o 'antes' se existir
+        # Tenta pegar prioritariamente 'texto_ia' (novo padrão) ou 'antes' (fallback)
+        texto_ia_rej = str(regra.get('texto_ia', regra.get('antes', ''))).strip()
         
         # Normalização para o padrão do banco
         if "Abertura" in tipo: tipo = "Abertura (Gancho)"
@@ -479,7 +480,7 @@ def _auto_salvar_estrutura(sp_client, estrutura_regras):
             sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}treinamento_estruturas").insert({
                 "tipo_estrutura": tipo,
                 "texto_ouro": texto_ouro,
-                "texto_ia_rejeitado": texto_ia
+                "texto_ia_rejeitado": texto_ia_rej
             }).execute()
             count += 1
         except Exception as e:
@@ -851,16 +852,16 @@ with st.sidebar:
     sb_sup = "rgba(0, 255, 136, 0.12)" if supabase_client else "rgba(255, 75, 75, 0.12)"
 
     st.markdown(f"""
-        <div style='font-size: 8px; color: #8b92a5; margin-bottom: 25px; margin-top: 5px; display: flex; align-items: center; gap: 8px;'>
+        <div style='font-size: 13px; color: #8b92a5; margin-bottom: 25px; margin-top: 5px; display: flex; align-items: center; gap: 8px;'>
             <span style='font-weight: 400; letter-spacing: 0.5px;'>V2.8</span>
             <span style='color: #2A3241;'>|</span>
             <div style='display: flex; align-items: center; gap: 4px;'>
-                <span style='color: {sc_llm}; font-weight: 400; font-size: 8px;'>{_llm_name}</span>
-                <span style='background: {sb_llm}; color: {sc_llm}; padding: 0.2px 3px; border-radius: 2px; font-size: 6px; font-weight: 600; border: 1px solid {sc_llm}22;'>{sl_llm}</span>
+                <span style='color: {sc_llm}; font-weight: 400; font-size: 14px;'>{_llm_name}</span>
+                <span style='background: {sb_llm}; color: {sc_llm}; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; border: 1px solid {sc_llm}66;'>{sl_llm}</span>
             </div>
             <div style='display: flex; align-items: center; gap: 4px;'>
-                <span style='color: {sc_sup}; font-weight: 400; font-size: 8px;'>Supabase</span>
-                <span style='background: {sb_sup}; color: {sc_sup}; padding: 0.2px 3px; border-radius: 2px; font-size: 6px; font-weight: 600; border: 1px solid {sc_sup}22;'>{sl_sup}</span>
+                <span style='color: {sc_sup}; font-weight: 400; font-size: 14px;'>Supabase</span>
+                <span style='background: {sb_sup}; color: {sc_sup}; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; border: 1px solid {sc_sup}66;'>{sl_sup}</span>
             </div>
         </div>
     """, unsafe_allow_html=True)
@@ -913,8 +914,8 @@ with st.sidebar:
     _desc = MODELOS_DESCRICAO.get(modelo_id_selecionado, "")
     if _desc:
         st.markdown(f"""
-            <div style='background: rgba(0, 134, 255, 0.05); padding: 5px 8px; border-radius: 4px; border-left: 3px solid #0086ff; margin-bottom: 20px;'>
-                <p style='font-size: 9px; color: #8b92a5; margin: 0; line-height: 1.3;'>{_desc}</p>
+            <div style='background: rgba(0, 134, 255, 0.05); padding: 10px 14px; border-radius: 6px; border-left: 4px solid #0086ff; margin-bottom: 15px;'>
+                <p style='font-size: 13.5px; color: #f0f0f0; margin: 0; line-height: 1.4; opacity: 0.9;'>{_desc}</p>
             </div>
         """, unsafe_allow_html=True)
     
