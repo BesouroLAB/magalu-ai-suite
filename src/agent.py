@@ -444,9 +444,13 @@ class RoteiristaAgent:
                         if i + 1 < len(linhas):
                             linhas[i+1] = f"Roteirista: Tiago Fernandes - Data: {data_s}"
                         if i + 2 < len(linhas):
+                            # Remove prefixos antigos para evitar duplicação em edições sucessivas
                             prod_str = linhas[i+2].replace('**', '').replace('Produto:', '').strip()
-                            nome_purificado = re.sub(r'^(NW\s*(3D)?\s*LU\s*[A-Z]{3}\s*\d+\s+)', '', prod_str)
-                            linhas[i+2] = f"Produto: NW LU {mes} {cod_s}{sub_s} {nome_purificado}{vid_s}"
+                            # Tenta detectar e remover qualquer prefixo NW / NW LU / NW 3D etc até chegar no nome real
+                            nome_purificado = re.sub(r'^(NW\s*(3D)?\s*(LU)?\s*[A-Z]{3}\s*\d+\s+)', '', prod_str)
+                            
+                            prefixo_lu = "LU " if com_lu else ""
+                            linhas[i+2] = f"Produto: NW {prefixo_lu}{mes} {cod_s}{sub_s} {nome_purificado}{vid_s}"
                         roteiro = "\n".join(linhas)
                         break
             except Exception as e:
@@ -543,7 +547,51 @@ class RoteiristaAgent:
 
         user_prompt = f"--- CÓDIGO SUGERIDO ---\n{codigo_original}\n\n--- ROTEIRO ORIGINAL (IA) ---\n{original}\n\n--- ROTEIRO FINAL (HUMANO) ---\n{final}"
 
-        # Usar Gemini 3 Flash Preview como mestre absoluto de Calibragem para todos os cenários
+        # --- CADEIA DE FALLBACK MULTI-PROVEDOR PARA CALIBRAGEM ---
+        
+        # 🟢 OPÇÃO 1: PUTER (Grok 4.1 Fast — Grátis)
+        api_key_puter = os.environ.get("PUTER_API_KEY")
+        if api_key_puter:
+            try:
+                print("[TRY] Tentando calibragem via Puter (grok-4-1-fast)...")
+                from openai import OpenAI as OpenAIClient
+                client = OpenAIClient(api_key=api_key_puter, base_url="https://api.puter.com/puterai/openai/v1/")
+                response = client.chat.completions.create(
+                    model="x-ai/grok-4-1-fast",
+                    messages=[
+                        {"role": "system", "content": sys_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.1
+                )
+                res = self._extract_json(response.choices[0].message.content)
+                print("[OK] Calibragem realizada via Puter (grok-4-1-fast)")
+                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "Grok 4.1 Fast (Puter)")
+            except Exception as e:
+                print(f"[ERROR] Erro Puter Calibragem: {e}")
+
+        # 🔵 OPÇÃO 2: OPENROUTER (DeepSeek R1 — Grátis)
+        api_key_or = os.environ.get("OPENROUTER_API_KEY")
+        if api_key_or:
+            try:
+                print("[TRY] Tentando calibragem via OpenRouter (deepseek-r1)...")
+                from openai import OpenAI as OpenAIClient
+                client = OpenAIClient(api_key=api_key_or, base_url="https://openrouter.ai/api/v1")
+                response = client.chat.completions.create(
+                    model="deepseek/deepseek-r1-0528:free",
+                    messages=[
+                        {"role": "system", "content": sys_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.1
+                )
+                res = self._extract_json(response.choices[0].message.content)
+                print("[OK] Calibragem realizada via OpenRouter (deepseek-r1)")
+                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "DeepSeek R1 (OpenRouter)")
+            except Exception as e:
+                print(f"[ERROR] Erro OpenRouter Calibragem: {e}")
+
+        # 🟡 OPÇÃO 3: GEMINI (Mestre Original)
         api_key_gemini = os.environ.get("GEMINI_API_KEY")
         if api_key_gemini:
             try:
@@ -561,12 +609,22 @@ class RoteiristaAgent:
                 )
                 res = self._extract_json(response.text)
                 print("[OK] Calibragem realizada via Gemini (3-flash-preview)")
-                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "Gemini 3 Flash Preview (via Google)")
+                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "Gemini 3 Flash Preview (Google)")
             except Exception as e:
                 print(f"[ERROR] Erro Gemini Calibragem: {e}")
 
         print("[CRITICAL ERROR] FALHA TOTAL: Nenhum provedor de IA conseguiu realizar a calibragem.")
-        return {"percentual": 50, "aprendizado": "Erro: Nenhum provedor de IA disponível para calibragem.", "categoria_id": fallback_id, "codigo_produto": codigo_original, "modelo_calibragem": "N/A", "fonetica_regras": [], "estrutura_regras": [], "persona_regras": []}
+        return {
+            "percentual": 50, 
+            "aprendizado": "Erro: Nenhum provedor de IA disponível para calibragem.", 
+            "categoria_id": fallback_id, 
+            "codigo_produto": codigo_original, 
+            "modelo_calibragem": "N/A", 
+            "fonetica_regras": [], 
+            "estrutura_regras": [], 
+            "persona_regras": [], 
+            "imagens_regras": []
+        }
 
     def _process_calib_res(self, res, fallback_id, categories_list, codigo_original, modelo_calibragem="N/A"):
         """Helper para processar e validar o JSON retornado pelos provedores."""
