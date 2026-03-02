@@ -562,7 +562,7 @@ class RoteiristaAgent:
         # --- CADEIA DE FALLBACK MULTI-PROVEDOR PARA CALIBRAGEM ---
         
         # 🟢 OPÇÃO 1: PUTER (Grok 4.1 Fast — Grátis)
-        api_key_puter = os.environ.get("PUTER_API_KEY")
+        api_key_puter = os.environ.get("PUTER_API_KEY") or st.secrets.get("PUTER_API_KEY") if 'st' in globals() else os.environ.get("PUTER_API_KEY")
         if api_key_puter:
             try:
                 print("[TRY] Tentando calibragem via Puter (grok-4-1-fast)...")
@@ -577,13 +577,18 @@ class RoteiristaAgent:
                     temperature=0.1
                 )
                 res = self._extract_json(response.choices[0].message.content)
+                # Validação: se o JSON veio vazio ou sem campos básicos, ignore e vá pro fallback
+                if not res or ("percentual" not in res and "aprendizado" not in res):
+                     print("[WARNING] Puter retornou JSON insuficiente. Indo para fallback...")
+                     raise Exception("JSON Insuficiente")
+
                 print("[OK] Calibragem realizada via Puter (grok-4-1-fast)")
                 return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "Grok 4.1 Fast (Puter)")
             except Exception as e:
                 print(f"[ERROR] Erro Puter Calibragem: {e}")
 
         # 🔵 OPÇÃO 2: OPENROUTER (DeepSeek R1 — Grátis)
-        api_key_or = os.environ.get("OPENROUTER_API_KEY")
+        api_key_or = os.environ.get("OPENROUTER_API_KEY") or st.secrets.get("OPENROUTER_API_KEY") if 'st' in globals() else os.environ.get("OPENROUTER_API_KEY")
         if api_key_or:
             try:
                 print("[TRY] Tentando calibragem via OpenRouter (deepseek-r1)...")
@@ -598,29 +603,41 @@ class RoteiristaAgent:
                     temperature=0.1
                 )
                 res = self._extract_json(response.choices[0].message.content)
+                if not res or ("percentual" not in res and "aprendizado" not in res):
+                     print("[WARNING] OpenRouter retornou JSON insuficiente. Indo para fallback...")
+                     raise Exception("JSON Insuficiente")
+
                 print("[OK] Calibragem realizada via OpenRouter (deepseek-r1)")
                 return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "DeepSeek R1 (OpenRouter)")
             except Exception as e:
                 print(f"[ERROR] Erro OpenRouter Calibragem: {e}")
 
         # 🟡 OPÇÃO 3: GEMINI (Mestre Original)
-        api_key_gemini = os.environ.get("GEMINI_API_KEY")
+        api_key_gemini = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY") if 'st' in globals() else os.environ.get("GEMINI_API_KEY")
         if api_key_gemini:
             try:
                 print("[TRY] Tentando calibragem via Gemini (3-flash-preview)...")
                 client_v2 = genai.Client(api_key=api_key_gemini)
                 
-                # Prompt de sistema + usuário combinados
-                full_prompt = f"{sys_prompt}\n\n{user_prompt}"
+                # Gemini v2 (SDK genai 1.0+) usa essa estrutura
+                response_gem = client_v2.models.generate_content(
+                    model="gemini-3-flash-preview",
+                    contents=[sys_prompt, user_prompt],
+                    config={'temperature': 0.1}
+                )
                 
                 try:
-                    res_text = response.text
+                    res_text = response_gem.text
                 except Exception as e:
-                    # Se Gemini bloqueou, capturamos o erro e retornamos fallback
-                    print(f"[RECOVERED ERROR] Gemini Calibracao Blocked: {e}")
+                    # Se Gemini bloqueou por segurança ou erro
+                    print(f"[RECOVERED ERROR] Gemini Calibracao Blocked or Failed: {e}")
                     return {"percentual": 50, "aprendizado": "Filtro de segurança do Gemini bloqueou a análise. Tente outro modelo.", "categoria_id": fallback_id}
 
                 res = self._extract_json(res_text)
+                if not res:
+                    print("[WARNING] Gemini retornou texto mas falhou na extração de JSON.")
+                    raise Exception("Falha na extração JSON")
+                    
                 print("[OK] Calibragem realizada via Gemini (3-flash-preview)")
                 return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "Gemini 3 Flash Preview (Google)")
             except Exception as e:
@@ -629,14 +646,15 @@ class RoteiristaAgent:
         print("[CRITICAL ERROR] FALHA TOTAL: Nenhum provedor de IA conseguiu realizar a calibragem.")
         return {
             "percentual": 50, 
-            "aprendizado": "Erro: Nenhum provedor de IA disponível para calibragem.", 
+            "aprendizado": "Erro: Nenhum provedor de IA disponível para calibragem ou falha técnica no processamento.", 
             "categoria_id": fallback_id, 
             "codigo_produto": codigo_original, 
             "modelo_calibragem": "N/A", 
             "fonetica_regras": [], 
             "estrutura_regras": [], 
             "persona_regras": [], 
-            "imagens_regras": []
+            "imagens_regras": [],
+            "resumo_estrategico": "Falha na análise automática."
         }
 
     def _process_calib_res(self, res, fallback_id, categories_list, codigo_original, modelo_calibragem="N/A"):
