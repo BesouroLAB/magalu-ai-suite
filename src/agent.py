@@ -398,7 +398,19 @@ class RoteiristaAgent:
                 config={'temperature': 0.7},
                 request_options={'timeout': 150}
             )
-            roteiro = response.text
+            
+            # Resiliência na obtenção do texto (evita exceções se a resposta for bloqueada ou vazia)
+            try:
+                roteiro = response.text
+                if not roteiro:
+                    # Tenta extrair manualmente se .text estiver vazio mas houver parte
+                    if response.candidates and response.candidates[0].content.parts:
+                        roteiro = "".join([p.text for p in response.candidates[0].content.parts])
+            except Exception as e:
+                # Se der erro (ex: blocked by safety), tenta pegar o feedback de segurança
+                block_reason = getattr(response, 'blocked', 'Filtro de segurança do Gemini bloqueou a resposta.')
+                roteiro = f"ERRO NA GERAÇÃO: {block_reason}. Tente outro modelo ou ajuste o texto de entrada."
+                print(f"[RECOVERED ERROR] Gemini Blocked: {e}")
             
             # Métricas via v2 metadata
             if hasattr(response, 'usage_metadata'):
