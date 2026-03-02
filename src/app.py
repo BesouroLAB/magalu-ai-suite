@@ -714,7 +714,8 @@ def modal_resultado_calibragem(calc, sp_cli, roteiro_ia, roteiro_humano, titulo_
     e_regras = calc.get('estrutura_regras', [])
     if e_regras:
         for r in e_regras:
-            st.success(f"🏗️ **Tabela: `{st.session_state.get('table_prefix', 'nw_')}treinamento_estruturas`**\n- **tipo_estrutura**: {r.get('tipo')}\n- **texto_ouro**: {r.get('texto_ouro')}")
+            txt_ia_modal = r.get('texto_ia', r.get('antes', '...'))
+            st.success(f"🏗️ **Tabela: `{st.session_state.get('table_prefix', 'nw_')}treinamento_estruturas`**\n\n- **tipo_estrutura**: {r.get('tipo', 'Abertura/CTA')}\n- **texto_ia_rejeitado**: {txt_ia_modal}\n- **texto_ouro**: {r.get('texto_ouro')}")
     else:
         st.success("🏗️ **Estruturas:** Não houve mudanças em Ganchos ou CTAs.")
 
