@@ -467,7 +467,8 @@ def _auto_salvar_estrutura(sp_client, estrutura_regras):
         tipo = str(regra.get('tipo', '')).strip()
         texto_ouro = str(regra.get('texto_ouro', '')).strip()
         # Tenta pegar prioritariamente 'texto_ia' (novo padrão) ou 'antes' (fallback)
-        texto_ia_rej = str(regra.get('texto_ia', regra.get('antes', ''))).strip()
+        raw_ia = regra.get('texto_ia', regra.get('antes', ''))
+        texto_ia_rej = str(raw_ia).strip() if raw_ia and str(raw_ia).lower() != 'none' else ""
         
         # Normalização para o padrão do banco
         if "Abertura" in tipo: tipo = "Abertura (Gancho)"
@@ -530,8 +531,10 @@ def _auto_salvar_imagens(sp_client, imagens_regras, codigo_p=""):
     for regra in imagens_regras:
         if not isinstance(regra, dict):
             continue
-        antes = str(regra.get('antes', '')).strip()
-        depois = str(regra.get('depois', '')).strip()
+        raw_antes = regra.get('antes', '')
+        raw_depois = regra.get('depois', '')
+        antes = str(raw_antes).strip() if raw_antes and str(raw_antes).lower() != 'none' else ""
+        depois = str(raw_depois).strip() if raw_depois and str(raw_depois).lower() != 'none' else ""
         motivo = str(regra.get('motivo', '')).strip()
         
         if not antes or not depois:
@@ -714,7 +717,8 @@ def modal_resultado_calibragem(calc, sp_cli, roteiro_ia, roteiro_humano, titulo_
     e_regras = calc.get('estrutura_regras', [])
     if e_regras:
         for r in e_regras:
-            txt_ia_modal = r.get('texto_ia', r.get('antes', '...'))
+            raw_ia_modal = r.get('texto_ia', r.get('antes'))
+            txt_ia_modal = str(raw_ia_modal).strip() if raw_ia_modal and str(raw_ia_modal).lower() != 'none' else "..."
             st.success(f"🏗️ **Tabela: `{st.session_state.get('table_prefix', 'nw_')}treinamento_estruturas`**\n\n- **tipo_estrutura**: {r.get('tipo', 'Abertura/CTA')}\n- **texto_ia_rejeitado**: {txt_ia_modal}\n- **texto_ouro**: {r.get('texto_ouro')}")
     else:
         st.success("🏗️ **Estruturas:** Não houve mudanças em Ganchos ou CTAs.")
@@ -734,8 +738,8 @@ def modal_resultado_calibragem(calc, sp_cli, roteiro_ia, roteiro_humano, titulo_
             st.markdown(f"""
             <div style='background-color: #2e1065; padding: 15px; border-radius: 8px; border-left: 5px solid #8b5cf6; margin-bottom: 10px; color: #c4b5fd;'>
                 📸 <b>Tabela: <code>{st.session_state.get('table_prefix', 'nw_')}treinamento_imagens</code></b><br/><br/>
-                <b><code>descricao_ia</code>:</b> {r.get('antes')}<br/>
-                <b><code>descricao_humano</code>:</b> {r.get('depois')}<br/>
+                <b><code>descricao_ia</code>:</b> {str(r.get('antes')) if r.get('antes') and str(r.get('antes')).lower() != 'none' else '...'}<br/>
+                <b><code>descricao_humano</code>:</b> {str(r.get('depois')) if r.get('depois') and str(r.get('depois')).lower() != 'none' else '...'}<br/>
                 <b><code>aprendizado</code>:</b> {r.get('motivo')}
             </div>
             """, unsafe_allow_html=True)
