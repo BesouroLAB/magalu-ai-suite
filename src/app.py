@@ -55,14 +55,47 @@ DARK_MODE_CSS = """
     }
     
     .stApp > header { background-color: transparent; }
-    .stApp { background-color: var(--bg-main) !important; color: var(--text-primary) !important; }
+    .stApp { background-color: var(--bg-main) !important; color: var(--text-primary); }
 
     h1 { font-size: 2.4rem !important; font-weight: 800 !important; color: #ffffff !important; letter-spacing: -0.5px; margin-bottom: 0.8rem !important; }
     h2 { font-size: 1.8rem !important; font-weight: 700 !important; color: #e0e6f0 !important; margin-bottom: 0.6rem !important; }
     h3 { font-size: 1.15rem !important; font-weight: 600 !important; color: #b0bdd0 !important; margin-bottom: 0.3rem !important; }
     h4 { font-size: 1.0rem !important; font-weight: 500 !important; color: var(--mglu-blue) !important; margin-bottom: 0.2rem !important; }
-    p, span, div, label { color: var(--text-primary) !important; font-family: 'Inter', sans-serif; font-size: 0.92rem !important; }
-    .stMarkdown, .stText { color: var(--text-muted) !important; font-size: 0.9rem !important; }
+    
+    p, span, label, li { color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.92rem; }
+    .stMarkdown p, .stMarkdown span, .stMarkdown li { color: var(--text-muted); font-size: 0.9rem; }
+    .stText { color: var(--text-muted); font-size: 0.9rem; }
+
+    /* Estilização de boxes de alerta do Streamlit para modo escuro */
+    div[data-testid="stNotification"] {
+        background-color: #050e1d !important;
+        border: 1px solid rgba(0, 134, 255, 0.2) !important;
+        color: #f0f0f0 !important;
+    }
+    div[data-testid="stNotification"] p { color: #f0f0f0 !important; }
+    div[data-testid="stNotification"] svg { fill: #0086ff !important; }
+    
+    /* Tabs styling */
+    .stTabs [data-baseweb="tab-list"] { background-color: transparent !important; }
+    .stTabs [data-baseweb="tab"] { color: var(--text-muted) !important; font-weight: 600 !important; }
+    .stTabs [aria-selected="true"] { color: var(--mglu-blue) !important; border-bottom-color: var(--mglu-blue) !important; }
+
+    /* Popover styling */
+    div[data-testid="stPopoverContent"] {
+        background-color: #050e1d !important;
+        border: 1px solid #0a1b33 !important;
+        color: #f0f0f0 !important;
+    }
+
+    /* Metric styling */
+    div[data-testid="stMetricValue"] { color: white !important; font-weight: 700 !important; }
+    div[data-testid="stMetricLabel"] { color: var(--text-muted) !important; text-transform: uppercase; letter-spacing: 1px; font-size: 0.75rem !important; }
+
+    /* Scrollbars customizadas */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #020710; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #0086ff; }
     
     .stTextArea > div > div > textarea, .stTextInput > div > div > input, .stSelectbox > div > div > div {
         background-color: var(--bg-card) !important;
@@ -156,6 +189,7 @@ DARK_MODE_CSS = """
     }
     
     .block-container { padding-top: 2rem; }
+
 
     /* Cards de Métricas Premium */
     .metric-card-premium {
@@ -264,9 +298,11 @@ def check_login():
         st.caption("Acesso restrito à equipe de conteúdo Magalu.")
     return False
 
-if not check_login():
-    st.stop()
-
+# --- INICIALIZAÇÃO DE ESTADO ---
+if 'batch_queue' not in st.session_state:
+    st.session_state['batch_queue'] = []
+if 'roteiros' not in st.session_state:
+    st.session_state['roteiros'] = []
 
 # --- FUNÇÕES SUPABASE E AUXILIARES ---
 def init_supabase():
@@ -326,7 +362,8 @@ def salvar_ouro(sp_client, cat_id, titulo, roteiro_perfeito):
         data = {
             "categoria_id": cat_id,
             "titulo_produto": titulo,
-            "roteiro_perfeito": roteiro_perfeito
+            "roteiro_perfeito": roteiro_perfeito,
+            "criado_em": get_now_sp().isoformat()
         }
         res = sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}roteiros_ouro").insert(data).execute()
         if hasattr(res, 'data') and len(res.data) > 0:
@@ -349,7 +386,8 @@ def salvar_persona(sp_client, pilar, texto_ia, texto_humano, lexico, erro):
             "texto_gerado_ia": texto_ia,
             "texto_corrigido_humano": texto_humano,
             "lexico_sugerido": lexico,
-            "erro_cometido": erro
+            "erro_cometido": erro,
+            "criado_em": get_now_sp().isoformat()
         }
         res = sp_client.table("nw_treinamento_persona_lu").insert(data).execute()
         if hasattr(res, 'data') and len(res.data) > 0:
@@ -370,7 +408,8 @@ def salvar_fonetica(sp_client, termo_err, termo_cor, exemplo_rot):
         data = {
             "termo_errado": termo_err,
             "termo_corrigido": termo_cor,
-            "exemplo_no_roteiro": exemplo_rot
+            "exemplo_no_roteiro": exemplo_rot,
+            "criado_em": get_now_sp().isoformat()
         }
         res = sp_client.table("nw_treinamento_fonetica").insert(data).execute()
         if hasattr(res, 'data') and len(res.data) > 0:
@@ -521,7 +560,8 @@ def salvar_imagem(sp_client, sku, ia_desc, hum_desc, motivo):
             "codigo_produto": sku,
             "descricao_ia": ia_desc,
             "descricao_humano": hum_desc,
-            "aprendizado": motivo
+            "aprendizado": motivo,
+            "criado_em": get_now_sp().isoformat()
         }
         prefix = st.session_state.get('table_prefix', 'nw_')
         res = sp_client.table(f"{prefix}treinamento_imagens").insert(data).execute()
@@ -543,7 +583,8 @@ def salvar_estrutura(sp_client, tipo, texto):
     try:
         data = {
             "tipo_estrutura": tipo,
-            "texto_ouro": texto
+            "texto_ouro": texto,
+            "criado_em": get_now_sp().isoformat()
         }
         res = sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}treinamento_estruturas").insert(data).execute()
         if hasattr(res, 'data') and len(res.data) > 0:
@@ -564,7 +605,8 @@ def salvar_nuance(sp_client, frase, analise, exemplo):
         data = {
             "frase_ia": frase,
             "analise_critica": analise,
-            "exemplo_ouro": exemplo
+            "exemplo_ouro": exemplo,
+            "criado_em": get_now_sp().isoformat()
         }
         res = sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}treinamento_nuances").insert(data).execute()
         if hasattr(res, 'data') and len(res.data) > 0:
@@ -579,8 +621,7 @@ def salvar_nuance(sp_client, frase, analise, exemplo):
 
 
 
-@st.dialog("🔍 Comparação Visual de Alterações")
-def modal_visual_diff(original, final):
+def render_visual_diff(original, final):
     # Normalização básica para evitar diffs de "espaço em branco" ou quebras de linha diferentes
     text_ia = [l.strip() for l in original.splitlines()]
     text_hum = [l.strip() for l in final.splitlines()]
@@ -617,17 +658,30 @@ def modal_visual_diff(original, final):
     </style>
     """
     st.markdown(diff_css + f"<div class='diff_container'>{html_diff}</div>", unsafe_allow_html=True)
-    if st.button("Fechar Comparação", use_container_width=True):
-        st.rerun()
-
+    
 @st.dialog("🧠 Resultado da Calibragem")
 def modal_resultado_calibragem(calc, sp_cli, roteiro_ia, roteiro_humano, titulo_curto="", codigo_p=""):
+    # Salva no estado para recuperação em caso de fechar acidentalmente
+    st.session_state['pending_calibration'] = {
+        'calc': calc, 'roteiro_ia': roteiro_ia, 'roteiro_humano': roteiro_humano,
+        'titulo_curto': titulo_curto, 'codigo_p': codigo_p
+    }
+    
+    if 'show_diff' not in st.session_state:
+        st.session_state['show_diff'] = False
+
     col_t1, col_t2 = st.columns([3, 1])
     with col_t1:
         st.markdown(f"### Aproveitamento Total: **{calc['percentual']}%**")
     with col_t2:
         if st.button("🔍 Ver Diff", use_container_width=True):
-            modal_visual_diff(roteiro_ia, roteiro_humano)
+            st.session_state['show_diff'] = not st.session_state['show_diff']
+            st.rerun()
+            
+    if st.session_state.get('show_diff', False):
+        st.markdown("#### 🔍 Comparação Visual de Alterações")
+        render_visual_diff(roteiro_ia, roteiro_humano)
+        st.divider()
     
     # 0. Resumo Estratégico (Meta-Análise)
     resumo = calc.get('resumo_estrategico', '')
@@ -718,20 +772,31 @@ def modal_resultado_calibragem(calc, sp_cli, roteiro_ia, roteiro_humano, titulo_
         _auto_salvar_imagens(sp_cli, i_regras, codigo_p)
         
         st.session_state['calibragem_concluida'] = True
+        if 'pending_calibration' in st.session_state:
+            del st.session_state['pending_calibration']
         st.rerun()
 
 with st.sidebar:
     # --- Verificação de Status (antes de renderizar) ---
     api_key_env = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
-    if api_key_env and not os.environ.get("GEMINI_API_KEY"):
+    if api_key_env:
         os.environ["GEMINI_API_KEY"] = api_key_env
-    if api_key_env and not os.environ.get("GOOGLE_API_KEY"):
         os.environ["GOOGLE_API_KEY"] = api_key_env
+    
     puter_key_env = os.environ.get("PUTER_API_KEY") or st.secrets.get("PUTER_API_KEY")
+    if puter_key_env: os.environ["PUTER_API_KEY"] = puter_key_env
+    
     openai_key_env = os.environ.get("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
+    if openai_key_env: os.environ["OPENAI_API_KEY"] = openai_key_env
+    
     openrouter_key_env = os.environ.get("OPENROUTER_API_KEY") or st.secrets.get("OPENROUTER_API_KEY")
+    if openrouter_key_env: os.environ["OPENROUTER_API_KEY"] = openrouter_key_env
+    
     zai_key_env = os.environ.get("ZAI_API_KEY") or st.secrets.get("ZAI_API_KEY")
+    if zai_key_env: os.environ["ZAI_API_KEY"] = zai_key_env
+    
     kimi_key_env = os.environ.get("KIMI_API_KEY") or st.secrets.get("KIMI_API_KEY")
+    if kimi_key_env: os.environ["KIMI_API_KEY"] = kimi_key_env
     supabase_client = init_supabase()
     if supabase_client:
         st.session_state['supabase_client'] = supabase_client
@@ -835,7 +900,11 @@ with st.sidebar:
                 st.toast(f"Módulo {modelo_label.split(' — ')[0]} carregado e pronto!", icon="🧠")
                 time.sleep(1.0) # Espera o toast ser lido antes do rebuild
             except Exception as e:
-                st.session_state['modelo_llm'] = "gemini-3-flash-preview" # Fallback
+                # Se falhar (ex: chave faltando), voltamos para o Gemini mas marcamos que JÁ TENTAMOS esse modelo
+                st.session_state['modelo_llm'] = "gemini-3-flash-preview"
+                st.session_state['last_model'] = modelo_id_selecionado # Importante: marca como tentado para parar o loop
+                st.error(f"❌ Falha ao carregar {modelo_label}: {str(e)}")
+                time.sleep(3.0)
         st.rerun()
 
     # Info rápida sobre o modelo
@@ -924,6 +993,18 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
     page = st.session_state['page']
+    
+    # --- RECUPERAÇÃO DE CALIBRAGEM ACCIDENTALMENTE FECHADA ---
+    if st.session_state.get('pending_calibration'):
+        pc = st.session_state['pending_calibration']
+        with st.container(border=True):
+            st.markdown(f"⚠️ **Calibragem de {pc['codigo_p']} ainda não confirmada!**")
+            col_rec1, col_rec2 = st.columns(2)
+            if col_rec1.button("🧠 Abrir Resultado Novamente", type="primary", use_container_width=True):
+                modal_resultado_calibragem(pc['calc'], st.session_state.get('supabase_client'), pc['roteiro_ia'], pc['roteiro_humano'], pc['titulo_curto'], pc['codigo_p'])
+            if col_rec2.button("🗑️ Descartar", type="secondary", use_container_width=True):
+                del st.session_state['pending_calibration']
+                st.rerun()
 
 @st.fragment
 def show_calibragem_summary():
@@ -997,50 +1078,45 @@ if page == "Criar Roteiros":
             }
             
             try:
+                # Tenta usar st.pills (Streamlit 1.30+)
                 modo_pill = st.pills(
-                    "Selecione o Formato do Roteiro:",
-                    list(modos_trabalho.keys()),
-                    default="📄 NW (NewWeb)"
-                )
-            except AttributeError:
-                modo_pill = st.radio(
                     "Selecione o Formato:",
                     list(modos_trabalho.keys()),
                     index=0,
-                    horizontal=True
+                    key="modo_pill",
+                    label_visibility="collapsed"
                 )
-            
-            if modo_pill:
                 modo_selecionado = modos_trabalho[modo_pill]
-                st.caption(f"ℹ️ {modos_descricao[modo_pill]}")
-            else:
-                modo_selecionado = "NW (NewWeb)"
-                st.caption("ℹ️ Descrição completa, Ficha e Foto (Padrão)")
+                st.caption(f"💡 {modos_descricao[modo_pill]}")
+            except (AttributeError, Exception):
+                # Fallback para st.selectbox se st.pills não existir ou falhar
+                modo_pill = st.selectbox(
+                    "Selecione o Formato:",
+                    list(modos_trabalho.keys()),
+                    index=0,
+                    key="modo_selecao_fallback"
+                )
+                modo_selecionado = modos_trabalho[modo_pill]
+                st.caption(f"💡 {modos_descricao[modo_pill]}")
 
-            st.markdown("---")
-            col_m_auto, col_d_auto = st.columns(2)
-            
+            col_m_auto, col_d_auto, col_lu_auto = st.columns([2, 2, 1])
             with col_m_auto:
                 st.markdown("**Mês de Lançamento**")
                 mes_selecionado = st.selectbox(
-                    "Mês",
+                    "Mês de Lançamento",
                     ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"],
-                    index=2, # Padrão MAR conforme solicitado
+                    index=datetime.now().month - 1, 
                     key="mes_auto",
                     label_visibility="collapsed"
                 )
-            
             with col_d_auto:
                 st.markdown("**Data do Roteiro**")
                 now_sp = get_now_sp()
                 data_roteiro = st.date_input("Data", value=now_sp, format="DD/MM/YYYY", key="data_auto", label_visibility="collapsed")
                 data_roteiro_str = data_roteiro.strftime('%d/%m/%y')
-
-            # Sugestão inteligente: Se o ambiente for NW 3D, sugere o modo 3D
-            if st.session_state.get('active_mode') == 'NW 3D':
-                if 'modo_pill' not in st.session_state or st.session_state.get('modo_pill') == "📄 NW (NewWeb)":
-                     # Forçar ou avisar? Vamos apenas garantir que o 3D esteja disponível.
-                     pass
+            with col_lu_auto:
+                st.markdown("**Personagem**")
+                com_lu_auto = st.selectbox("Cena 1", ["Com LU", "Sem LU"], key="com_lu_auto_opt", label_visibility="collapsed")
 
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown("### 2. Códigos dos Produtos")
@@ -1073,7 +1149,6 @@ if page == "Criar Roteiros":
                     })
                     st.session_state['skus_validados'] = df_pre
             
-            
             if 'skus_validados' in st.session_state and not st.session_state['skus_validados'].empty:
                 st.markdown("### 3. Dados Extras (Opcional)")
                 st.info("💡 Preencha SKUs relacionados (se houver variações de cor/voltagem) e o link do vídeo do fornecedor para enriquecer o roteiro.")
@@ -1100,152 +1175,88 @@ if page == "Criar Roteiros":
                 )
                 
                 if st.button("🚀 Iniciar Extração e Geração", use_container_width=True, type="primary", key="btn_auto"):
-                    # Verificação de formatos em desenvolvimento (Exceto NW e 3D)
                     if modo_selecionado not in ["NW (NewWeb)", "3D (NewWeb 3D)"]:
                         st.warning(f"🚧 O formato {modo_selecionado} ainda está em desenvolvimento.")
                         st.stop()
                     
-                    modelo_id = st.session_state.get('modelo_llm', 'gemini-3-flash-preview')
+                    codigos = [str(row['SKU Principal']).strip() for _, row in df_edited.iterrows()]
+                    total = len(codigos)
+                    progress_text = st.empty()
+                    bar = st.progress(0)
                     
-                    # Validação genérica de API Key baseada no provider
-                    _provider = modelo_id.split('/')[0] if '/' in modelo_id else 'gemini'
-                    _env_var = PROVIDER_KEY_MAP.get(_provider)
-                    if _env_var and not os.environ.get(_env_var):
-                        st.warning(f"⚠️ Forneça a chave `{_env_var}` no painel de Configurações.")
-                    else:
+                    sp_cli = st.session_state.get('supabase_client')
+                    modelo_id = st.session_state.get('modelo_llm', 'gemini-3-flash-preview')
+                    table_prefix = st.session_state.get('table_prefix', 'nw_')
+                    
+                     # Instancia Agente (fora do loop para eficiência)
+                    agent = RoteiristaAgent(supabase_client=sp_cli, model_id=modelo_id, table_prefix=table_prefix)
+                    
+                    for i, (idx, row) in enumerate(df_edited.iterrows()):
+                        current_code = str(row['SKU Principal']).strip()
+                        percent = int((i + 1) / total * 100)
+                        progress_text.markdown(f"**⏳ Processando {i+1}/{total} ({percent}%):** SKU {current_code}")
+                        bar.progress((i + 1) / total)
+                        
                         try:
-                            agent = RoteiristaAgent(
-                                supabase_client=st.session_state.get('supabase_client'),
-                                model_id=modelo_id,
-                                table_prefix=st.session_state.get('table_prefix', 'nw_')
-                            )
-                            roteiros = []
-                            base_count = get_total_script_count(st.session_state.get('supabase_client'))
-                            
-                            progress = st.progress(0, text="Iniciando extração...")
-                            think_placeholder = st.empty()
-                            
-                            total_skus = len(df_edited)
-                            for i, row in df_edited.iterrows():
-                                code = str(row['SKU Principal']).strip()
+                            with st.spinner(f"Extraindo e gerando roteiro para {current_code}..."):
+                                
+                                # 1. Scrape
+                                gemini_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
+                                ficha_extraida = scrape_with_gemini(current_code, api_key=gemini_key)
+                                
+                                # 2. Geração
                                 val_sub = row['Outros Códigos (Cor/Voltagem)']; sub_skus = str(val_sub).strip() if pd.notna(val_sub) and str(val_sub).lower() != 'nan' else ''
                                 val_vid = row['Vídeo do Fornecedor (Link)']; video_url = str(val_vid).strip() if pd.notna(val_vid) and str(val_vid).lower() != 'nan' else ''
                                 
-                                import time
-                                
-                                progress.progress(
-                                    (i) / total_skus,
-                                    text=f"🔍 [{code}] Buscando no Google Search... ({i+1}/{total_skus})"
+                                res_gen = agent.gerar_roteiro(
+                                    scraped_data=ficha_extraida,
+                                    modo_trabalho=modo_selecionado,
+                                    codigo=current_code,
+                                    sub_skus=sub_skus,
+                                    video_url=video_url,
+                                    data_roteiro=data_roteiro_str,
+                                    mes=mes_selecionado
                                 )
-                                think_placeholder.markdown(f"💭 *IA Pensando: '🔍 Investigando base da Magalu para o código {code}...'*")
                                 
-                                # 1. Gemini extrai dados do produto via URL
-                                gemini_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
-                                ficha_extraida = scrape_with_gemini(code, api_key=gemini_key)
-                                
-                                progress.progress(
-                                    (i + 0.5) / total_skus,
-                                    text=f"✍️ [{code}] Analisando contexto e escrevendo roteiro... ({i+1}/{total_skus})"
-                                )
-                                think_placeholder.markdown(f"💭 *IA Pensando: '🧠 Decodificando ficha técnica, aplicando Persona da Lu e regras fonéticas aprendidas para {code}...'*")
-                                
-                                
-                                # 2. Gera o roteiro com os dados extraídos (retorna dict)
-                                txt_ficha = ficha_extraida.get('text', str(ficha_extraida)) if isinstance(ficha_extraida, dict) else str(ficha_extraida)
-                                
-                                # Verificação anti-alucinação: se o scraper falhar, não pedimos pro agente inventar
-                                if "Não foi possível extrair dados" in txt_ficha or "⚠️" in txt_ficha:
-                                    roteiro_texto = (
-                                        "⚠️ EXTRAÇÃO AUTOMÁTICA FALHOU\n\n"
-                                        "Não conseguimos encontrar os detalhes técnicos para este código automaticamente.\n\n"
-                                        "POR FAVOR, COLE A FICHA TÉCNICA MANUALMENTE ABAIXO E CLIQUE EM 'GERAR' NOVAMENTE."
-                                    )
-                                    resultado = {
-                                        "roteiro": roteiro_texto,
-                                        "model_id": "-",
-                                        "tokens_in": 0,
-                                        "tokens_out": 0,
-                                        "custo_brl": 0.0
-                                    }
-                                    nome_p = f"SKU {code} (Falha na Extração)"
-                                else:
-                                    # Extrai nome do produto (primeira linha da ficha)
-                                    nome_p = txt_ficha.split('\n')[0].strip() if txt_ficha else "Produto"
-                                    
-                                    resultado = agent.gerar_roteiro(
-                                        ficha_extraida, 
-                                        modo_trabalho=modo_selecionado, 
-                                        mes=mes_selecionado, 
-                                        data_roteiro=data_roteiro_str,
-                                        codigo=code,
-                                        nome_produto=nome_p,
-                                        sub_skus=sub_skus,
-                                        video_url=video_url
-                                    )
-                                    roteiro_texto = resultado["roteiro"]
-                                
-                                # Atribuímos o número sequencial histórico (o último é o número mais alto)
-                                global_id = base_count + i + 1
-                                
-                                roteiros.insert(0, { # Insere no INÍCIO para o último ficar no topo
+                                # 3. Resultado
+                                global_num = get_total_script_count(sp_cli) + 1
+                                novo_roteiro = {
                                     "_uid": str(uuid.uuid4()),
                                     "ficha": ficha_extraida,
-                                    "roteiro_original": roteiro_texto,
-                                    "categoria_id": cat_selecionada_id,
-                                    "codigo": code,
-                                    "model_id": resultado["model_id"],
-                                    "tokens_in": resultado["tokens_in"],
-                                    "tokens_out": resultado["tokens_out"],
-                                    "custo_brl": resultado["custo_brl"],
-                                    "id_sequencial": global_id, # Deprecated
-                                    "global_num": global_id,
-                                    "mes": mes_selecionado, # Salva o mês de lançamento
-                                    "sub_skus": sub_skus,
-                                    "video_url": video_url
-                                })
+                                    "roteiro_original": res_gen["roteiro"],
+                                    "codigo": current_code,
+                                    "model_id": res_gen["model_id"],
+                                    "tokens_in": res_gen["tokens_in"],
+                                    "tokens_out": res_gen["tokens_out"],
+                                    "custo_brl": res_gen["custo_brl"],
+                                    "global_num": global_num,
+                                    "mes": mes_selecionado
+                                }
                                 
-                                progress.progress(
-                                    (i + 1) / total_skus,
-                                    text=f"✅ [{code}] Roteiro finalizado! ({i+1}/{total_skus})"
-                                )
-                                think_placeholder.markdown(f"💭 *IA Pensando: '✅ Roteiro de {code} estruturado e validado. Próximo!'*")
-                                
-                                # Auto-log no histórico (silencioso) com tracking de custo
-                                try:
-                                    sp_hist = st.session_state.get('supabase_client')
-                                    if sp_hist:
-                                        ficha_text = ficha_extraida.get('text', '') if isinstance(ficha_extraida, dict) else str(ficha_extraida)
-                                        sp_hist.table(f"{st.session_state.get('table_prefix', 'nw_')}historico_roteiros").insert({
-                                            "codigo_produto": code,
+                                # Log Histórico
+                                if sp_cli:
+                                    try:
+                                        sp_cli.table(f"{table_prefix}historico_roteiros").insert({
+                                            "codigo_produto": current_code,
                                             "modo_trabalho": modo_selecionado,
-                                            "roteiro_gerado": roteiro_texto,
-                                            "ficha_extraida": ficha_text[:5000],
-                                            "modelo_llm": resultado["model_id"],
-                                            "tokens_entrada": resultado["tokens_in"],
-                                            "tokens_saida": resultado["tokens_out"],
-                                            "custo_estimado_brl": resultado["custo_brl"]
+                                            "roteiro_gerado": res_gen["roteiro"],
+                                            "ficha_extraida": str(ficha_extraida)[:5000],
+                                            "modelo_llm": res_gen["model_id"],
+                                            "tokens_entrada": res_gen["tokens_in"],
+                                            "tokens_saida": res_gen["tokens_out"],
+                                            "custo_estimado_brl": res_gen["custo_brl"],
+                                            "criado_em": get_now_sp().isoformat()
                                         }).execute()
-                                except Exception:
-                                    pass  # Não bloqueia a geração se o log falhar
+                                    except: pass
                                 
-                                # Delay para evitar 429 Too Many Requests
-                                if i < total_skus - 1:
-                                    progress.progress((i + 0.8) / total_skus, text=f"⏳ [{code}] Cota de segurança... Aguardando 5s.")
-                                    time.sleep(5)
-                            
-                            progress.progress(1.0, text="✅ Lote Concluído com Sucesso!")
-                            st.session_state['data_roteiro_global'] = data_roteiro_str
-                            st.session_state['mes_global'] = mes_selecionado
-                            if 'roteiros' not in st.session_state:
-                                st.session_state['roteiros'] = []
-                            # Prepend o novo lote ao início da lista global da sessão
-                            st.session_state['roteiros'] = roteiros + st.session_state.get('roteiros', [])
-                            st.session_state['roteiro_ativo_idx'] = 0 # Foca no mais novo
-                            st.rerun() 
-                            
+                                st.session_state['roteiros'].insert(0, novo_roteiro)
                         except Exception as e:
-                            st.error(f"Erro na geração: {e}")
-        
+                            st.error(f"❌ Erro no SKU {current_code}: {e}")
+
+                    st.session_state['roteiro_ativo_idx'] = 0
+                    st.success(f"🎯 Geração de {total} roteiros concluída!")
+                    st.rerun()
+
         with tab_manual:
             # --- MODO MANUAL (FALLBACK) ---
             st.markdown("### 1. Dados dos Produtos")
@@ -1271,18 +1282,18 @@ if page == "Criar Roteiros":
                 
             col_add, col_rem = st.columns(2)
             with col_add:
-                if st.button("➕ Adicionar", use_container_width=True, type="secondary"):
+                if st.button("➕ Adicionar", use_container_width=True, type="secondary", key="btn_add_ficha"):
                     st.session_state['num_fichas'] += 1
                     st.rerun()
             with col_rem:
                 if st.session_state['num_fichas'] > 1:
-                    if st.button("➖ Remover", use_container_width=True, type="secondary"):
+                    if st.button("➖ Remover", use_container_width=True, type="secondary", key="btn_rem_ficha"):
                         st.session_state['num_fichas'] -= 1
                         st.rerun()
 
             st.markdown("---")
             
-            col_m_man, col_d_man = st.columns(2)
+            col_m_man, col_d_man, col_lu_man = st.columns([2, 2, 1])
             with col_m_man:
                 st.markdown("**Mês de Lançamento**")
                 mes_selecionado_man = st.selectbox(
@@ -1297,11 +1308,14 @@ if page == "Criar Roteiros":
                 now_sp_man = get_now_sp()
                 data_roteiro_man = st.date_input("Data do Roteiro:", value=now_sp_man, format="DD/MM/YYYY", key="date_man", label_visibility="collapsed")
                 data_roteiro_str_man = data_roteiro_man.strftime('%d/%m/%y')
+            with col_lu_man:
+                st.markdown("**Personagem**")
+                com_lu_man = st.selectbox("Cena 1", ["Com LU", "Sem LU"], key="com_lu_man_opt", label_visibility="collapsed")
             
-            # Seletor de modo manual (Novo)
+            # Seletor de modo manual
             st.markdown("**Formato do Roteiro (Manual)**")
-            modo_manual = st.selectbox("Selecione:", list(modos_trabalho.keys()), key="modo_man")
-            modo_man_selecionado = modos_trabalho[modo_manual]
+            modo_manual_input = st.selectbox("Selecione:", list(modos_trabalho.keys()), key="modo_man")
+            modo_man_selecionado = modos_trabalho[modo_manual_input]
 
             if st.button("🚀 Gerar Roteiros a partir de Fichas", use_container_width=True, type="primary", key="btn_manual"):
                 fichas_validas = [f for f in fichas_informadas if f["ficha"].strip() and f["sku"].strip()]
@@ -1309,93 +1323,50 @@ if page == "Criar Roteiros":
                 if not fichas_validas:
                     st.warning("⚠️ Preencha o Código e a Ficha Técnica de pelo menos um produto.")
                 else:
+                    total = len(fichas_validas)
+                    bar = st.progress(0)
+                    sp_cli = st.session_state.get('supabase_client')
                     modelo_id = st.session_state.get('modelo_llm', 'gemini-3-flash-preview')
-                    _provider = modelo_id.split('/')[0] if '/' in modelo_id else 'gemini'
-                    _env_var = PROVIDER_KEY_MAP.get(_provider)
-                    if _env_var and not os.environ.get(_env_var):
-                        st.warning(f"⚠️ Forneça a chave `{_env_var}` no painel de Configurações.")
-                    else:
-                        with st.spinner(f"Processando {len(fichas_validas)} roteiro(s)..."):
+                    table_prefix = st.session_state.get('table_prefix', 'nw_')
+
+                    # Instancia Agente (fora do loop para eficiência)
+                    agent = RoteiristaAgent(supabase_client=sp_cli, model_id=modelo_id, table_prefix=table_prefix)
+                    
+                    progress_text_man = st.empty()
+                    for i, itm in enumerate(fichas_validas):
+                        percent = int((i + 1) / total * 100)
+                        progress_text_man.markdown(f"**⏳ Processando {i+1}/{total} ({percent}%):** SKU {itm['sku']}")
+                        bar.progress((i+1)/total)
+                        with st.spinner(f"Gerando roteiro {i+1}/{total}..."):
                             try:
-                                agent = RoteiristaAgent(
-                                    supabase_client=st.session_state.get('supabase_client'),
-                                    model_id=modelo_id,
-                                    table_prefix=st.session_state.get('table_prefix', 'nw_')
+                                ficha_man = {"text": itm["ficha"], "images": []}
+                                res_gen = agent.gerar_roteiro(
+                                    scraped_data=ficha_man,
+                                    modo_trabalho=modo_man_selecionado,
+                                    codigo=itm["sku"],
+                                    data_roteiro=data_roteiro_str_man,
+                                    mes=mes_selecionado_man,
+                                    com_lu=(com_lu_man == "Com LU")
                                 )
-                                roteiros = []
-                                # Busca a base do histórico para numeração
-                                base_count = get_total_script_count(st.session_state.get('supabase_client'))
-                                
-                                think_placeholder_man = st.empty()
-                                for i, item_man in enumerate(fichas_validas):
-                                    ficha = item_man["ficha"]
-                                    code = item_man["sku"]
-                                    # Extrai nome do produto da ficha manual (primeira linha)
-                                    nome_p_man = ficha.split('\n')[0].strip() if ficha else "Produto"
-                                    
-                                    think_placeholder_man.markdown(f"💭 *IA Pensando: '✍️ Redigindo roteiro para {code} com base na ficha manual fornecida...'*")
-                                    
-                                    resultado = agent.gerar_roteiro(
-                                        ficha, 
-                                        modo_trabalho=modo_man_selecionado, 
-                                        mes=mes_selecionado_man, 
-                                        data_roteiro=data_roteiro_str_man,
-                                        codigo=code,
-                                        nome_produto=nome_p_man
-                                    )
-                                    roteiro_texto = resultado["roteiro"]
-                                    
-                                    # Atribuímos o número sequencial histórico
-                                    global_id = base_count + i + 1
-
-                                    roteiros.insert(0, { # Newest at the beginning
-                                        "_uid": str(uuid.uuid4()),
-                                        "ficha": ficha,
-                                        "roteiro_original": roteiro_texto,
-                                        "categoria_id": cat_selecionada_id,
-                                        "codigo": code,
-                                        "model_id": resultado["model_id"],
-                                        "tokens_in": resultado["tokens_in"],
-                                        "tokens_out": resultado["tokens_out"],
-                                        "custo_brl": resultado["custo_brl"],
-                                        "global_num": global_id,
-                                        "mes": mes_selecionado_man
-                                    })
-
-                                    # Auto-log no histórico (Modo Manual)
-                                    try:
-                                        sp_hist = st.session_state.get('supabase_client')
-                                        if sp_hist:
-                                            sp_hist.table(f"{st.session_state.get('table_prefix', 'nw_')}historico_roteiros").insert({
-                                                "codigo_produto": code,
-                                                "modo_trabalho": "Manual NW",
-                                                "roteiro_gerado": roteiro_texto,
-                                                "ficha_extraida": ficha[:5000],
-                                                "modelo_llm": resultado["model_id"],
-                                                "tokens_entrada": resultado["tokens_in"],
-                                                "tokens_saida": resultado["tokens_out"],
-                                                "custo_estimado_brl": resultado["custo_brl"]
-                                            }).execute()
-                                    except Exception:
-                                        pass
-                                    
-                                    think_placeholder_man.markdown(f"💭 *IA Pensando: '✅ Roteiro manual de {code} finalizado e salvo em mesa.'*")
-
-                                    # Delay de segurança extra
-                                    if i < len(fichas_validas) - 1:
-                                        import time
-                                        time.sleep(5)
-
-                                st.session_state['data_roteiro_global'] = data_roteiro_str_man
-                                st.session_state['mes_global'] = mes_selecionado_man
-                                if 'roteiros' not in st.session_state:
-                                    st.session_state['roteiros'] = []
-                                # Prepend para o topo
-                                st.session_state['roteiros'] = roteiros + st.session_state.get('roteiros', [])
-                                st.session_state['roteiro_ativo_idx'] = 0
-                                st.rerun()
+                                global_num = get_total_script_count(sp_cli) + 1
+                                novo_roteiro = {
+                                    "_uid": str(uuid.uuid4()),
+                                    "ficha": ficha_man,
+                                    "roteiro_original": res_gen["roteiro"],
+                                    "codigo": itm["sku"],
+                                    "model_id": res_gen["model_id"],
+                                    "tokens_in": res_gen["tokens_in"],
+                                    "tokens_out": res_gen["tokens_out"],
+                                    "custo_brl": res_gen["custo_brl"],
+                                    "global_num": global_num,
+                                    "mes": mes_selecionado_man
+                                }
+                                st.session_state['roteiros'].insert(0, novo_roteiro)
                             except Exception as e:
-                                st.error(f"Erro na geração: {e}")
+                                st.error(f"Erro no SKU {itm['sku']}: {e}")
+
+                    st.session_state['roteiro_ativo_idx'] = 0
+                    st.rerun()
 
     # --- SCRIPTS DA SESSÃO (CARDS VISÍVEIS — SEM EXPANDER) ---
     if 'roteiros' in st.session_state and st.session_state['roteiros']:
@@ -1811,6 +1782,13 @@ if page == "Criar Roteiros":
                             local_agent = RoteiristaAgent(model_id="gemini-3-flash-preview", table_prefix=st.session_state.get('table_prefix', 'nw_'))
                             calc = local_agent.analisar_calibracao(item['roteiro_original'], edited_val, lista_c, codigo_produto)
                             think_calib.empty()
+                            st.session_state['pending_calibration'] = {
+                                'calc': calc,
+                                'roteiro_ia': item['roteiro_original'],
+                                'roteiro_humano': edited_val,
+                                'titulo_curto': titulo_curto,
+                                'codigo_p': codigo_produto
+                            }
                             modal_resultado_calibragem(calc, sp_cli, item['roteiro_original'], edited_val, titulo_curto, codigo_produto)
                     else:
                         st.error("Conecte o Supabase primeiro.")
@@ -1868,6 +1846,10 @@ elif page == "Treinar IA":
             # --- CONVERSÃO DE FUSO HORÁRIO GLOBAL (UTC -> SÃO PAULO) ---
             for df in [df_est, df_fon, df_pers, df_ouro, df_cats, df_nuan, df_img]:
                 if not df.empty and 'criado_em' in df.columns:
+                    # Garantir que é datetime para ordenar corretamente
+                    df['criado_em'] = pd.to_datetime(df['criado_em'])
+                    df.sort_values(by='criado_em', ascending=False, inplace=True)
+                    # Agora converte para string formatada para exibição
                     df['criado_em'] = df['criado_em'].apply(convert_to_sp_time)
                     
         except Exception as e:
@@ -1895,7 +1877,7 @@ elif page == "Treinar IA":
             st.divider()
             if not df_nuan.empty:
                 st.markdown("#### 📋 Nuances Registradas")
-                st.dataframe(df_nuan[['criado_em', 'frase_ia', 'analise_critica', 'exemplo_ouro']].sort_values(by='criado_em', ascending=False), use_container_width=True)
+                st.dataframe(df_nuan[['criado_em', 'frase_ia', 'analise_critica', 'exemplo_ouro']], use_container_width=True)
             else:
                 st.info("Nenhuma nuance registrada ainda.")
         
@@ -1983,6 +1965,13 @@ elif page == "Treinar IA":
                                     calc = ag.analisar_calibracao(roteiro_ia_input, roteiro_humano_input, cats_list_manual)
                                     
                                 think_hub.empty()
+                                st.session_state['pending_calibration'] = {
+                                    'calc': calc,
+                                    'roteiro_ia': roteiro_ia_input,
+                                    'roteiro_humano': roteiro_humano_input,
+                                    'titulo_curto': calc['codigo_produto'],
+                                    'codigo_p': calc['codigo_produto']
+                                }
                                 modal_resultado_calibragem(calc, sp_client, roteiro_ia_input, roteiro_humano_input, calc['codigo_produto'], calc['codigo_produto'])
                         except Exception as e:
                             st.error(f"Erro ao salvar calibragem: {e}")
@@ -1998,7 +1987,7 @@ elif page == "Treinar IA":
                 if 'aprendizado' in df_ouro.columns: cols_view.append('aprendizado')
                 
                 df_view = df_ouro[cols_view].dropna(subset=['aprendizado']).copy()
-                df_view = df_view.sort_values(by='criado_em', ascending=False).reset_index(drop=True)
+                df_view = df_view.reset_index(drop=True)
                 
                 # Adiciona Sequential ID (#005, #004...) e Emojis de Qualidade
                 total_calib = len(df_view)
@@ -2039,7 +2028,7 @@ elif page == "Treinar IA":
                     
             st.divider()
             if not df_est.empty:
-                st.dataframe(df_est[['criado_em', 'tipo_estrutura', 'texto_ouro']].sort_values(by='criado_em', ascending=False), use_container_width=True)
+                st.dataframe(df_est[['criado_em', 'tipo_estrutura', 'texto_ouro']], use_container_width=True)
             else:
                 st.info("Nenhuma estrutura cadastrada ainda.")
 
@@ -2064,7 +2053,7 @@ elif page == "Treinar IA":
             
             st.divider()
             if not df_img.empty:
-                st.dataframe(df_img[['criado_em', 'codigo_produto', 'descricao_ia', 'descricao_humano', 'aprendizado']].sort_values(by='criado_em', ascending=False), use_container_width=True)
+                st.dataframe(df_img[['criado_em', 'codigo_produto', 'descricao_ia', 'descricao_humano', 'aprendizado']], use_container_width=True)
             else:
                 st.info("Nenhuma calibragem visual cadastrada ainda.")
 
@@ -2087,7 +2076,7 @@ elif page == "Treinar IA":
             
             st.divider()
             if not df_pers.empty:
-                st.dataframe(df_pers[['criado_em', 'pilar_persona', 'texto_corrigido_humano', 'lexico_sugerido']].sort_values(by='criado_em', ascending=False), use_container_width=True)
+                st.dataframe(df_pers[['criado_em', 'pilar_persona', 'texto_corrigido_humano', 'lexico_sugerido']], use_container_width=True)
             else:
                 st.info("Nenhuma regra de persona cadastrada ainda.")
                 
@@ -2141,9 +2130,9 @@ elif page == "Treinar IA":
             st.divider()
             if not df_ouro.empty:
                 # Tabela de visualização
-                cols_ouro = ['titulo_produto', 'roteiro_perfeito']
+                cols_ouro = ['criado_em', 'titulo_produto', 'roteiro_perfeito']
                 if 'codigo_produto' in df_ouro.columns:
-                    cols_ouro.insert(0, 'codigo_produto')
+                    cols_ouro.insert(1, 'codigo_produto')
                 st.dataframe(df_ouro[cols_ouro], use_container_width=True)
                 
                 # --- EXPORTAÇÃO JSON-LD ---
@@ -2495,6 +2484,7 @@ elif page == "Dashboard":
             res_est = sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}treinamento_estruturas").select("*").execute()
             res_hist = sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}historico_roteiros").select("criado_em, codigo_produto, modo_trabalho, modelo_llm, custo_estimado_brl").execute()
             res_nuan = sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}treinamento_nuances").select("*").execute()
+            res_img = sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}treinamento_imagens").select("*").execute()
             
             ouro_data = res_ouro.data if hasattr(res_ouro, 'data') else []
             pers_data = res_pers.data if hasattr(res_pers, 'data') else []
@@ -2502,6 +2492,7 @@ elif page == "Dashboard":
             est_data = res_est.data if hasattr(res_est, 'data') else []
             hist_data = res_hist.data if hasattr(res_hist, 'data') else []
             nuan_data = res_nuan.data if hasattr(res_nuan, 'data') else []
+            img_data = res_img.data if hasattr(res_img, 'data') else []
             cats_dict = {c['id']: c['nome'] for c in res_cats.data} if hasattr(res_cats, 'data') else {}
             
             df_ouro = pd.DataFrame(ouro_data)
@@ -2510,6 +2501,7 @@ elif page == "Dashboard":
             df_est = pd.DataFrame(est_data)
             df_hist_dash = pd.DataFrame(hist_data)
             df_nuan = pd.DataFrame(nuan_data)
+            df_img = pd.DataFrame(img_data)
             
             # --- NOVA LÓGICA: df_fb agora vem de df_ouro (Calibragens) ---
             if not df_ouro.empty:
@@ -2529,7 +2521,7 @@ elif page == "Dashboard":
                 df_fb = pd.DataFrame()
             
             # --- CONVERSÃO DE FUSO HORÁRIO GLOBAL (UTC -> SÃO PAULO) ---
-            for df in [df_ouro, df_pers, df_fon, df_est, df_nuan]:
+            for df in [df_ouro, df_pers, df_fon, df_est, df_nuan, df_img]:
                 if not df.empty and 'criado_em' in df.columns:
                     df['criado_em'] = df['criado_em'].apply(convert_to_sp_time)
             
@@ -2562,6 +2554,7 @@ elif page == "Dashboard":
                 df_est = df_est[(pd.to_datetime(df_est['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_est['criado_em']).dt.tz_localize(None) <= end_date)] if not df_est.empty else df_est
                 df_hist_dash = df_hist_dash[(pd.to_datetime(df_hist_dash['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_hist_dash['criado_em']).dt.tz_localize(None) <= end_date)] if not df_hist_dash.empty else df_hist_dash
                 df_nuan = df_nuan[(pd.to_datetime(df_nuan['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_nuan['criado_em']).dt.tz_localize(None) <= end_date)] if not df_nuan.empty else df_nuan
+                df_img = df_img[(pd.to_datetime(df_img['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_img['criado_em']).dt.tz_localize(None) <= end_date)] if not df_img.empty else df_img
 
             # Aplicar Filtro de Busca
             if search_dash:
@@ -2576,6 +2569,7 @@ elif page == "Dashboard":
                 df_est = filter_search(df_est, search_dash)
                 df_hist_dash = filter_search(df_hist_dash, search_dash)
                 df_nuan = filter_search(df_nuan, search_dash)
+                df_img = filter_search(df_img, search_dash)
 
             # Recalcular métricas após filtros
             if not df_ouro.empty and 'nota_percentual' in df_ouro.columns:
@@ -2605,7 +2599,7 @@ elif page == "Dashboard":
             score_color = get_score_color(taxa_aprovacao)
 
             st.markdown(f"""
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 25px;">
                     <div class="metric-card-premium">
                         <div class="metric-label">📝 Volume Produzido</div>
                         <div class="metric-value">{total_historico}</div>
@@ -2620,6 +2614,11 @@ elif page == "Dashboard":
                         <div class="metric-label">🎯 Precisão da IA</div>
                         <div class="metric-value" style="color: {score_color} !important;">{taxa_aprovacao:.1f}%</div>
                         <div style="font-size: 10px; color: #8b92a5; margin-top: 5px;">Taxa de aproveitamento</div>
+                    </div>
+                    <div class="metric-card-premium">
+                        <div class="metric-label">📸 Lições Visuais</div>
+                        <div class="metric-value" style="color: #8b5cf6 !important;">{len(df_img)}</div>
+                        <div style="font-size: 10px; color: #8b92a5; margin-top: 5px;">Memória de imagens</div>
                     </div>
                     <div class="metric-card-premium">
                         <div class="metric-label">💰 Investimento</div>
@@ -2701,8 +2700,8 @@ elif page == "Dashboard":
                 num_ouro_puro = total_ouro - num_calib
                 
                 kb_data = {
-                    "Componente": ["Fonética", "Estrutura", "Calibragem", "Roteiro Ouro", "Persona", "Nuances"],
-                    "Registros": [len(df_fon), len(df_est), num_calib, num_ouro_puro, len(df_pers), len(df_nuan)]
+                    "Componente": ["Fonética", "Estrutura", "Calibragem", "Roteiro Ouro", "Persona", "Nuances", "Imagens"],
+                    "Registros": [len(df_fon), len(df_est), num_calib, num_ouro_puro, len(df_pers), len(df_nuan), len(df_img)]
                 }
                 df_kb = pd.DataFrame(kb_data)
                 fig_kb = px.bar(df_kb, x='Registros', y='Componente', orientation='h', 
@@ -2853,7 +2852,7 @@ elif page == "Dashboard":
             
             # === SEÇÃO 4: TABELAS DETALHADAS ===
             st.markdown("### 📋 Dados Detalhados")
-            tab_hist, tab_ouro, tab_feed, tab_nuan, tab_pers, tab_fon = st.tabs(["💵 Histórico In-Depth", "🏆 Roteiros Ouro", "⚖️ Feedbacks", "🧠 Nuances", "💃 Persona", "🗣️ Fonética"])
+            tab_hist, tab_ouro, tab_feed, tab_nuan, tab_img_dash, tab_pers, tab_fon = st.tabs(["💵 Histórico In-Depth", "🏆 Roteiros Ouro", "⚖️ Feedbacks", "🧠 Nuances", "📸 Imagens", "💃 Persona", "🗣️ Fonética"])
             
             with tab_hist:
                 if not df_hist_dash.empty:
@@ -2888,6 +2887,15 @@ elif page == "Dashboard":
                     st.dataframe(df_n[['criado_em', 'frase_ia', 'analise_critica', 'exemplo_ouro']].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhuma nuance de linguagem cadastrada.")
+            
+            with tab_img_dash:
+                if not df_img.empty:
+                    df_i = df_img.copy()
+                    if 'criado_em' in df_i.columns:
+                        df_i['criado_em'] = pd.to_datetime(df_i['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%Y %H:%M')
+                    st.dataframe(df_i[['criado_em', 'codigo_produto', 'descricao_ia', 'descricao_humano', 'aprendizado']].sort_values(by='criado_em', ascending=False), use_container_width=True)
+                else:
+                    st.info("Nenhuma calibragem de imagem cadastrada.")
             
             with tab_ouro:
                 if not df_ouro.empty:

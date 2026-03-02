@@ -1,7 +1,7 @@
 import os
 import json
 import glob
-import google.generativeai as genai_v1
+from google import genai
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -72,8 +72,7 @@ class RoteiristaAgent:
             api_key = os.environ.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
             if not api_key:
                 raise ValueError("GEMINI_API_KEY não encontrada!")
-            genai_v1.configure(api_key=api_key)
-            self.client_gemini = genai_v1.GenerativeModel(self.model_id)
+            self.client_gemini = genai.Client(api_key=api_key)
         elif self.model_id.startswith("puter/"):
             self.provider = "puter"
             puter_key = os.environ.get("PUTER_API_KEY")
@@ -101,16 +100,6 @@ class RoteiristaAgent:
                 base_url="https://openrouter.ai/api/v1"
             )
             self.model_id = self.model_id.replace("openrouter/", "")
-        elif self.model_id.startswith("puter/"):
-            self.provider = "puter"
-            puter_key = os.environ.get("PUTER_API_KEY")
-            if not puter_key:
-                raise ValueError("PUTER_API_KEY não encontrada!")
-            self.client_openai = OpenAI(
-                api_key=puter_key,
-                base_url="https://api.puter.com/puterai/openai/v1/"
-            )
-            self.model_id = self.model_id.replace("puter/", "")
         elif self.model_id.startswith("zai/"):
             self.provider = "zai"
             zai_key = os.environ.get("ZAI_API_KEY")
@@ -300,12 +289,12 @@ class RoteiristaAgent:
         api_key_gemini = os.environ.get("GEMINI_API_KEY")
         if api_key_gemini:
             try:
-                from google.genai import types
-                client = genai_v1.Client(api_key=api_key_gemini)
+                client = genai.Client(api_key=api_key_gemini)
                 response = client.models.generate_content(
                     model='gemini-3-flash-preview',
                     contents=prompt,
-                    config=types.GenerateContentConfig(temperature=0.3)
+                    config={'temperature': 0.3},
+                    request_options={'timeout': 150}
                 )
                 print("[OK] Memoria de calibragem gerada via Gemini (3-flash-preview)")
                 return response.text.replace('\n', ' ').strip()
@@ -314,7 +303,7 @@ class RoteiristaAgent:
 
         return "Erro: Nenhum provedor disponível para gerar memória de calibragem."
 
-    def gerar_roteiro(self, scraped_data, modo_trabalho="NW (NewWeb)", mes="MAR", data_roteiro=None, codigo=None, nome_produto=None, sub_skus=None, video_url=None):
+    def gerar_roteiro(self, scraped_data, modo_trabalho="NW (NewWeb)", mes="MAR", data_roteiro=None, codigo=None, nome_produto=None, sub_skus=None, video_url=None, com_lu=True):
         """Envia a requisição para o Gemini gerar o roteiro. Suporta Multimodal e Modos de Trabalho."""
         context = self._build_context()
 
@@ -340,14 +329,21 @@ class RoteiristaAgent:
             sub_skus_str = f" {sub_skus}" if (sub_skus and str(sub_skus).lower() != 'nan') else ""
             video_ref_str = f"\n   {video_url}" if (video_url and str(video_url).lower() != 'nan') else ""
             
+            lu_constraint = (
+                f"2. A CENA 1 (Primeira cena do vídeo) DEVE OBRIGATORIAMENTE mostrar a 'Lu' em ação, interagindo com o produto ou apresentando-o.\n"
+                f"3. A partir da CENA 2, CORTE para imagens do produto. REGRA CRÍTICA DE IMAGEM: É ESTRITAMENTE PROIBIDO sugerir ações humanas nas Colunas de Imagem (ex: 'mão segurando o celular', 'pessoa bebendo café', 'cliente usando'). O vídeo NW é feito APENAS com fotos estáticas do fornecedor, animações gráficas (GCs) e recortes do vídeo oficial. IMAGENS 100% LIMPAS DE HUMANOS."
+            ) if com_lu else (
+                 f"2. A CENA 1 (Primeira cena do vídeo) DEVE OBRIGATORIAMENTE ser um PLANO GERAL DO PRODUTO (sem a Lu). A Lu NÃO deve aparecer visualmente nesta cena nem nas seguintes.\n"
+                 f"3. REGRA CRÍTICA DE IMAGEM: É ESTRITAMENTE PROIBIDO sugerir a Lu ou ações humanas nas Colunas de Imagem (ex: 'Lu apontando', 'mão segurando o celular', 'pessoa bebendo café'). O vídeo NW é feito APENAS com fotos estáticas do fornecedor, animações gráficas (GCs) e recortes do vídeo oficial. IMAGENS 100% LIMPAS DE HUMANOS."
+            )
+
             diretriz_modo += (
                 f"\n\n🚨 REGRA ABSOLUTA DE FORMATAÇÃO E ESTRUTURA (NW LU):\n"
                 f"1. O TEXTO DEVE COMEÇAR COM O CABEÇALHO EXATAMENTE ABAIXO (PROIBIDO COPIAR A DATA OU MÊS DOS EXEMPLOS, USE EXATAMENTE O QUE ESTÁ AQUI):\n"
                 f"   Cliente: Magalu\n"
                 f"   Roteirista: Tiago Fernandes - Data: {data_str}\n"
                 f"   Produto: NW LU {mes} {cod_str}{sub_skus_str} [INSERIR NOME RESUMIDO DO PRODUTO AQUI]{video_ref_str}\n"
-                f"2. A CENA 1 (Primeira cena do vídeo) DEVE OBRIGATORIAMENTE mostrar a 'Lu' em ação, interagindo com o produto ou apresentando-o.\n"
-                f"3. A partir da CENA 2, CORTE para imagens do produto. REGRA CRÍTICA DE IMAGEM: É ESTRITAMENTE PROIBIDO sugerir ações humanas nas Colunas de Imagem (ex: 'mão segurando o celular', 'pessoa bebendo café', 'cliente usando'). O vídeo NW é feito APENAS com fotos estáticas do fornecedor, animações gráficas (GCs) e recortes do vídeo oficial. IMAGENS 100% LIMPAS DE HUMANOS."
+                f"{lu_constraint}"
             )
 
         if "SOCIAL" in modo_trabalho:
@@ -393,13 +389,22 @@ class RoteiristaAgent:
                             "data": img_bytes
                         })
 
-            # Chamada via SDK v1
-            response = self.client_gemini.generate_content(contents)
+            # Chamada via SDK v2 com timeout estendido
+            response = self.client_gemini.models.generate_content(
+                model=self.model_id,
+                contents=contents,
+                config={'temperature': 0.7},
+                request_options={'timeout': 150}
+            )
             roteiro = response.text
             
-            # Métricas via v1
-            tokens_in = len(final_prompt) // 4
-            tokens_out = len(roteiro) // 4
+            # Métricas via v2 metadata
+            if hasattr(response, 'usage_metadata'):
+                tokens_in = response.usage_metadata.prompt_token_count
+                tokens_out = response.usage_metadata.candidates_token_count
+            else:
+                tokens_in = len(final_prompt) // 4
+                tokens_out = len(roteiro) // 4
         
         elif self.client_openai:
             messages = [{"role": "user", "content": final_prompt}]
@@ -491,41 +496,36 @@ class RoteiristaAgent:
 
         sys_prompt = (
             "Você é um Editor Sênior de Redação Publicitária e Especialista em Qualidade Magalu.\n"
-            "Sua tarefa é realizar uma ANALISE TÉCNICA E CIRÚRGICA da calibragem:\n\n"
-            "1. COMPARE o Roteiro Original (IA) com o Roteiro Final (Aprovado pelo Humano).\n"
-            "2. CALCULE O SCORE (%) DE APROVEITAMENTO: Seja criterioso e técnico. Este percentual (0-100) será convertido em Estrelas (0-5) na interface. "
-            "Siga esta Régua Orgânica Magalu:\n"
-            "   - 🔥 100% (5.0 Estrelas): Roteiro Perfeito. IA seguiu persona, regras fonéticas e estrutura. Humano só revisou formatação básica.\n"
-            "   - 🟢 85% a 95% (4.2 a 4.8 Estrelas): Ajustes Finos. Humano melhorou fluidez, corrigiu uma pronúncia ou trocou um termo.\n"
-            "   - 🟡 60% a 80% (3.0 a 4.0 Estrelas): Ajustes Estruturais. Humano reconstruiu partes da abertura ou mudou a ordem das cenas.\n"
-            "   - 🔴 Abaixo de 60% (1.0 a 2.9 Estrelas): Erro Grave. IA errou o tom de voz da Lu, omitiu specs cruciais ou alucinou o SKU.\n"
-            "   ATENÇÃO: Não penalize a IA por termos técnicos vindos da ficha técnica. Analise a redação e a persona.\n"
-            "3. APRENDIZADO TÁTICO (MEMÓRIA TÉCNICA): Transforme as edições em DIRETRIZES UNIVERSAIS para o futuro.\n"
-            "   - Use verbos imperativos (Integrar, Eliminar, Simplificar).\n"
-            "   - É PROIBIDO citar nomes ou specs do produto atual na regra (ex: '85W'). Use o formato: '[Regra Geral]. (Ex: [Aplicação no produto atual])'.\n"
-            "   - NUNCA inclua regras visuais ou de imagem aqui (elas vão na regra 10).\n"
-            "4. EXTRAIA O CÓDIGO DO PRODUTO (SKU): Procure no texto ou use o sugerido.\n"
-            "5. CATEGORIZE (CRÍTICO): Escolha o ID correto da lista abaixo com base na função principal do item.\n"
-            "6. FONÉTICA (AUTO-EXTRAÇÃO): Mapeie termos onde o humano adicionou pronúncia `(exemplo)`. "
-            "Atenção: 'termo_errado' = IA sem pronúncia. 'termo_corrigido' = Humano com pronúncia. Não inverta!\n"
-            "7. ESTRUTURAS (HOOKS E CTAs): Extraia a ABERTURA e o FECHAMENTO exatos que o HUMANO aprovou.\n"
-            "8. PERSONA LU (AUTO-EXTRAÇÃO): Extraia correções de tom, vocabulário ou emoção da Lu.\n"
-            "9. RESUMO ESTRATÉGICO (META-ANÁLISE): No campo 'resumo_estrategico', escreva um parágrafo curto sintetizando a 'Direção Criativa' que o humano está tomando. "
-            "Se não houver mudança criativa, escreva 'O roteiro manteve a direção criativa da IA.'\n"
-            "10. DESCRIÇÃO DE IMAGENS (VISUAL - ALERTA CRÍTICO): É PROIBIDO COLOCAR FEEDBACKS VISUAIS NO 'aprendizado' DA REGRA 3. "
-            "LADO A LADO, compare as linhas que começam com 'Imagem:' na versão da IA e do Humano. "
-            "Se o humano detalhou ou alterou os elementos visuais da cena ou da tela, extraia OBRIGATORIAMENTE em 'imagens_regras'. "
-            "Cada regra tem: 'antes' (a imagem gerada pela IA), 'depois' (a imagem ditada pelo humano) e 'motivo' (por que o humano mudou a direção de arte/câmera). "
-            "SE NÃO EXISTIREM ALTERAÇÕES NAS IMAGENS, retorne uma lista vazia [].\n\n"
+            "Sua tarefa é realizar uma ANALISE TÉCNICA E CIRÚRGICA da calibragem baseada em DIFF (Diferença entre versões).\n\n"
+            "🔴 METODOLOGIA OBRIGATÓRIA (DIFF-ORIENTED):\n"
+            "1. ANALISE LINHA POR LINHA: Compare cada frase do Roteiro IA com a respectiva do Roteiro Humano.\n"
+            "2. FOCO NO DELTA: Identifique exatamente o que foi ADICIONADO, REMOVIDO ou ALTERADO.\n"
+            "3. RAZÃO DA MUDANÇA: Para cada diferença encontrada no DIFF, pergunte-se: 'Por que o humano mudou isso?'. A resposta a essa pergunta é o que deve compor as lições técnicas e os registros nas tabelas.\n"
+            "4. CERTO X ERRADO: Toda análise deve evidenciar o erro da IA (texto gerado) e o acerto do Humano (texto corrigido).\n\n"
+            "ITENS DA ANÁLISE:\n"
+            "1. CALCULE O SCORE (%) DE APROVEITAMENTO: Seja justo. Pequenas trocas de palavras, correções de vírgula ou gramática NÃO devem baixar a nota para menos de 95%.\n"
+            "   Siga esta Régua Orgânica Magalu:\n"
+            "   - 🔥 96% a 100% (4.8 a 5.0 Estrelas): Roteiro Excelente.\n"
+            "   - 🟢 85% a 95% (4.2 a 4.7 Estrelas): Ajustes de Estilo.\n"
+            "   - 🟡 65% a 84% (3.2 a 4.1 Estrelas): Ajustes Estruturais.\n"
+            "   - 🔴 Abaixo de 65% (1.0 a 3.1 Estrelas): Erro Grave.\n"
+            "2. LIÇÕES TÉCNICAS (ROTEIROS OURO): Transforme os DIFFS em DIRETRIZES GERAIS para o futuro no campo 'aprendizado'. Esta é a ÚNICA área onde você deve fazer análises explicativas.\n"
+            "3. EXTRAIA O CÓDIGO DO PRODUTO (SKU): Procure no texto ou use o sugerido.\n"
+            "4. CATEGORIZE: Escolha o ID correto da lista abaixo.\n\n"
+            "🔴 REGRA DE EXTRAÇÃO LITERAL (PARA OS ARRAYS DE REGRAS ABAIXO):\n"
+            "   É ESTRITAMENTE PROIBIDO inserir análises, resumos ou explicações nos campos: 'antes', 'depois', 'erro', 'correcao', 'texto_ouro', 'termo_errado', 'termo_corrigido'.\n"
+            "   Eles DEVEM ser um COPY/PASTE EXATO (Substring Literal) do respectivo roteiro.\n"
+            "   Exemplo CERTO: \"erro\": \"O painel analógico\", \"correcao\": \"O painel é super fácil, sabe?\"\n"
+            "   Exemplo ERRADO: \"erro\": \"IA usou tom descritivo\", \"correcao\": \"Humano adicionou interjeição\".\n\n"
+            "5. FONÉTICA (AUTO-EXTRAÇÃO): Mapeie termos com pronúncia. 'termo_errado' = texto IA exato. 'termo_corrigido' = texto Humano exato.\n"
+            "6. ESTRUTURAS (HOOKS E CTAs): 'texto_ouro' DEVE ser a frase exata contendo o hook ou fechamento aprovado no Humano.\n"
+            "7. PERSONA LU (AUTO-EXTRAÇÃO): Identifique no DIFF mudanças de tom/gírias. 'erro' = Frase EXATA do Roteiro IA. 'correcao' = Frase EXATA do Roteiro Humano.\n"
+            "8. RESUMO ESTRATÉGICO: Sintetize a intenção do editor.\n"
+            "9. IMAGENS (VISUAL - ALERTA MÁXIMO): Compare cada linha 'Imagem:'. 'antes' = Texto APÓS 'Imagem:' no Roteiro IA. 'depois' = Texto APÓS 'Imagem:' no Roteiro Humano. O campo 'motivo' é o ÚNICO lugar para explicar a razão da mudança.\n"
             "LISTA DE CATEGORIAS DISPONÍVEIS:\n"
             f"{cat_str}\n\n"
             "🚨 REGRA CRÍTICA DE FORMATAÇÃO DE SAÍDA:\n"
-            "Você é um robô de extração de dados Puros. Retorne EXCLUSIVAMENTE o conteúdo JSON abaixo.\n"
-            "- NENHUM TEXTO ANTES OU DEPOIS DO JSON.\n"
-            "- SEM PENSAMENTOS (tags <think> são proibidas na resposta final).\n"
-            "- NÃO use blocos de código markdown (```json ... ```).\n"
-            "- Inicie OBRIGATORIAMENTE with { e termine OBRIGATORIAMENTE with }.\n\n"
-            "Formato exato:\n"
+            "Retorne EXCLUSIVAMENTE o conteúdo JSON abaixo. Sem blocos markdown, sem tags, sem preâmbulo.\n"
             "{\n"
             "  \"percentual\": <inteiro 0-100>,\n"
             "  \"aprendizado\": \"<diretrizes táticas de escrita em tópicos>\",\n"
@@ -546,17 +546,16 @@ class RoteiristaAgent:
         if api_key_gemini:
             try:
                 print("[TRY] Tentando calibragem via Gemini (3-flash-preview)...")
-                genai_v1.configure(api_key=api_key_gemini)
-                model_v1 = genai_v1.GenerativeModel('gemini-3-flash-preview')
+                client_v2 = genai.Client(api_key=api_key_gemini)
                 
-                # Prompt de sistema + usuário combinados (v1)
+                # Prompt de sistema + usuário combinados
                 full_prompt = f"{sys_prompt}\n\n{user_prompt}"
                 
-                response = model_v1.generate_content(
-                    full_prompt,
-                    generation_config=genai_v1.types.GenerationConfig(
-                        temperature=0.1,
-                    )
+                response = client_v2.models.generate_content(
+                    model='gemini-3-flash-preview',
+                    contents=full_prompt,
+                    config={'temperature': 0.1},
+                    request_options={'timeout': 150}
                 )
                 res = self._extract_json(response.text)
                 print("[OK] Calibragem realizada via Gemini (3-flash-preview)")
@@ -598,7 +597,9 @@ class RoteiristaAgent:
             "modelo_calibragem": modelo_calibragem,
             "fonetica_regras": res.get("fonetica_regras", []),
             "estrutura_regras": res.get("estrutura_regras", []),
-            "persona_regras": res.get("persona_regras", [])
+            "persona_regras": res.get("persona_regras", []),
+            "imagens_regras": res.get("imagens_regras", []),
+            "resumo_estrategico": res.get("resumo_estrategico", "")
         }
 
     def chat_with_context(self, user_query, chat_history=[], supabase_context=None):
@@ -630,7 +631,8 @@ class RoteiristaAgent:
                 response = self.client_gemini.models.generate_content(
                     model=self.model_id,
                     contents=full_prompt,
-                    config={"temperature": 0.5}
+                    config={"temperature": 0.5},
+                    request_options={'timeout': 150}
                 )
                 return response.text
                 
@@ -687,11 +689,20 @@ class RoteiristaAgent:
             user_prompt
         ]
 
-        if self.client_gemini:
-            response = self.client_gemini.generate_content(contents)
+        if self.provider == "gemini":
+            response = self.client_gemini.models.generate_content(
+                model=self.model_id,
+                contents=[sys_prompt, user_prompt],
+                config={'temperature': 0.7},
+                request_options={'timeout': 150}
+            )
             roteiro = response.text
-            tokens_in = len(str(contents)) // 4
-            tokens_out = len(roteiro) // 4
+            if hasattr(response, 'usage_metadata'):
+                tokens_in = response.usage_metadata.prompt_token_count
+                tokens_out = response.usage_metadata.candidates_token_count
+            else:
+                tokens_in = len(str(contents)) // 4
+                tokens_out = len(roteiro) // 4
         elif self.client_openai:
             messages = [
                 {"role": "system", "content": sys_prompt},
