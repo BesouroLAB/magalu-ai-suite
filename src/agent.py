@@ -420,14 +420,21 @@ class RoteiristaAgent:
                         http_options={'timeout': 120000} # 120 segundos em ms
                     )
                 )
-            except TypeError as te:
-                if 'request_options' in str(te):
-                    print(f"[CRITICAL ERR] Erro detectado no SDK v2 (request_options): {te}. Tentando fallback sem config.")
+            except Exception as outer_e:
+                print(f"[CRITICAL ERR] Erro no modelo principal ({self.model_id}): {outer_e}. Tentando fallback geral para gemini-2.5-flash.")
+                try:
+                    self.model_id = 'gemini-2.5-flash'
                     response = self.client_gemini.models.generate_content(
                         model=self.model_id,
-                        contents=contents
+                        contents=contents,
+                        config=types.GenerateContentConfig(
+                            temperature=0.7,
+                            http_options={'timeout': 120000}
+                        )
                     )
-                else: raise te
+                except Exception as fallback_e:
+                    print(f"[CRITICAL ERR] Fallback para gemini-2.5-flash também falhou: {fallback_e}")
+                    raise outer_e # Relança o erro original se o fallback também falhar
             
             # Resiliência na obtenção do texto (evita exceções se a resposta for bloqueada ou vazia)
             try:
