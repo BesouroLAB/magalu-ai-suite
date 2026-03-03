@@ -2670,9 +2670,10 @@ elif page == "Dashboard":
                 col_f1, col_f2 = st.columns([1, 2])
                 with col_f1:
                     hoje = datetime.now()
+                    um_ano_atras = hoje - pd.Timedelta(days=365)
                     periodo = st.date_input(
                         "📅 Período de Análise:",
-                        value=(hoje.replace(day=1), hoje),
+                        value=(um_ano_atras, hoje),
                         format="DD/MM/YYYY"
                     )
                 with col_f2:
@@ -2684,13 +2685,25 @@ elif page == "Dashboard":
                 # Ajuste para cobrir o dia inteiro da data final
                 end_date = end_date.replace(hour=23, minute=59, second=59)
                 
-                df_ouro = df_ouro[(pd.to_datetime(df_ouro['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_ouro['criado_em']).dt.tz_localize(None) <= end_date)] if not df_ouro.empty else df_ouro
-                df_pers = df_pers[(pd.to_datetime(df_pers['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_pers['criado_em']).dt.tz_localize(None) <= end_date)] if not df_pers.empty else df_pers
-                df_fon = df_fon[(pd.to_datetime(df_fon['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_fon['criado_em']).dt.tz_localize(None) <= end_date)] if not df_fon.empty else df_fon
-                df_est = df_est[(pd.to_datetime(df_est['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_est['criado_em']).dt.tz_localize(None) <= end_date)] if not df_est.empty else df_est
-                df_hist_dash = df_hist_dash[(pd.to_datetime(df_hist_dash['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_hist_dash['criado_em']).dt.tz_localize(None) <= end_date)] if not df_hist_dash.empty else df_hist_dash
-                df_nuan = df_nuan[(pd.to_datetime(df_nuan['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_nuan['criado_em']).dt.tz_localize(None) <= end_date)] if not df_nuan.empty else df_nuan
-                df_img = df_img[(pd.to_datetime(df_img['criado_em']).dt.tz_localize(None) >= start_date) & (pd.to_datetime(df_img['criado_em']).dt.tz_localize(None) <= end_date)] if not df_img.empty else df_img
+                def safe_filter(df, start_d, end_d):
+                    if df.empty or 'criado_em' not in df.columns: return df
+                    def parse_val(v):
+                        try:
+                            if isinstance(v, str) and "às" in v:
+                                return pd.to_datetime(v, format='%d/%m/%y às %H:%M').tz_localize(None)
+                            return pd.to_datetime(v, utc=True).tz_convert('America/Sao_Paulo').tz_localize(None)
+                        except: return pd.NaT
+                    
+                    parsed_dates = df['criado_em'].apply(parse_val)
+                    return df[(parsed_dates >= start_d) & (parsed_dates <= end_d)]
+
+                df_ouro = safe_filter(df_ouro, start_date, end_date)
+                df_pers = safe_filter(df_pers, start_date, end_date)
+                df_fon = safe_filter(df_fon, start_date, end_date)
+                df_est = safe_filter(df_est, start_date, end_date)
+                df_hist_dash = safe_filter(df_hist_dash, start_date, end_date)
+                df_nuan = safe_filter(df_nuan, start_date, end_date)
+                df_img = safe_filter(df_img, start_date, end_date)
 
             # Aplicar Filtro de Busca
             if search_dash:
@@ -2862,15 +2875,22 @@ elif page == "Dashboard":
             with col_prod:
                 st.markdown("#### 📈 Evolução de Produção & Qualidade")
                 if not df_hist_dash.empty and 'criado_em' in df_hist_dash.columns:
-                    # Preparação de dados de volume
+                    # Need safe parsing here too!
+                    def parse_date_only(v):
+                        try:
+                            if isinstance(v, str) and "às" in v:
+                                return pd.to_datetime(v, format='%d/%m/%y às %H:%M').date()
+                            return pd.to_datetime(v, utc=True).tz_convert('America/Sao_Paulo').date()
+                        except: return pd.NaT
+
                     df_timeline = df_hist_dash.copy()
-                    df_timeline['data'] = pd.to_datetime(df_timeline['criado_em']).dt.date
+                    df_timeline['data'] = df_timeline['criado_em'].apply(parse_date_only)
                     vol_data = df_timeline.groupby('data').size().reset_index(name='Volume')
                     
                     # Preparação de dados de qualidade (se houver ouro)
                     if not df_ouro.empty:
                         df_q = df_ouro.copy()
-                        df_q['data'] = pd.to_datetime(df_q['criado_em']).dt.date
+                        df_q['data'] = df_q['criado_em'].apply(parse_date_only)
                         qual_data = df_q.groupby('data')['nota_percentual'].mean().reset_index(name='Qualidade')
                         chart_merged = pd.merge(vol_data, qual_data, on='data', how='left').fillna(0)
                     else:
@@ -3143,7 +3163,15 @@ elif page == "Assistente Lu":
                             d_recent = sp.table(f"{st.session_state.get('table_prefix', 'nw_')}historico_roteiros").select("criado_em, codigo_produto, custo_estimado_brl, modelo_llm").order('criado_em', desc=True).limit(200).execute()
                             if d_recent.data:
                                 df = pd.DataFrame(d_recent.data)
-                                df['data'] = pd.to_datetime(df['criado_em']).dt.tz_convert('America/Sao_Paulo').dt.date
+                                
+                                def parse_date_only(v):
+                                    try:
+                                        if isinstance(v, str) and "às" in v:
+                                            return pd.to_datetime(v, format='%d/%m/%y às %H:%M').date()
+                                        return pd.to_datetime(v, utc=True).tz_convert('America/Sao_Paulo').date()
+                                    except: return pd.NaT
+
+                                df['data'] = df['criado_em'].apply(parse_date_only)
                                 total_geral = len(df)
                                 total_hoje = len(df[df['data'] == now_sp_chat.date()])
                                 custo_total = df['custo_estimado_brl'].sum()
