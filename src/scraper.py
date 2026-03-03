@@ -63,12 +63,25 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None) -> dict:
             temperature=0.0
         )
         
-        # gemini-2.0-flash é estável e resiliente para grounding
-        response = client.models.generate_content(
-            model='gemini-2.0-flash', 
-            contents=prompt,
-            config=config
-        )
+        # Tenta primeiro com o Gemini 3 Flash Preview (Melhor inteligência de pesquisa)
+        # Se falhar (ex: 503), faz fallback automático para o 2.0 Flash (Mais estável)
+        try:
+            print(f"[SCRAPER] Tentando Grounding via Gemini 3 Flash Preview...")
+            response = client.models.generate_content(
+                model='gemini-3-flash-preview', 
+                contents=prompt,
+                config=config
+            )
+        except Exception as e_3:
+            if "503" in str(e_3) or "service_unavailable" in str(e_3).lower():
+                print(f"[SCRAPER] Gemini 3 instável (503). Acionando FALLBACK 2.0 Flash...")
+                response = client.models.generate_content(
+                    model='gemini-2.0-flash', 
+                    contents=prompt,
+                    config=config
+                )
+            else:
+                raise e_3
         
         def get_text_safe(resp):
             try:
@@ -81,17 +94,23 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None) -> dict:
         result_text = get_text_safe(response)
         
         if not result_text or len(result_text.strip()) < 50 or "ERRO:" in result_text:
-            print(f"[SCRAPER] Grounding falhou para {code}. Tentando Prompt Direto sem Tools...")
-            # Fallback 1: Prompt Direto sem Tools (Grounding as vezes bloqueia por segurança)
-            response_fallback = client.models.generate_content(
-                model='gemini-2.0-flash',
-                contents=f"Extraia a ficha técnica do produto Magalu código {code}. Se não souber, retorne apenas 'FALHA_TOTAL'.",
-            )
+            print(f"[SCRAPER] Grounding falhou para {code}. Tentando Prompt Direto...")
+            # Fallback 1: Prompt Direto sem Tools
+            try:
+                response_fallback = client.models.generate_content(
+                    model='gemini-3-flash-preview',
+                    contents=f"Extraia a ficha técnica do produto Magalu código {code}. Se não souber, retorne apenas 'FALHA_TOTAL'.",
+                )
+            except:
+                response_fallback = client.models.generate_content(
+                    model='gemini-2.0-flash',
+                    contents=f"Extraia a ficha técnica do produto Magalu código {code}. Se não souber, retorne apenas 'FALHA_TOTAL'.",
+                )
             result_text = get_text_safe(response_fallback)
 
         if (not result_text or "FALHA_TOTAL" in result_text) and input_val.startswith("http"):
             print(f"[SCRAPER] Prompt Direto falhou. Tentando extração via URL Context...")
-            # Fallback 2: URL Context (Simulado via requests se possível, ou apenas avisando)
+            # Fallback 2: URL Context
             try:
                 import requests
                 from bs4 import BeautifulSoup
@@ -99,16 +118,22 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None) -> dict:
                 resp = requests.get(input_val, headers=headers, timeout=10)
                 if resp.status_code == 200:
                     soup = BeautifulSoup(resp.text, 'html.parser')
-                    # Pega o texto principal
                     text_content = soup.get_text(separator='\n')
-                    # Resume com IA
-                    res_url = client.models.generate_content(
-                        model='gemini-2.0-flash',
-                        contents=f"Resuma os dados técnicos deste produto Magalu a partir do conteúdo bruto abaixo:\n\n{text_content[:15000]}"
-                    )
+                    
+                    try:
+                        res_url = client.models.generate_content(
+                            model='gemini-3-flash-preview',
+                            contents=f"Resuma os dados técnicos deste produto Magalu a partir do conteúdo bruto abaixo:\n\n{text_content[:15000]}"
+                        )
+                    except:
+                        res_url = client.models.generate_content(
+                            model='gemini-2.0-flash',
+                            contents=f"Resuma os dados técnicos deste produto Magalu a partir do conteúdo bruto abaixo:\n\n{text_content[:15000]}"
+                        )
                     result_text = get_text_safe(res_url)
             except Exception as e:
                 print(f"[SCRAPER] Erro no Fallback URL: {e}")
+
 
         if not result_text or len(result_text.strip()) < 50:
              result_text = f"⚠️ EXTRAÇÃO AUTOMÁTICA FALHOU: Não conseguimos resgatar dados para o SKU {code}. Por favor, cole a ficha técnica manualmente no campo de entrada."
