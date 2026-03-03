@@ -75,15 +75,25 @@ class RoteiristaAgent:
         self.client_openai = None
         self.provider = "gemini"
 
+        def _get_key(key_name):
+            # Tenta Env -> Tenta Secrets (Streamlit)
+            val = os.environ.get(key_name)
+            if not val:
+                try:
+                    import streamlit as st
+                    val = st.secrets.get(key_name)
+                except: pass
+            return val
+
         if self.model_id.startswith("gemini"):
             self.provider = "gemini"
-            api_key = os.environ.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
+            api_key = _get_key("GEMINI_API_KEY")
             if not api_key:
                 raise ValueError("GEMINI_API_KEY não encontrada!")
             self.client_gemini = genai.Client(api_key=api_key)
         elif self.model_id.startswith("puter/"):
             self.provider = "puter"
-            puter_key = os.environ.get("PUTER_API_KEY")
+            puter_key = _get_key("PUTER_API_KEY")
             if not puter_key:
                 raise ValueError("PUTER_API_KEY não encontrada!")
             self.client_openai = OpenAI(
@@ -93,30 +103,31 @@ class RoteiristaAgent:
             self.model_id = self.model_id.replace("puter/", "")
         elif self.model_id.startswith("openai/"):
             self.provider = "openai"
-            openai_key = os.environ.get("OPENAI_API_KEY")
+            openai_key = _get_key("OPEN_AI_KEY") or _get_key("OPENAI_API_KEY")
             if not openai_key:
                 raise ValueError("OPENAI_API_KEY não encontrada!")
             self.client_openai = OpenAI(api_key=openai_key)
             self.model_id = self.model_id.replace("openai/", "")
         elif self.model_id.startswith("openrouter/"):
             self.provider = "openrouter"
-            or_key = os.environ.get("OPENROUTER_API_KEY")
-            if not or_key:
+            openrouter_key = _get_key("OPENROUTER_API_KEY")
+            if not openrouter_key:
                 raise ValueError("OPENROUTER_API_KEY não encontrada!")
             self.client_openai = OpenAI(
-                api_key=or_key,
+                api_key=openrouter_key,
                 base_url="https://openrouter.ai/api/v1"
             )
             self.model_id = self.model_id.replace("openrouter/", "")
         elif self.model_id.startswith("zai/"):
             self.provider = "zai"
-            zai_key = os.environ.get("ZAI_API_KEY")
+            zai_key = _get_key("ZAI_API_KEY")
             if not zai_key:
                 raise ValueError("ZAI_API_KEY não encontrada!")
             self.client_openai = OpenAI(
                 api_key=zai_key,
                 base_url="https://api.z.ai/api/paas/v4/"
             )
+            self.model_id = self.model_id.replace("zai/", "")
             self.model_id = self.model_id.replace("zai/", "")
         elif self.model_id.startswith("kimi/"):
             self.provider = "kimi"
@@ -301,7 +312,7 @@ class RoteiristaAgent:
                 response = client.models.generate_content(
                     model='gemini-2.0-flash', # Mais estável
                     contents=prompt,
-                    config=types.GenerateConfig(temperature=0.3)
+                    config=types.GenerateContentConfig(temperature=0.3)
                 )
                 print("[OK] Memoria de calibragem gerada via Gemini (3-flash-preview)")
                 return response.text.replace('\n', ' ').strip()
@@ -404,7 +415,7 @@ class RoteiristaAgent:
                 response = self.client_gemini.models.generate_content(
                     model=self.model_id,
                     contents=contents,
-                    config=types.GenerateConfig(
+                    config=types.GenerateContentConfig(
                         temperature=0.7,
                         http_options={'timeout': 120000} # 120 segundos em ms
                     )
@@ -643,7 +654,7 @@ class RoteiristaAgent:
                 response_gem = client_v2.models.generate_content(
                     model="gemini-2.0-flash", # Mais estável que o 3-preview sob carga
                     contents=[sys_prompt, user_prompt],
-                    config=types.GenerateConfig(temperature=0.1)
+                    config=types.GenerateContentConfig(temperature=0.1)
                 )
                 
                 try:
@@ -742,7 +753,7 @@ class RoteiristaAgent:
                 response = self.client_gemini.models.generate_content(
                     model=self.model_id,
                     contents=full_prompt,
-                    config=types.GenerateConfig(temperature=0.5)
+                    config=types.GenerateContentConfig(temperature=0.5)
                 )
                 return response.text
                 
@@ -803,7 +814,7 @@ class RoteiristaAgent:
             response = self.client_gemini.models.generate_content(
                 model=self.model_id,
                 contents=[sys_prompt, user_prompt],
-                config=types.GenerateConfig(temperature=0.7)
+                config=types.GenerateContentConfig(temperature=0.7)
             )
             roteiro = response.text
             if hasattr(response, 'usage_metadata'):

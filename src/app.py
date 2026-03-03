@@ -1107,9 +1107,18 @@ if 'show_doc_modal' in st.session_state:
     modal_doc_viewer(st.session_state['show_doc_modal'])
 
 
-# --- PÁGINA 1: CRIAR ROTEIROS ---
+    # --- PÁGINA 1: CRIAR ROTEIROS ---
 if page == "Criar Roteiros":
     
+    # --- EXIBIÇÃO DE ERROS PERSISTENTES ---
+    if st.session_state.get('last_errors'):
+        with st.expander("🚨 Detalhes de Erros Recentemente Ocorridos", expanded=True):
+            for err in st.session_state['last_errors']:
+                st.error(err)
+            if st.button("Clear Errors"):
+                del st.session_state['last_errors']
+                st.rerun()
+
     # --- COMMAND CENTER (INPUTS) ---
     # Colapsa automaticamente após geração, mas o usuário sempre pode reabrir
     _has_roteiros = 'roteiros' in st.session_state and st.session_state['roteiros']
@@ -1266,12 +1275,13 @@ if page == "Criar Roteiros":
                     bar = st.progress(0)
                     
                     sp_cli = st.session_state.get('supabase_client')
-                    modelo_id = st.session_state.get('modelo_llm', 'gemini-3-flash-preview')
+                    modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
                     table_prefix = st.session_state.get('table_prefix', 'nw_')
                     
                      # Instancia Agente (fora do loop para eficiência)
                     agent = RoteiristaAgent(supabase_client=sp_cli, model_id=modelo_id, table_prefix=table_prefix)
                     
+                    erros_lote = []
                     for i, (idx, row) in enumerate(df_edited.iterrows()):
                         current_code = str(row['SKU Principal']).strip()
                         percent = int((i + 1) / total * 100)
@@ -1338,10 +1348,19 @@ if page == "Criar Roteiros":
                                 
                                 st.session_state['roteiros'].insert(0, novo_roteiro)
                         except Exception as e:
-                            st.error(f"❌ Erro no SKU {current_code}: {e}")
+                            err_msg = f"❌ Erro no SKU {current_code}: {str(e)}"
+                            st.error(err_msg)
+                            erros_lote.append(err_msg)
 
                     st.session_state['roteiro_ativo_idx'] = 0
-                    st.success(f"🎯 Geração de {total} roteiros concluída!")
+                    if erros_lote:
+                        st.session_state['last_errors'] = erros_lote
+                    
+                    if not erros_lote:
+                        st.success(f"🎯 Geração de {total} roteiros concluída!")
+                    else:
+                        st.warning(f"⚠️ Concluído com {len(erros_lote)} erro(s). Veja os detalhes acima.")
+                    
                     st.rerun()
 
         with tab_manual:
