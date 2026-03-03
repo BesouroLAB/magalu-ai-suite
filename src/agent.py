@@ -2,6 +2,7 @@ import os
 import json
 import glob
 from google import genai
+from google.genai import types
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -293,7 +294,7 @@ class RoteiristaAgent:
                 response = client.models.generate_content(
                     model='gemini-3-flash-preview',
                     contents=prompt,
-                    config={'temperature': 0.3}
+                    config=types.GenerateConfig(temperature=0.3)
                 )
                 print("[OK] Memoria de calibragem gerada via Gemini (3-flash-preview)")
                 return response.text.replace('\n', ' ').strip()
@@ -390,12 +391,25 @@ class RoteiristaAgent:
                             "data": img_bytes
                         })
 
-            # Chamada via SDK v2 com timeout estendido
-            response = self.client_gemini.models.generate_content(
-                model=self.model_id,
-                contents=contents,
-                config={'temperature': 0.7}
-            )
+            # Chamada via SDK v2 com timeout estendido através do GenerateConfig
+            try:
+                print(f"[DEBUG] Chamando Models.generate_content para SKU {codigo} com modelo {self.model_id}")
+                response = self.client_gemini.models.generate_content(
+                    model=self.model_id,
+                    contents=contents,
+                    config=types.GenerateConfig(
+                        temperature=0.7,
+                        http_options={'timeout': 120000} # 120 segundos em ms
+                    )
+                )
+            except TypeError as te:
+                if 'request_options' in str(te):
+                    print(f"[CRITICAL ERR] Erro detectado no SDK v2 (request_options): {te}. Tentando fallback sem config.")
+                    response = self.client_gemini.models.generate_content(
+                        model=self.model_id,
+                        contents=contents
+                    )
+                else: raise te
             
             # Resiliência na obtenção do texto (evita exceções se a resposta for bloqueada ou vazia)
             try:
@@ -622,7 +636,7 @@ class RoteiristaAgent:
                 response_gem = client_v2.models.generate_content(
                     model="gemini-3-flash-preview",
                     contents=[sys_prompt, user_prompt],
-                    config={'temperature': 0.1}
+                    config=types.GenerateConfig(temperature=0.1)
                 )
                 
                 try:
@@ -721,7 +735,7 @@ class RoteiristaAgent:
                 response = self.client_gemini.models.generate_content(
                     model=self.model_id,
                     contents=full_prompt,
-                    config={"temperature": 0.5}
+                    config=types.GenerateConfig(temperature=0.5)
                 )
                 return response.text
                 
@@ -782,7 +796,7 @@ class RoteiristaAgent:
             response = self.client_gemini.models.generate_content(
                 model=self.model_id,
                 contents=[sys_prompt, user_prompt],
-                config={'temperature': 0.7}
+                config=types.GenerateConfig(temperature=0.7)
             )
             roteiro = response.text
             if hasattr(response, 'usage_metadata'):
