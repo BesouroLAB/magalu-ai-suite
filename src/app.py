@@ -1045,6 +1045,7 @@ with st.sidebar:
             st.markdown(f"⚠️ **Calibragem de {pc['codigo_p']} ainda não confirmada!**")
             col_rec1, col_rec2 = st.columns(2)
             if col_rec1.button("🧠 Abrir Resultado Novamente", type="primary", use_container_width=True):
+                st.session_state['show_diff'] = False
                 modal_resultado_calibragem(pc['calc'], st.session_state.get('supabase_client'), pc['roteiro_ia'], pc['roteiro_humano'], pc['titulo_curto'], pc['codigo_p'])
             if col_rec2.button("🗑️ Descartar", type="secondary", use_container_width=True):
                 del st.session_state['pending_calibration']
@@ -1890,6 +1891,7 @@ if page == "Criar Roteiros":
                                 'titulo_curto': titulo_curto,
                                 'codigo_p': codigo_produto
                             }
+                            st.session_state['show_diff'] = False
                             modal_resultado_calibragem(calc, sp_cli, item['roteiro_original'], edited_val, titulo_curto, codigo_produto)
                     else:
                         st.error("Conecte o Supabase primeiro.")
@@ -2055,6 +2057,7 @@ elif page == "Treinar IA":
                                     'titulo_curto': calc['codigo_produto'],
                                     'codigo_p': calc['codigo_produto']
                                 }
+                                st.session_state['show_diff'] = False
                                 modal_resultado_calibragem(calc, sp_client, roteiro_ia_input, roteiro_humano_input, calc['codigo_produto'], calc['codigo_produto'])
                         except Exception as e:
                             st.error(f"Erro ao salvar calibragem: {e}")
