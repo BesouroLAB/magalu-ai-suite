@@ -1866,9 +1866,34 @@ elif page == "Treinar IA":
 
         tab_fb, tab_nuan, tab_est, tab_img, tab_pers, tab_fon, tab_ouro, tab_cat = st.tabs(["⚖️ Calibragem", "🧠 Nuances", "💬 Ganchos & CTAs", "📸 Imagens", "💃 Persona", "🗣️ Fonética", "🏆 Roteiros Ouro", "📂 Categorias"])
         
+        # --- FUNÇÕES MODAIS DE DOCUMENTAÇÃO ---
+        @st.dialog("📚 Guia do Redator V3.0", width="large")
+        def modal_doc_redator():
+            try:
+                with open("docs/calibragem_redatores_v3.0.md", "r", encoding="utf-8") as f:
+                    st.markdown(f.read())
+            except Exception as e:
+                st.error(f"Arquivo não encontrado: {e}")
+
+        @st.dialog("⚙️ Documentação Técnica V3.0", width="large")
+        def modal_doc_tecnica():
+            try:
+                with open("docs/calibragem_tecnica_v3.0.md", "r", encoding="utf-8") as f:
+                    st.markdown(f.read())
+            except Exception as e:
+                st.error(f"Arquivo não encontrado: {e}")
+
         with tab_fb:
-            st.markdown("### ⚖️ Calibragem: IA vs Aprovado")
-            st.caption("Compare o que a IA gerou com o roteiro final aprovado. A Suíte Magalu calculará o nível de aproveitamento e extrairá Diretrizes de Redação automaticamente.")
+            col_header, col_btn1, col_btn2 = st.columns([2.5, 1, 1])
+            with col_header:
+                st.markdown("### ⚖️ Calibragem (IA vs Humano)")
+                st.caption("Compare e treine a IA automaticamente.")
+            with col_btn1:
+                if st.button("📚 Guia do Redator", use_container_width=True):
+                    modal_doc_redator()
+            with col_btn2:
+                if st.button("⚙️ Manual Técnico", use_container_width=True):
+                    modal_doc_tecnica()
             
             st.markdown("""
             <div style='background-color: rgba(0, 134, 255, 0.1); padding: 15px; border-radius: 8px; border-left: 5px solid #0084ff; margin-bottom: 20px;'>
