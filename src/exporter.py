@@ -7,6 +7,7 @@ import io
 import re
 import zipfile
 from datetime import datetime
+import pytz
 from docx import Document
 from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -180,7 +181,7 @@ def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "
 
     if not has_header:
         # Gera cabeçalho padrão
-        header_date = selected_date if selected_date else datetime.now().strftime('%d/%m/%y')
+        header_date = selected_date if selected_date else datetime.now(pytz.timezone('America/Sao_Paulo')).strftime('%d/%m/%y')
         _add_header_line(doc, "Cliente: Magalu")
         _add_header_line(doc, f"Roteirista: Tiago Fernandes - Data: {header_date}")
         _add_header_line(doc, f"Produto: NW LU {selected_month} {code} {product_name}")
@@ -195,7 +196,7 @@ def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "
         if btype == "header":
             # Corrige a data se necessário
             if "Data:" in text:
-                now = datetime.now()
+                now = datetime.now(pytz.timezone('America/Sao_Paulo'))
                 text = re.sub(r'Data:\s*[\d/]+', f"Data: {now.strftime('%d/%m/%y')}", text)
             _add_header_line(doc, text)
         elif btype == "separator":
@@ -288,7 +289,7 @@ def export_all_roteiros_zip(roteiros: list, selected_month: str = "MAR", selecte
             zip_file.writestr(filename, doc_bytes)
             
     zip_buffer.seek(0)
-    now = datetime.now()
+    now = datetime.now(pytz.timezone('America/Sao_Paulo'))
     zip_filename = f"ROTEIROS_MAGALU_{now.strftime('%d_%m_%Y_%H%M')}.zip"
     
     return zip_buffer.getvalue(), zip_filename
