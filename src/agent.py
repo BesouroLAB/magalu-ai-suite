@@ -293,8 +293,7 @@ class RoteiristaAgent:
                 response = client.models.generate_content(
                     model='gemini-3-flash-preview',
                     contents=prompt,
-                    config={'temperature': 0.3},
-                    request_options={'timeout': 150}
+                    config={'temperature': 0.3}
                 )
                 print("[OK] Memoria de calibragem gerada via Gemini (3-flash-preview)")
                 return response.text.replace('\n', ' ').strip()
@@ -395,8 +394,7 @@ class RoteiristaAgent:
             response = self.client_gemini.models.generate_content(
                 model=self.model_id,
                 contents=contents,
-                config={'temperature': 0.7},
-                request_options={'timeout': 150}
+                config={'temperature': 0.7}
             )
             
             # Resiliência na obtenção do texto (evita exceções se a resposta for bloqueada ou vazia)
@@ -723,8 +721,7 @@ class RoteiristaAgent:
                 response = self.client_gemini.models.generate_content(
                     model=self.model_id,
                     contents=full_prompt,
-                    config={"temperature": 0.5},
-                    request_options={'timeout': 150}
+                    config={"temperature": 0.5}
                 )
                 return response.text
                 
@@ -785,8 +782,7 @@ class RoteiristaAgent:
             response = self.client_gemini.models.generate_content(
                 model=self.model_id,
                 contents=[sys_prompt, user_prompt],
-                config={'temperature': 0.7},
-                request_options={'timeout': 150}
+                config={'temperature': 0.7}
             )
             roteiro = response.text
             if hasattr(response, 'usage_metadata'):

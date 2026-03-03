@@ -322,7 +322,7 @@ def convert_to_sp_time(utc_datetime_str):
         if dt_utc.tzinfo is None:
             dt_utc = dt_utc.tz_localize('UTC')
         dt_sp = dt_utc.tz_convert('America/Sao_Paulo')
-        return dt_sp.strftime('%d/%m/%Y %H:%M')
+        return dt_sp.strftime('%d/%m/%y às %H:%M')
     except Exception:
         return utc_datetime_str
 
@@ -664,7 +664,23 @@ def render_visual_diff(original, final):
     </style>
     """
     st.markdown(diff_css + f"<div class='diff_container'>{html_diff}</div>", unsafe_allow_html=True)
+
+@st.dialog("📚 Documentação da IA", width="large")
+def modal_doc_viewer(file_path):
+    try:
+        if os.path.exists(file_path):
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            st.markdown(content)
+        else:
+            st.error(f"Arquivo não encontrado: {file_path}")
+    except Exception as e:
+        st.error(f"Erro ao ler documentação: {e}")
     
+    if st.button("Fechar", use_container_width=True):
+        del st.session_state['show_doc_modal']
+        st.rerun()
+
 @st.dialog("🧠 Resultado da Calibragem")
 def modal_resultado_calibragem(calc, sp_cli, roteiro_ia, roteiro_humano, titulo_curto="", codigo_p=""):
     # Salva no estado para recuperação em caso de fechar acidentalmente
@@ -750,12 +766,32 @@ def modal_resultado_calibragem(calc, sp_cli, roteiro_ia, roteiro_humano, titulo_
         </div>
         """, unsafe_allow_html=True)
 
+    # --- SELETOR DE CATEGORIA (OVERRIDE HUMANO) ---
+    st.markdown("#### 📁 Classificação")
+    col_cat_m, _ = st.columns([2, 1])
+    with col_cat_m:
+        cat_guess_id = calc.get('categoria_id', 1)
+        try:
+            res_c_m = sp_cli.table("nw_categorias").select("id, nome").execute()
+            cats_m = res_c_m.data if res_c_m.data else []
+            cat_opt_m = {f"{c['nome']} (ID {c['id']})": c['id'] for c in cats_m}
+            cat_labels_m = list(cat_opt_m.keys())
+            def_idx_m = 0
+            for it, label in enumerate(cat_labels_m):
+                if cat_opt_m[label] == cat_guess_id:
+                    def_idx_m = it
+                    break
+            sel_cat_modal = st.selectbox("Confirmar Categoria Alvo:", cat_labels_m, index=def_idx_m, key="sel_cat_modal_calib")
+            final_cat_id_modal = cat_opt_m[sel_cat_modal]
+        except:
+            final_cat_id_modal = cat_guess_id
+
     st.divider()
     st.caption("Ao confirmar, a IA alimentará simultaneamente as tabelas acima.")
     
     if st.button("🚀 Confirmar e Gravar Todas as Lições", type="primary", use_container_width=True):
         # Salva Feedback Ouro (Aba Feedback)
-        cat_id = calc.get('categoria_id')
+        cat_id = final_cat_id_modal
         if not cat_id:
              # Fallback categoria ID
              try:
@@ -875,7 +911,7 @@ with st.sidebar:
     st.markdown("<div style='margin-bottom: 5px; font-weight: 600; font-size: 14px; color: #b0bdd0;'>📁 Ambiente (Tabelas):</div>", unsafe_allow_html=True)
     active_env = st.radio(
         "Ambiente de Trabalho",
-        ["NW Padrão", "NW 3D"],
+        ["NW Padrão", "NW 3D", "Discovery (SOCIAL)"],
         horizontal=True,
         label_visibility="collapsed",
         key="active_mode_radio"
@@ -883,7 +919,12 @@ with st.sidebar:
     
     # Salva no session state para refazer queries de banco dinâmicas
     st.session_state['active_mode'] = active_env
-    st.session_state['table_prefix'] = "nw_" if active_env == "NW Padrão" else "nw3d_"
+    if active_env == "NW Padrão":
+        st.session_state['table_prefix'] = "nw_"
+    elif active_env == "NW 3D":
+        st.session_state['table_prefix'] = "nw3d_"
+    else:
+        st.session_state['table_prefix'] = "social_"
 
     # --- SELETOR DE MODELO LLM ---
     # Usamos uma chave para detectar mudança
@@ -988,10 +1029,21 @@ with st.sidebar:
     </style>
     """, unsafe_allow_html=True)
 
+    # --- LINK DE DOCUMENTAÇÃO (Como Funciona) ---
     is_doc_active = st.session_state['page'] == "Como Funciona"
-    if st.button("📖 Como Funciona", use_container_width=True, key="btn_doc"):
+    if st.button("📖 Como Funciona (Básico)", use_container_width=True, key="btn_doc"):
         st.session_state['page'] = "Como Funciona"
         st.rerun()
+
+    # Botoes de Documentação Adicional (Novos)
+    st.markdown("<div style='margin-bottom: 5px; font-weight: 600; font-size: 11px; color: #6366f1; opacity: 0.8; margin-top: 10px;'>📚 MANUAIS DA IA:</div>", unsafe_allow_html=True)
+    col_doc1, col_doc2 = st.columns(2)
+    with col_doc1:
+        if st.button("📓 Guia Redator", use_container_width=True, key="doc_redator"):
+            st.session_state['show_doc_modal'] = "docs/calibragem_redatores_v3.0.md"
+    with col_doc2:
+        if st.button("🛠️ Manual Técnico", use_container_width=True, key="doc_tecnico"):
+            st.session_state['show_doc_modal'] = "docs/calibragem_tecnica_v3.0.md"
 
     st.markdown("""
         <div style='margin-top: 50px; padding: 15px 5px; border-top: 1px solid rgba(255,255,255,0.03); text-align: center;'>
@@ -1047,9 +1099,12 @@ def show_calibragem_summary():
             del st.session_state['show_calib_modal']
             st.rerun()
 
-# --- APLICAÇÃO PRINCIPAL ---
+# --- MODAIS GLOBAIS ---
 if 'show_calib_modal' in st.session_state:
     show_calibragem_summary()
+
+if 'show_doc_modal' in st.session_state:
+    modal_doc_viewer(st.session_state['show_doc_modal'])
 
 
 # --- PÁGINA 1: CRIAR ROTEIROS ---
@@ -1061,8 +1116,26 @@ if page == "Criar Roteiros":
     expander_input = st.expander("✍️ Inserir Códigos e Gerar", expanded=not _has_roteiros)
     
     with expander_input:
-        # Categoria padrão
+        # Carregamento de Categorias para o seletor
+        sp_cli_top = st.session_state.get('supabase_client')
         cat_selecionada_id = 1
+        lista_categorias_select = ["Genérico (ID 1)"]
+        cat_map = {"Genérico (ID 1)": 1}
+        
+        if sp_cli_top:
+            try:
+                res_c = sp_cli_top.table("nw_categorias").select("id, nome").execute()
+                if res_c.data:
+                    for c in res_c.data:
+                        label = f"{c['nome']} (ID {c['id']})"
+                        lista_categorias_select.append(label)
+                        cat_map[label] = c['id']
+            except: pass
+
+        col_cat_sel, _ = st.columns([2, 1])
+        with col_cat_sel:
+            cat_label_sel = st.selectbox("📁 Categoria Alvo (Para o Histórico):", lista_categorias_select, index=0, help="Define onde esse lote de roteiros será classificado na base de dados.")
+            cat_selecionada_id = cat_map[cat_label_sel]
 
         # Modo de entrada via Tabs
         tab_auto, tab_manual = st.tabs(["⚡ Automático (SKUs da Magalu)", "✍️ Manual (Colar Fichas)"])
@@ -1080,7 +1153,7 @@ if page == "Criar Roteiros":
             }
             modos_descricao = {
                 "📄 NW (NewWeb)": "Descrição completa, Ficha e Foto (Padrão)",
-                "📱 SOCIAL (Reels)": "Em breve: Ganchos virais e retenção",
+                "📱 SOCIAL (Reels)": "Hook viral + Captura mobile (Descobrimento)",
                 "🎮 3D (NewWeb 3D)": "Cenas em 3D autorais Magalu (Contínuo)",
                 "🎙️ Review": "Em breve: Prós e contras pro apresentador"
             }
@@ -1183,7 +1256,7 @@ if page == "Criar Roteiros":
                 )
                 
                 if st.button("🚀 Iniciar Extração e Geração", use_container_width=True, type="primary", key="btn_auto"):
-                    if modo_selecionado not in ["NW (NewWeb)", "3D (NewWeb 3D)"]:
+                    if modo_selecionado not in ["NW (NewWeb)", "3D (NewWeb 3D)", "SOCIAL (Reels/TikTok)"]:
                         st.warning(f"🚧 O formato {modo_selecionado} ainda está em desenvolvimento.")
                         st.stop()
                     
@@ -1206,13 +1279,15 @@ if page == "Criar Roteiros":
                         bar.progress((i + 1) / total)
                         
                         try:
-                            with st.spinner(f"Extraindo e gerando roteiro para {current_code}..."):
+                            with st.status(f"🚀 SKU {current_code} ({i+1}/{total})", expanded=True) as status_box:
                                 
                                 # 1. Scrape
+                                status_box.write("🔍 **Etapa 1:** Extraindo dados técnicos Magalu (Scraping)...")
                                 gemini_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
                                 ficha_extraida = scrape_with_gemini(current_code, api_key=gemini_key)
                                 
                                 # 2. Geração
+                                status_box.write("🧠 **Etapa 2:** Consultando IA e aplicando aprendizados (Agent)...")
                                 val_sub = row['Outros Códigos (Cor/Voltagem)']; sub_skus = str(val_sub).strip() if pd.notna(val_sub) and str(val_sub).lower() != 'nan' else ''
                                 val_vid = row['Vídeo do Fornecedor (Link)']; video_url = str(val_vid).strip() if pd.notna(val_vid) and str(val_vid).lower() != 'nan' else ''
                                 
@@ -1226,7 +1301,8 @@ if page == "Criar Roteiros":
                                     mes=mes_selecionado
                                 )
                                 
-                                # 3. Resultado
+                                # 3. Resultado e Salvamento
+                                status_box.write("💾 **Etapa 3:** Registrando no histórico e finalizando...")
                                 global_num = get_total_script_count(sp_cli) + 1
                                 novo_roteiro = {
                                     "_uid": str(uuid.uuid4()),
@@ -1253,9 +1329,12 @@ if page == "Criar Roteiros":
                                             "tokens_entrada": res_gen["tokens_in"],
                                             "tokens_saida": res_gen["tokens_out"],
                                             "custo_estimado_brl": res_gen["custo_brl"],
+                                            "categoria_id": cat_selecionada_id,
                                             "criado_em": get_now_sp().isoformat()
                                         }).execute()
                                     except: pass
+                                
+                                status_box.update(label=f"✅ SKU {current_code} Finalizado!", state="complete")
                                 
                                 st.session_state['roteiros'].insert(0, novo_roteiro)
                         except Exception as e:
@@ -1345,9 +1424,15 @@ if page == "Criar Roteiros":
                         percent = int((i + 1) / total * 100)
                         progress_text_man.markdown(f"**⏳ Processando {i+1}/{total} ({percent}%):** SKU {itm['sku']}")
                         bar.progress((i+1)/total)
-                        with st.spinner(f"Gerando roteiro {i+1}/{total}..."):
-                            try:
+                        
+                        try:
+                            with st.status(f"🚀 SKU {itm['sku']} ({i+1}/{total})", expanded=True) as status_box_man:
+                                # 1. Preparação
+                                status_box_man.write("📝 **Etapa 1:** Processando ficha técnica manual...")
                                 ficha_man = {"text": itm["ficha"], "images": []}
+                                
+                                # 2. Geração
+                                status_box_man.write("🧠 **Etapa 2:** Consultando IA e aplicando aprendizados...")
                                 res_gen = agent.gerar_roteiro(
                                     scraped_data=ficha_man,
                                     modo_trabalho=modo_man_selecionado,
@@ -1356,6 +1441,9 @@ if page == "Criar Roteiros":
                                     mes=mes_selecionado_man,
                                     com_lu=(com_lu_man == "Com LU")
                                 )
+                                
+                                # 3. Salvamento
+                                status_box_man.write("💾 **Etapa 3:** Registrando no histórico...")
                                 global_num = get_total_script_count(sp_cli) + 1
                                 novo_roteiro = {
                                     "_uid": str(uuid.uuid4()),
@@ -1370,8 +1458,27 @@ if page == "Criar Roteiros":
                                     "mes": mes_selecionado_man
                                 }
                                 st.session_state['roteiros'].insert(0, novo_roteiro)
-                            except Exception as e:
-                                st.error(f"Erro no SKU {itm['sku']}: {e}")
+                                
+                                # Log Histórico
+                                if sp_cli:
+                                    try:
+                                        sp_cli.table(f"{table_prefix}historico_roteiros").insert({
+                                            "codigo_produto": itm['sku'],
+                                            "modo_trabalho": modo_man_selecionado,
+                                            "roteiro_gerado": res_gen["roteiro"],
+                                            "ficha_extraida": itm['ficha'],
+                                            "tokens_entrada": res_gen["tokens_in"],
+                                            "tokens_saida": res_gen["tokens_out"],
+                                            "custo_estimado_brl": res_gen["custo_brl"],
+                                            "modelo_llm": res_gen["model_id"],
+                                            "categoria_id": cat_selecionada_id
+                                        }).execute()
+                                    except: pass
+                                
+                                status_box_man.update(label=f"✅ SKU {itm['sku']} Finalizado!", state="complete")
+                                
+                        except Exception as e:
+                            st.error(f"Erro no SKU {itm['sku']}: {e}")
 
                     st.session_state['roteiro_ativo_idx'] = 0
                     st.rerun()
@@ -2900,7 +3007,7 @@ elif page == "Dashboard":
                     
                     # Formatação de colunas
                     if 'criado_em' in df_show_hist.columns:
-                        df_show_hist['criado_em'] = pd.to_datetime(df_show_hist['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%Y %H:%M')
+                        df_show_hist['criado_em'] = pd.to_datetime(df_show_hist['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%y às %H:%M')
                         
                     if 'custo_estimado_brl' in df_show_hist.columns:
                         df_show_hist['Custo Brl'] = df_show_hist['custo_estimado_brl'].apply(
@@ -2923,7 +3030,7 @@ elif page == "Dashboard":
                 if not df_est.empty:
                     df_e = df_est.copy()
                     if 'criado_em' in df_e.columns:
-                        df_e['criado_em'] = pd.to_datetime(df_e['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%Y %H:%M')
+                        df_e['criado_em'] = pd.to_datetime(df_e['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%y às %H:%M')
                     available_cols = [c for c in ['criado_em', 'tipo_estrutura', 'texto_ia_rejeitado', 'texto_ouro'] if c in df_e.columns]
                     st.dataframe(df_e[available_cols].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
@@ -2933,7 +3040,7 @@ elif page == "Dashboard":
                 if not df_nuan.empty:
                     df_n = df_nuan.copy()
                     if 'criado_em' in df_n.columns:
-                        df_n['criado_em'] = pd.to_datetime(df_n['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%Y %H:%M')
+                        df_n['criado_em'] = pd.to_datetime(df_n['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%y às %H:%M')
                     st.dataframe(df_n[['criado_em', 'frase_ia', 'analise_critica', 'exemplo_ouro']].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhuma nuance de linguagem cadastrada.")
@@ -2942,7 +3049,7 @@ elif page == "Dashboard":
                 if not df_img.empty:
                     df_i = df_img.copy()
                     if 'criado_em' in df_i.columns:
-                        df_i['criado_em'] = pd.to_datetime(df_i['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%Y %H:%M')
+                        df_i['criado_em'] = pd.to_datetime(df_i['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%y às %H:%M')
                     st.dataframe(df_i[['criado_em', 'codigo_produto', 'descricao_ia', 'descricao_humano', 'aprendizado']].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhuma calibragem de imagem cadastrada.")
@@ -2950,10 +3057,16 @@ elif page == "Dashboard":
             with tab_ouro:
                 if not df_ouro.empty:
                     df_o = df_ouro.copy()
-                    df_o = df_ouro.copy()
+                    if 'categoria_id' in df_o.columns and not df_cats.empty:
+                        cat_map_names = dict(zip(df_cats['id'], df_cats['nome']))
+                        df_o['Categoria'] = df_o['categoria_id'].map(cat_map_names)
+                    
                     if 'criado_em' in df_o.columns:
-                        df_o['criado_em'] = pd.to_datetime(df_o['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%Y %H:%M')
-                    st.dataframe(df_o[['criado_em', 'categoria', 'titulo_produto', 'roteiro_perfeito']].sort_values(by='criado_em', ascending=False), use_container_width=True)
+                        df_o['criado_em'] = pd.to_datetime(df_o['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%y às %H:%M')
+                    
+                    cols_o = ['criado_em', 'Categoria', 'titulo_produto', 'roteiro_perfeito']
+                    available_o = [c for c in cols_o if c in df_o.columns]
+                    st.dataframe(df_o[available_o].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhum Roteiro Ouro cadastrado.")
             
@@ -2961,7 +3074,7 @@ elif page == "Dashboard":
                 if not df_fb.empty:
                     df_f = df_fb.copy()
                     if 'criado_em' in df_f.columns:
-                        df_f['criado_em'] = pd.to_datetime(df_f['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%Y %H:%M')
+                        df_f['criado_em'] = pd.to_datetime(df_f['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%y às %H:%M')
                     # Colunas do novo sistema de calibragem
                     available_cols = [c for c in ['criado_em', 'estrela', 'categoria', 'modelo_calibragem', 'aprendizado', 'roteiro_original_ia', 'roteiro_perfeito'] if c in df_f.columns]
                     st.dataframe(df_f[available_cols].sort_values(by='criado_em', ascending=False), use_container_width=True)
@@ -2973,7 +3086,7 @@ elif page == "Dashboard":
                     df_p = df_pers.copy()
                     df_p = df_pers.copy()
                     if 'criado_em' in df_p.columns:
-                        df_p['criado_em'] = pd.to_datetime(df_p['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%Y %H:%M')
+                        df_p['criado_em'] = pd.to_datetime(df_p['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%y às %H:%M')
                     st.dataframe(df_p[['criado_em', 'pilar_persona', 'texto_gerado_ia', 'texto_corrigido_humano', 'lexico_sugerido']].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhum ajuste de persona cadastrado.")
@@ -2982,7 +3095,7 @@ elif page == "Dashboard":
                 if not df_fon.empty:
                     df_fo = df_fon.copy()
                     if 'criado_em' in df_fo.columns:
-                        df_fo['criado_em'] = pd.to_datetime(df_fo['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%Y %H:%M')
+                        df_fo['criado_em'] = pd.to_datetime(df_fo['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%y às %H:%M')
                     st.dataframe(df_fo[['criado_em', 'termo_errado', 'termo_corrigido', 'exemplo_no_roteiro']].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhuma regra de fonética cadastrada.")
