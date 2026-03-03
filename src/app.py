@@ -766,25 +766,9 @@ def modal_resultado_calibragem(calc, sp_cli, roteiro_ia, roteiro_humano, titulo_
         </div>
         """, unsafe_allow_html=True)
 
-    # --- SELETOR DE CATEGORIA (OVERRIDE HUMANO) ---
-    st.markdown("#### 📁 Classificação")
-    col_cat_m, _ = st.columns([2, 1])
-    with col_cat_m:
-        cat_guess_id = calc.get('categoria_id', 1)
-        try:
-            res_c_m = sp_cli.table("nw_categorias").select("id, nome").execute()
-            cats_m = res_c_m.data if res_c_m.data else []
-            cat_opt_m = {f"{c['nome']} (ID {c['id']})": c['id'] for c in cats_m}
-            cat_labels_m = list(cat_opt_m.keys())
-            def_idx_m = 0
-            for it, label in enumerate(cat_labels_m):
-                if cat_opt_m[label] == cat_guess_id:
-                    def_idx_m = it
-                    break
-            sel_cat_modal = st.selectbox("Confirmar Categoria Alvo:", cat_labels_m, index=def_idx_m, key="sel_cat_modal_calib")
-            final_cat_id_modal = cat_opt_m[sel_cat_modal]
-        except:
-            final_cat_id_modal = cat_guess_id
+    # Categoria automática baseada no aprendizado
+    final_cat_id_modal = calc.get('categoria_id', 1)
+
 
     st.divider()
     st.caption("Ao confirmar, a IA alimentará simultaneamente as tabelas acima.")
@@ -1125,26 +1109,9 @@ if page == "Criar Roteiros":
     expander_input = st.expander("✍️ Inserir Códigos e Gerar", expanded=not _has_roteiros)
     
     with expander_input:
-        # Carregamento de Categorias para o seletor
-        sp_cli_top = st.session_state.get('supabase_client')
         cat_selecionada_id = 1
-        lista_categorias_select = ["Genérico (ID 1)"]
-        cat_map = {"Genérico (ID 1)": 1}
-        
-        if sp_cli_top:
-            try:
-                res_c = sp_cli_top.table("nw_categorias").select("id, nome").execute()
-                if res_c.data:
-                    for c in res_c.data:
-                        label = f"{c['nome']} (ID {c['id']})"
-                        lista_categorias_select.append(label)
-                        cat_map[label] = c['id']
-            except: pass
+        # Categoria removida da UI para ser automática (ID 1)
 
-        col_cat_sel, _ = st.columns([2, 1])
-        with col_cat_sel:
-            cat_label_sel = st.selectbox("📁 Categoria Alvo (Para o Histórico):", lista_categorias_select, index=0, help="Define onde esse lote de roteiros será classificado na base de dados.")
-            cat_selecionada_id = cat_map[cat_label_sel]
 
         # Modo de entrada via Tabs
         tab_auto, tab_manual = st.tabs(["⚡ Automático (SKUs da Magalu)", "✍️ Manual (Colar Fichas)"])

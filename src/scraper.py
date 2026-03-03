@@ -63,9 +63,9 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None) -> dict:
             temperature=0.0
         )
         
-        # gemini-3-flash-preview suporta search grounding nativamente de forma ultrarrápida e barata
+        # gemini-2.0-flash é estável e resiliente para grounding
         response = client.models.generate_content(
-            model='gemini-3-flash-preview', 
+            model='gemini-2.0-flash', 
             contents=prompt,
             config=config
         )
@@ -84,7 +84,7 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None) -> dict:
             print(f"[SCRAPER] Grounding falhou para {code}. Tentando Prompt Direto sem Tools...")
             # Fallback 1: Prompt Direto sem Tools (Grounding as vezes bloqueia por segurança)
             response_fallback = client.models.generate_content(
-                model='gemini-3-flash-preview',
+                model='gemini-2.0-flash',
                 contents=f"Extraia a ficha técnica do produto Magalu código {code}. Se não souber, retorne apenas 'FALHA_TOTAL'.",
             )
             result_text = get_text_safe(response_fallback)
@@ -103,7 +103,7 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None) -> dict:
                     text_content = soup.get_text(separator='\n')
                     # Resume com IA
                     res_url = client.models.generate_content(
-                        model='gemini-3-flash-preview',
+                        model='gemini-2.0-flash',
                         contents=f"Resuma os dados técnicos deste produto Magalu a partir do conteúdo bruto abaixo:\n\n{text_content[:15000]}"
                     )
                     result_text = get_text_safe(res_url)
