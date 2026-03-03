@@ -2994,9 +2994,16 @@ elif page == "Dashboard":
                 if not df_hist_dash.empty:
                     df_show_hist = df_hist_dash.copy()
                     
+                    # Data format safe parser
+                    def safe_format_date(val):
+                        try:
+                            return pd.to_datetime(val, utc=True).tz_convert('America/Sao_Paulo').strftime('%d/%m/%y às %H:%M')
+                        except:
+                            return val
+
                     # Formatação de colunas
                     if 'criado_em' in df_show_hist.columns:
-                        df_show_hist['criado_em'] = pd.to_datetime(df_show_hist['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%y às %H:%M')
+                        df_show_hist['criado_em'] = df_show_hist['criado_em'].apply(safe_format_date)
                         
                     if 'custo_estimado_brl' in df_show_hist.columns:
                         df_show_hist['Custo Brl'] = df_show_hist['custo_estimado_brl'].apply(
@@ -3019,7 +3026,7 @@ elif page == "Dashboard":
                 if not df_est.empty:
                     df_e = df_est.copy()
                     if 'criado_em' in df_e.columns:
-                        df_e['criado_em'] = pd.to_datetime(df_e['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%y às %H:%M')
+                        df_e['criado_em'] = df_e['criado_em'].apply(safe_format_date)
                     available_cols = [c for c in ['criado_em', 'tipo_estrutura', 'texto_ia_rejeitado', 'texto_ouro'] if c in df_e.columns]
                     st.dataframe(df_e[available_cols].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
@@ -3029,7 +3036,7 @@ elif page == "Dashboard":
                 if not df_nuan.empty:
                     df_n = df_nuan.copy()
                     if 'criado_em' in df_n.columns:
-                        df_n['criado_em'] = pd.to_datetime(df_n['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%y às %H:%M')
+                        df_n['criado_em'] = df_n['criado_em'].apply(safe_format_date)
                     st.dataframe(df_n[['criado_em', 'frase_ia', 'analise_critica', 'exemplo_ouro']].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhuma nuance de linguagem cadastrada.")
@@ -3038,7 +3045,7 @@ elif page == "Dashboard":
                 if not df_img.empty:
                     df_i = df_img.copy()
                     if 'criado_em' in df_i.columns:
-                        df_i['criado_em'] = pd.to_datetime(df_i['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%y às %H:%M')
+                        df_i['criado_em'] = df_i['criado_em'].apply(safe_format_date)
                     st.dataframe(df_i[['criado_em', 'codigo_produto', 'descricao_ia', 'descricao_humano', 'aprendizado']].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhuma calibragem de imagem cadastrada.")
@@ -3051,7 +3058,7 @@ elif page == "Dashboard":
                         df_o['Categoria'] = df_o['categoria_id'].map(cat_map_names)
                     
                     if 'criado_em' in df_o.columns:
-                        df_o['criado_em'] = pd.to_datetime(df_o['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%y às %H:%M')
+                        df_o['criado_em'] = df_o['criado_em'].apply(safe_format_date)
                     
                     cols_o = ['criado_em', 'Categoria', 'titulo_produto', 'roteiro_perfeito']
                     available_o = [c for c in cols_o if c in df_o.columns]
@@ -3063,7 +3070,7 @@ elif page == "Dashboard":
                 if not df_fb.empty:
                     df_f = df_fb.copy()
                     if 'criado_em' in df_f.columns:
-                        df_f['criado_em'] = pd.to_datetime(df_f['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%y às %H:%M')
+                        df_f['criado_em'] = df_f['criado_em'].apply(safe_format_date)
                     # Colunas do novo sistema de calibragem
                     available_cols = [c for c in ['criado_em', 'estrela', 'categoria', 'modelo_calibragem', 'aprendizado', 'roteiro_original_ia', 'roteiro_perfeito'] if c in df_f.columns]
                     st.dataframe(df_f[available_cols].sort_values(by='criado_em', ascending=False), use_container_width=True)
@@ -3075,7 +3082,7 @@ elif page == "Dashboard":
                     df_p = df_pers.copy()
                     df_p = df_pers.copy()
                     if 'criado_em' in df_p.columns:
-                        df_p['criado_em'] = pd.to_datetime(df_p['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%y às %H:%M')
+                        df_p['criado_em'] = df_p['criado_em'].apply(safe_format_date)
                     st.dataframe(df_p[['criado_em', 'pilar_persona', 'texto_gerado_ia', 'texto_corrigido_humano', 'lexico_sugerido']].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhum ajuste de persona cadastrado.")
@@ -3084,7 +3091,7 @@ elif page == "Dashboard":
                 if not df_fon.empty:
                     df_fo = df_fon.copy()
                     if 'criado_em' in df_fo.columns:
-                        df_fo['criado_em'] = pd.to_datetime(df_fo['criado_em'], utc=True).dt.tz_convert('America/Sao_Paulo').dt.strftime('%d/%m/%y às %H:%M')
+                        df_fo['criado_em'] = df_fo['criado_em'].apply(safe_format_date)
                     st.dataframe(df_fo[['criado_em', 'termo_errado', 'termo_corrigido', 'exemplo_no_roteiro']].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhuma regra de fonética cadastrada.")
