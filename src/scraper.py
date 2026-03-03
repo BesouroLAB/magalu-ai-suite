@@ -65,6 +65,7 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None) -> dict:
         
         # Tenta primeiro com o Gemini 3 Flash Preview (Melhor inteligência de pesquisa)
         # Se falhar (ex: 503), faz fallback automático para o 2.0 Flash (Mais estável)
+        response = None
         try:
             print(f"[SCRAPER] Tentando Grounding via Gemini 3 Flash Preview...")
             response = client.models.generate_content(
@@ -73,15 +74,16 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None) -> dict:
                 config=config
             )
         except Exception as e_3:
-            if "503" in str(e_3) or "service_unavailable" in str(e_3).lower():
-                print(f"[SCRAPER] Gemini 3 instável (503). Acionando FALLBACK 2.0 Flash...")
+            print(f"[SCRAPER] Gemini 3 instável ({e_3}). Acionando FALLBACK 2.0 Flash...")
+            try:
                 response = client.models.generate_content(
                     model='gemini-2.0-flash', 
                     contents=prompt,
                     config=config
                 )
-            else:
-                raise e_3
+            except Exception as e_2:
+                print(f"[SCRAPER] Gemini 2.0 também falhou no Grounding ({e_2}).")
+                response = None
         
         def get_text_safe(resp):
             try:
