@@ -858,7 +858,7 @@ with st.sidebar:
         """, unsafe_allow_html=True)
     
     # --- STATUS INDICATORS (apenas LLM ativa + Supabase) ---
-    _modelo_atual = st.session_state.get('modelo_llm', 'gemini-3-flash-preview')
+    _modelo_atual = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
     _prov = _modelo_atual.split('/')[0] if '/' in _modelo_atual else 'gemini'
     _env_map = {
         "gemini": api_key_env, 
@@ -2015,7 +2015,7 @@ elif page == "Treinar IA":
             """, unsafe_allow_html=True)
             
             # --- FORMULÁRIO DE ENTRADA ---
-            with st.form("form_calibracao", clear_on_submit=True):
+            with st.form("form_calibracao", clear_on_submit=False):
                 col_ia, col_humano = st.columns(2)
                 with col_ia:
                     st.markdown("**🤖 ANTES (Roteiro da IA)**")
@@ -2033,19 +2033,19 @@ elif page == "Treinar IA":
                         think_hub = st.empty()
                         try:
                             # Usa qualquer provedor disponível (Puter/OpenRouter/Gemini)
-                            # Determina qual model_id usar para instanciar o agente. Novo Default: Gemini 3 Flash Preview
-                            _calib_model = "gemini-3-flash-preview"
+                            # Determina qual model_id usar para instanciar o agente. Novo Default: Gemini 2.0 Flash
+                            _calib_model = "gemini-2.0-flash"
                             # Verifica tanto env quanto secrets
                             gemini_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
                             puter_key = os.environ.get("PUTER_API_KEY") or st.secrets.get("PUTER_API_KEY")
                             openrouter_key = os.environ.get("OPENROUTER_API_KEY") or st.secrets.get("OPENROUTER_API_KEY")
 
                             if gemini_key:
-                                _calib_model = "gemini-3-flash-preview"
+                                _calib_model = "gemini-2.0-flash"
                             elif puter_key:
                                 _calib_model = "puter/x-ai/grok-4-1-fast"
                             elif openrouter_key:
-                                _calib_model = "openrouter/deepseek/deepseek-r1-0528:free"
+                                _calib_model = "openrouter/deepseek/deepseek-r1:free"
                             else:
                                 st.error("Nenhuma chave de IA configurada (Gemini, Puter ou OpenRouter).")
                                 _calib_model = None
@@ -3132,7 +3132,7 @@ elif page == "Assistente Lu":
             message_placeholder = st.empty()
             
             # Re-instantiate agent to ensure it uses the current model_id
-            modelo_id = st.session_state.get('modelo_llm', 'gemini-3-flash-preview')
+            modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
             
             try:
                 # Compile Supabase context for RAG

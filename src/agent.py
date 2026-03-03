@@ -13,24 +13,29 @@ PROJECT_ROOT = os.path.join(os.path.dirname(__file__), '..')
 PRICING_USD_PER_1M = {
     "gemini-3.1-pro-preview":   {"input": 3.50, "output": 10.50},
     "gemini-3-flash-preview":   {"input": 0.70, "output": 2.10},
-    "gemini-2.5-flash-lite": {"input": 0.10, "output": 0.40},
+    "gemini-2.0-flash":         {"input": 0.10, "output": 0.40},
+    "gemini-2.5-flash":         {"input": 0.10, "output": 0.40},
+    "gemini-2.5-flash-lite":    {"input": 0.10, "output": 0.40},
     # Modelos gratuitos (via Puter, OpenRouter, Z.ai, Kimi)
     "gpt-4o-mini": {"input": 0.00, "output": 0.00},
     "x-ai/grok-4-1-fast": {"input": 0.00, "output": 0.00},
     "moonshot-v1-8k": {"input": 0.00, "output": 0.00},
     "glm-4.5-flash": {"input": 0.00, "output": 0.00},
-    "deepseek/deepseek-r1-0528:free": {"input": 0.00, "output": 0.00},
+    "deepseek/deepseek-r1": {"input": 0.00, "output": 0.00},
+    "openrouter/free": {"input": 0.00, "output": 0.00},
     "google/gemma-3-27b:free": {"input": 0.00, "output": 0.00},
-    "meta-llama/llama-4-scout:free": {"input": 0.00, "output": 0.00},
+    "meta-llama/llama-3.3-70b-instruct:free": {"input": 0.00, "output": 0.00},
     "meta-llama/llama-3.1-70b-instruct": {"input": 0.00, "output": 0.00},
     "claude-3-5-sonnet": {"input": 0.00, "output": 0.00},
 }
 USD_TO_BRL = 5.80
 
 MODELOS_DISPONIVEIS = {
-    "🚀 Gemini 3 Flash Preview [PAGO] — ~R$0,02/roteiro": "gemini-3-flash-preview",
+    "🚀 Gemini 2.5 Flash [ESTÁVEL] — ~R$0,005/roteiro": "gemini-2.5-flash",
+    "⚡ Gemini 3 Flash Preview [BETA] — ~R$0,02/roteiro": "gemini-3-flash-preview",
     "👑 Gemini 3.1 Pro Preview [PAGO] — ~R$0,19/roteiro": "gemini-3.1-pro-preview",
-    "💰 Gemini 2.5 Flash-Lite [PAGO] — ~R$0,005/roteiro": "gemini-2.5-flash-lite",
+    "💰 Gemini 2.0 Flash [PAGO] — ~R$0,005/roteiro": "gemini-2.0-flash",
+    "⚖️ OpenRouter Auto-Free [GRÁTIS] — Múltiplos": "openrouter/free",
     "🔥 Grok 4.1 Fast [GRÁTIS] — Criativo (Puter)": "puter/x-ai/grok-4-1-fast",
     "🤖 GPT-4o Mini [GRÁTIS] — Fluído (Puter)": "puter/gpt-4o-mini",
     "🇨🇳 GLM-4.5 Flash [GRÁTIS] — Ficha Técnica (Z.ai)": "zai/glm-4.5-flash"
@@ -38,8 +43,10 @@ MODELOS_DISPONIVEIS = {
 
 MODELOS_DESCRICAO = {
     "gemini-3.1-pro-preview": "[O SUPERIOR] (Fev/2026) Inteligência de ponta absoluta. Melhor estruturação, obediência de formatação e raciocínio hiper avançado. Perfeito para 3D. Custo: ~R$ 0,19.",
-    "gemini-3-flash-preview": "[O ÁGIL] (Dez/2025) Rápido e muito preciso na interpretação. Versão ultra-otimizada. Custo: ~R$ 0,02.",
-    "gemini-2.5-flash-lite": "[CUSTO-BENEFÍCIO] (2025) Barato e rápido. Ótimo com fonética e resume bem as cenas sem perder a essência. Custo: ~R$ 0,005.",
+    "gemini-3-flash-preview": "[O FRONTEIRA] (Dez/2025) Versão mais recente e experimental. Altíssimo raciocínio, mas pode apresentar instabilidade na API (erro 503). Custo: ~R$ 0,02.",
+    "gemini-2.5-flash": "[O EQUILIBRADO] (Mar/2026) Nova baseline estável. Rápido, preciso e com custo baixíssimo. Recomendado para uso diário. Custo: ~R$ 0,005.",
+    "gemini-2.0-flash": "[LEGADO ESTÁVEL] (2025) Versão anterior mas muito robusta. Custo: ~R$ 0,005.",
+    "openrouter/free": "[O CAMALEÃO] (2026) Seleciona automaticamente o melhor modelo gratuito disponível (Llama 3.3, Gemma 3, etc). Ótimo fallback sem custo.",
     "puter/gpt-4o-mini": "[O DESOBEDIENTE] (2024) Bom nos benefícios, mas costuma quebrar regras de cabeçalho e errar pronúncias. Use como estepe.",
     "puter/x-ai/grok-4-1-fast": "[O VENCEDOR / O HUMANO] (2025) O meio termo perfeito. Transforma dados frios em textos diretos, dinâmicos e naturais para a Lu. Prioridade gratuita.",
     "zai/glm-4.5-flash": "[LENTO E PRECISO] (2025) Não alucina. Excelente para fichas ultra-técnicas (ferramentas), mas a sua lentidão inviabiliza lotes grandes."
@@ -292,7 +299,7 @@ class RoteiristaAgent:
             try:
                 client = genai.Client(api_key=api_key_gemini)
                 response = client.models.generate_content(
-                    model='gemini-3-flash-preview',
+                    model='gemini-2.0-flash', # Mais estável
                     contents=prompt,
                     config=types.GenerateConfig(temperature=0.3)
                 )
@@ -600,15 +607,15 @@ class RoteiristaAgent:
             except Exception as e:
                 print(f"[ERROR] Erro Puter Calibragem: {e}")
 
-        # 🔵 OPÇÃO 2: OPENROUTER (DeepSeek R1 — Grátis)
+        # 🔵 OPÇÃO 2: OPENROUTER (Auto-Free — Grátis)
         api_key_or = os.environ.get("OPENROUTER_API_KEY") or st.secrets.get("OPENROUTER_API_KEY") if 'st' in globals() else os.environ.get("OPENROUTER_API_KEY")
         if api_key_or:
             try:
-                print("[TRY] Tentando calibragem via OpenRouter (deepseek-r1)...")
+                print("[TRY] Tentando calibragem via OpenRouter (Auto-Free)...")
                 from openai import OpenAI as OpenAIClient
                 client = OpenAIClient(api_key=api_key_or, base_url="https://openrouter.ai/api/v1")
                 response = client.chat.completions.create(
-                    model="deepseek/deepseek-r1-0528:free",
+                    model="openrouter/free",
                     messages=[
                         {"role": "system", "content": sys_prompt},
                         {"role": "user", "content": user_prompt}
@@ -620,8 +627,8 @@ class RoteiristaAgent:
                      print("[WARNING] OpenRouter retornou JSON insuficiente. Indo para fallback...")
                      raise Exception("JSON Insuficiente")
 
-                print("[OK] Calibragem realizada via OpenRouter (deepseek-r1)")
-                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "DeepSeek R1 (OpenRouter)")
+                print("[OK] Calibragem realizada via OpenRouter (Auto-Free)")
+                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "OpenRouter Auto-Free")
             except Exception as e:
                 print(f"[ERROR] Erro OpenRouter Calibragem: {e}")
 
@@ -634,7 +641,7 @@ class RoteiristaAgent:
                 
                 # Gemini v2 (SDK genai 1.0+) usa essa estrutura
                 response_gem = client_v2.models.generate_content(
-                    model="gemini-3-flash-preview",
+                    model="gemini-2.0-flash", # Mais estável que o 3-preview sob carga
                     contents=[sys_prompt, user_prompt],
                     config=types.GenerateConfig(temperature=0.1)
                 )
