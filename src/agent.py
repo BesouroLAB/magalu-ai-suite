@@ -575,6 +575,7 @@ class RoteiristaAgent:
             "LISTA DE CATEGORIAS DISPONÍVEIS:\n"
             f"{cat_str}\n\n"
             "🚨 FORMATO DE SAÍDA (JSON PURO):\n"
+            "   IMPORTANTE: Retorne TODAS as chaves abaixo. Se não houver dados para uma lista, retorne um array vazio [].\n"
             "{\n"
             "  \"percentual\": <inteiro 0-100>,\n"
             "  \"aprendizado\": \"<diretrizes táticas em tópicos>\",\n"
@@ -600,20 +601,29 @@ class RoteiristaAgent:
                 client_v2 = genai.Client(api_key=api_key_gemini)
                 
                 try:
-                    response_gem = client_v2.models.generate_content(
-                        model="gemini-3-flash-preview", 
-                        contents=[sys_prompt, user_prompt],
-                        config=types.GenerateContentConfig(temperature=0.1)
-                    )
-                    model_str = "Gemini 3 Flash Preview"
-                except Exception as e_gem:
-                    print(f"[WARN] Gemini 3 falhou ({e_gem}), tentando 2.0 Flash...")
+                    print("[TRY] Tentando calibragem via Gemini (2.0-flash)...")
                     response_gem = client_v2.models.generate_content(
                         model="gemini-2.0-flash", 
-                        contents=[sys_prompt, user_prompt],
-                        config=types.GenerateContentConfig(temperature=0.1)
+                        contents=user_prompt,
+                        config=types.GenerateContentConfig(
+                            system_instruction=sys_prompt,
+                            temperature=0.1,
+                            response_mime_type="application/json"
+                        )
                     )
                     model_str = "Gemini 2.0 Flash"
+                except Exception as e_gem:
+                    print(f"[WARN] Gemini 2.0 falhou ({e_gem}), tentando 1.5 Flash...")
+                    response_gem = client_v2.models.generate_content(
+                        model="gemini-1.5-flash", 
+                        contents=user_prompt,
+                        config=types.GenerateContentConfig(
+                            system_instruction=sys_prompt,
+                            temperature=0.1,
+                            response_mime_type="application/json"
+                        )
+                    )
+                    model_str = "Gemini 1.5 Flash"
                 
                 try:
                     res_text = response_gem.text
@@ -700,10 +710,10 @@ class RoteiristaAgent:
             "categoria_id": final_cat_id,
             "codigo_produto": sku_clean,
             "modelo_calibragem": modelo_calibragem,
-            "fonetica_regras": res.get("fonetica_regras", []),
-            "estrutura_regras": res.get("estrutura_regras", []),
-            "persona_regras": res.get("persona_regras", []),
-            "imagens_regras": res.get("imagens_regras", []),
+            "fonetica_regras": res.get("fonetica_regras") if isinstance(res.get("fonetica_regras"), list) else [],
+            "estrutura_regras": res.get("estrutura_regras") if isinstance(res.get("estrutura_regras"), list) else [],
+            "persona_regras": res.get("persona_regras") if isinstance(res.get("persona_regras"), list) else [],
+            "imagens_regras": res.get("imagens_regras") if isinstance(res.get("imagens_regras"), list) else [],
             "resumo_estrategico": res.get("resumo_estrategico", "")
         }
 

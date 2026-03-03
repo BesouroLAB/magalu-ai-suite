@@ -438,17 +438,16 @@ def _auto_salvar_fonetica(sp_client, fonetica_regras):
         
         try:
             existing = sp_client.table("nw_treinamento_fonetica").select("id").eq("termo_errado", termo_err).execute()
-            if hasattr(existing, 'data') and len(existing.data) > 0:
-                continue
-            
-            sp_client.table("nw_treinamento_fonetica").insert({
-                "termo_errado": termo_err,
-                "termo_corrigido": termo_cor,
-                "exemplo_no_roteiro": exemplo
-            }).execute()
-            count += 1
+            if not existing.data:
+                sp_client.table("nw_treinamento_fonetica").insert({
+                    "termo_errado": termo_err,
+                    "termo_corrigido": termo_cor,
+                    "exemplo_no_roteiro": exemplo,
+                    "criado_em": get_now_sp().isoformat()
+                }).execute()
+                count += 1
         except Exception as e:
-            print(f"[ERROR] Erro ao salvar fonetica auto: {e}")
+            st.error(f"Erro ao salvar fonética: {e}")
     
     if count > 0:
         st.toast(f"📖 {count} regra(s) fonética(s) aprendida(s) automaticamente!", icon="🎓")
@@ -481,11 +480,13 @@ def _auto_salvar_estrutura(sp_client, estrutura_regras):
             sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}treinamento_estruturas").insert({
                 "tipo_estrutura": tipo,
                 "texto_ouro": texto_ouro,
-                "texto_ia_rejeitado": texto_ia_rej
+                "texto_ia_rejeitado": texto_ia_rej,
+                "aprendizado": str(regra.get('motivo', '')).strip(),
+                "criado_em": get_now_sp().isoformat()
             }).execute()
             count += 1
         except Exception as e:
-            print(f"[ERROR] Erro ao salvar estrutura auto: {e}")
+            st.error(f"Erro ao salvar estrutura: {e}")
     
     if count > 0:
         st.toast(f"📝 {count} estrutura(s) (abertura/fechamento) aprendida(s)!", icon="✨")
@@ -512,11 +513,12 @@ def _auto_salvar_persona(sp_client, persona_regras):
                 "pilar_persona": pilar,
                 "texto_gerado_ia": erro,
                 "texto_corrigido_humano": correcao,
-                "lexico_sugerido": lexico
+                "lexico_sugerido": lexico,
+                "criado_em": get_now_sp().isoformat()
             }).execute()
             count += 1
         except Exception as e:
-            print(f"[ERROR] Erro ao salvar persona auto: {e}")
+            st.error(f"Erro ao salvar persona: {e}")
     
     if count > 0:
         st.toast(f"💃 {count} regra(s) de persona da Lu aprendida(s)!", icon="🎭")
@@ -546,11 +548,12 @@ def _auto_salvar_imagens(sp_client, imagens_regras, codigo_p=""):
                 "codigo_produto": codigo_p,
                 "descricao_ia": antes,
                 "descricao_humano": depois,
-                "aprendizado": motivo
+                "aprendizado": motivo,
+                "criado_em": get_now_sp().isoformat()
             }).execute()
             count += 1
         except Exception as e:
-            print(f"[ERROR] Erro ao salvar imagem auto: {e}")
+            st.error(f"Erro ao salvar lição visual: {e}")
             
     if count > 0:
         st.toast(f"📸 {count} lição(ões) visual(ais) aprendida(s)!", icon="🖼️")
@@ -590,6 +593,7 @@ def salvar_estrutura(sp_client, tipo, texto, texto_ia=""):
             "tipo_estrutura": tipo,
             "texto_ouro": texto,
             "texto_ia_rejeitado": texto_ia,
+            "aprendizado": "", # Manual não tem motivo automático, mas campo existe
             "criado_em": get_now_sp().isoformat()
         }
         res = sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}treinamento_estruturas").insert(data).execute()
@@ -767,7 +771,7 @@ def modal_resultado_calibragem(calc, sp_cli, roteiro_ia, roteiro_humano, titulo_
         """, unsafe_allow_html=True)
 
     # Categoria automática baseada no aprendizado
-    final_cat_id_modal = calc.get('categoria_id', 1)
+    final_cat_id_modal = calc.get('categoria_id', 77)
 
 
     st.divider()
@@ -779,11 +783,12 @@ def modal_resultado_calibragem(calc, sp_cli, roteiro_ia, roteiro_humano, titulo_
         if not cat_id:
              # Fallback categoria ID
              try:
-                 prefix = st.session_state.get('table_prefix', 'nw_')
-                 res_c = sp_cli.table(f"{prefix}categorias").select("id, nome").execute()
+                 # Categoria é sempre nw_categorias independente do prefixo do formato
+                 res_c = sp_cli.table("nw_categorias").select("id, nome").execute()
                  lista_c = res_c.data if hasattr(res_c, 'data') else []
                  cat_id = next((c['id'] for c in lista_c if 'Genérico' in c['nome']), 77)
-             except:
+             except Exception as e_cat:
+                 print(f"Erro ao buscar categorias: {e_cat}")
                  cat_id = 77
                  
         # Concatena resumo estratégico com diretrizes técnicas
@@ -1110,8 +1115,8 @@ if page == "Criar Roteiros":
     expander_input = st.expander("✍️ Inserir Códigos e Gerar", expanded=not _has_roteiros)
     
     with expander_input:
-        cat_selecionada_id = 1
-        # Categoria removida da UI para ser automática (ID 1)
+        cat_selecionada_id = 77
+        # Categoria removida da UI para ser automática (ID 77 - Genérico)
 
 
         # Modo de entrada via Tabs
@@ -1310,7 +1315,8 @@ if page == "Criar Roteiros":
                                             "categoria_id": cat_selecionada_id,
                                             "criado_em": get_now_sp().isoformat()
                                         }).execute()
-                                    except: pass
+                                    except Exception as e:
+                                        print(f"❌ Erro ao salvar histórico (Auto): {e}")
                                 
                                 status_box.update(label=f"✅ SKU {current_code} Finalizado!", state="complete")
                                 
@@ -1460,7 +1466,8 @@ if page == "Criar Roteiros":
                                             "modelo_llm": res_gen["model_id"],
                                             "categoria_id": cat_selecionada_id
                                         }).execute()
-                                    except: pass
+                                    except Exception as e:
+                                        print(f"❌ Erro ao salvar histórico (Manual): {e}")
                                 
                                 status_box_man.update(label=f"✅ SKU {itm['sku']} Finalizado!", state="complete")
                                 
@@ -1725,7 +1732,7 @@ if page == "Criar Roteiros":
                                         rec_item = {
                                             "ficha": r_row['ficha_extraida'],
                                             "roteiro_original": r_row['roteiro_gerado'],
-                                            "categoria_id": 1,
+                                            "categoria_id": 77,
                                             "codigo": r_row['codigo_produto'],
                                             "model_id": r_row['modelo_llm'],
                                             "custo_brl": r_row['custo_estimado_brl'],
@@ -2072,19 +2079,30 @@ elif page == "Treinar IA":
                 if 'modelo_calibragem' in df_ouro.columns: cols_view.append('modelo_calibragem')
                 if 'aprendizado' in df_ouro.columns: cols_view.append('aprendizado')
                 
-                df_view = df_ouro[cols_view].dropna(subset=['aprendizado']).copy()
+                df_view = df_ouro[cols_view + (['categoria_id'] if 'categoria_id' in df_ouro.columns else [])].dropna(subset=['aprendizado']).copy()
                 df_view = df_view.reset_index(drop=True)
                 
+                # Mapeia nome da categoria
+                if not df_cats.empty and 'categoria_id' in df_view.columns:
+                    cat_map = dict(zip(df_cats['id'], df_cats['nome']))
+                    df_view['categoria_id'] = df_view['categoria_id'].map(cat_map).fillna("Genérico")
+
                 # Adiciona Sequential ID (#005, #004...) e Emojis de Qualidade
                 total_calib = len(df_view)
                 df_view.index = [f"#{total_calib - i:03d}" for i in range(total_calib)]
                 
                 if 'nota_percentual' in df_view.columns:
-                    df_view['nota_percentual'] = df_view['nota_percentual'].apply(
-                        lambda x: f"{'🟢' if x/20.0 >= 4.0 else ('🟡' if x/20.0 >= 3.0 else '🔴')} {x/20.0:.1f} ⭐ ({int(x)}%)"
-                    )
+                    def safe_format_stars(x):
+                        try:
+                            val = float(x)
+                            if pd.isna(val): return "-"
+                            return f"{'🟢' if val/20.0 >= 4.0 else ('🟡' if val/20.0 >= 3.0 else '🔴')} {val/20.0:.1f} ⭐ ({int(val)}%)"
+                        except:
+                            return "-"
+                    df_view['nota_percentual'] = df_view['nota_percentual'].apply(safe_format_stars)
 
                 rename_map = {
+                    'categoria_id': 'Categoria',
                     'aprendizado': 'Memória da IA (Lição Aprendida)', 
                     'nota_percentual': 'Estrelas ⭐', 
                     'codigo_produto': 'SKU', 
@@ -2227,7 +2245,7 @@ elif page == "Treinar IA":
                 if st.form_submit_button("🏆 Cadastrar Roteiro Ouro", type="primary"):
                     if t_prod.strip() and t_rot.strip():
                         data_ouro = {
-                            "categoria_id": 1,
+                            "categoria_id": 77,
                             "titulo_produto": t_prod,
                             "roteiro_perfeito": t_rot,
                         }
@@ -2611,55 +2629,85 @@ elif page == "Dashboard":
     else:
         sp_client = st.session_state['supabase_client']
         
-        # Carrega dados do banco
+        # Inicialização preventiva para evitar NameError
+        df_ouro = df_pers = df_fon = df_est = df_hist_dash = df_nuan = df_img = df_cats = pd.DataFrame()
+        cats_dict = {}
+        df_fb = pd.DataFrame()
+
+        # Carrega dados do banco de forma resiliente (tabela por tabela)
+        def safe_fetch(table_name, select="*"):
+            try:
+                res = sp_client.table(table_name).select(select).execute()
+                return res.data if hasattr(res, 'data') else []
+            except Exception:
+                return []
+
+        active_mode = st.session_state.get('active_mode', 'NW Padrão')
+        prefix = st.session_state.get('table_prefix', 'nw_')
+        
+        # MODO SOCIAL: Se for modo Social, usamos as tabelas nw_ mas com filtro de visualização
+        fetch_prefix = prefix
+        if active_mode == "Discovery (SOCIAL)":
+            fetch_prefix = "nw_" # Fallback para usar tabelas existentes enquanto social_ não são criadas
+
+        # Tabelas que variam por prefixo
+        ouro_data = safe_fetch(f"{fetch_prefix}roteiros_ouro")
+        est_data = safe_fetch(f"{fetch_prefix}treinamento_estruturas")
+        hist_data = safe_fetch(f"{fetch_prefix}historico_roteiros", "criado_em, codigo_produto, modo_trabalho, modelo_llm, custo_estimado_brl")
+        nuan_data = safe_fetch(f"{fetch_prefix}treinamento_nuances")
+        img_data = safe_fetch(f"{fetch_prefix}treinamento_imagens")
+        fon_data = safe_fetch(f"{fetch_prefix}treinamento_fonetica")
+        
+        # Tabelas fixas (sempre nw_)
+        pers_data = safe_fetch("nw_treinamento_persona_lu")
+        cats_data = safe_fetch("nw_categorias")
+
+        # Inicialização dos DataFrames (Garante colunas base mesmo se vazio)
+        cats_dict = {c['id']: c['nome'] for c in cats_data} if cats_data else {}
+        df_cats = pd.DataFrame(cats_data)
+        
+        def safe_df(data, columns):
+            df = pd.DataFrame(data)
+            if df.empty:
+                return pd.DataFrame(columns=columns)
+            return df
+
+        df_ouro = safe_df(ouro_data, ['criado_em', 'categoria_id', 'codigo_produto', 'titulo_produto', 'roteiro_original_ia', 'roteiro_perfeito', 'nota_percentual', 'aprendizado'])
+        df_pers = safe_df(pers_data, ['criado_em', 'pilar_persona', 'texto_gerado_ia', 'texto_corrigido_humano', 'lexico_sugerido'])
+        df_fon = safe_df(fon_data, ['criado_em', 'termo_errado', 'termo_corrigido', 'exemplo_no_roteiro'])
+        df_est = safe_df(est_data, ['criado_em', 'tipo_estrutura', 'texto_ia_rejeitado', 'texto_ouro', 'aprendizado'])
+        df_hist_dash = safe_df(hist_data, ['criado_em', 'codigo_produto', 'modo_trabalho', 'modelo_llm', 'custo_estimado_brl'])
+        df_nuan = safe_df(nuan_data, ['criado_em', 'frase_ia', 'analise_critica', 'exemplo_ouro'])
+        df_img = safe_df(img_data, ['criado_em', 'codigo_produto', 'descricao_ia', 'descricao_humano', 'aprendizado'])
+        
+        # Filtro Global para Modo SOCIAL no Histórico
+        if active_mode == "Discovery (SOCIAL)":
+            if not df_hist_dash.empty:
+                df_hist_dash = df_hist_dash[df_hist_dash['modo_trabalho'] == 'SOCIAL'].copy()
+
+        # Bloco de processamento de dados (calculados)
         try:
-            res_ouro = sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}roteiros_ouro").select("*").execute()
-            res_pers = sp_client.table("nw_treinamento_persona_lu").select("*").execute()
-            res_fon = sp_client.table("nw_treinamento_fonetica").select("*").execute()
-            res_cats = sp_client.table("nw_categorias").select("*").execute()
-            res_est = sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}treinamento_estruturas").select("*").execute()
-            res_hist = sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}historico_roteiros").select("criado_em, codigo_produto, modo_trabalho, modelo_llm, custo_estimado_brl").execute()
-            res_nuan = sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}treinamento_nuances").select("*").execute()
-            res_img = sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}treinamento_imagens").select("*").execute()
-            
-            ouro_data = res_ouro.data if hasattr(res_ouro, 'data') else []
-            pers_data = res_pers.data if hasattr(res_pers, 'data') else []
-            fon_data = res_fon.data if hasattr(res_fon, 'data') else []
-            est_data = res_est.data if hasattr(res_est, 'data') else []
-            hist_data = res_hist.data if hasattr(res_hist, 'data') else []
-            nuan_data = res_nuan.data if hasattr(res_nuan, 'data') else []
-            img_data = res_img.data if hasattr(res_img, 'data') else []
-            cats_dict = {c['id']: c['nome'] for c in res_cats.data} if hasattr(res_cats, 'data') else {}
-            
-            df_ouro = pd.DataFrame(ouro_data)
-            df_pers = pd.DataFrame(pers_data)
-            df_fon = pd.DataFrame(fon_data)
-            df_est = pd.DataFrame(est_data)
-            df_hist_dash = pd.DataFrame(hist_data)
-            df_nuan = pd.DataFrame(nuan_data)
-            df_img = pd.DataFrame(img_data)
-            
-            # --- NOVA LÓGICA: df_fb agora vem de df_ouro (Calibragens) ---
+            df_fb = pd.DataFrame()
             if not df_ouro.empty:
                 # Primeiro mapeia a categoria em df_ouro
-                df_ouro['categoria'] = df_ouro['categoria_id'].map(cats_dict).fillna("Genérico")
+                if 'categoria_id' in df_ouro.columns:
+                    df_ouro['categoria'] = df_ouro['categoria_id'].map(cats_dict).fillna("Genérico")
                 
-                df_fb = df_ouro[df_ouro['roteiro_original_ia'].notna()].copy()
-                # Converte nota_percentual (0-100) para labels de sentimento
-                def map_sentimento(p):
-                    if p >= 96: return "Ajuste Fino"
-                    if p >= 85: return "Edição Moderada"
-                    if p >= 60: return "Mudança Estrutural"
-                    return "Reescrita Pesada"
-                df_fb['avaliacao_label'] = df_fb['nota_percentual'].apply(map_sentimento)
-                df_fb['estrela'] = df_fb['nota_percentual'].apply(lambda x: f"{(x/20.0):.1f} ⭐")
-            else:
-                df_fb = pd.DataFrame()
+                if 'roteiro_original_ia' in df_ouro.columns:
+                    df_fb = df_ouro[df_ouro['roteiro_original_ia'].notna()].copy()
+                    if not df_fb.empty:
+                        # Converte nota_percentual (0-100) para labels de sentimento
+                        def map_sentimento(p):
+                            if pd.isna(p): return "N/A"
+                            if p >= 96: return "Ajuste Fino"
+                            if p >= 85: return "Edição Moderada"
+                            if p >= 60: return "Mudança Estrutural"
+                            return "Reescrita Pesada"
+                        df_fb['avaliacao_label'] = df_fb['nota_percentual'].apply(map_sentimento)
+                        df_fb['estrela'] = df_fb['nota_percentual'].apply(lambda x: f"{(x/20.0):.1f} ⭐" if pd.notna(x) else "-")
             
-            # --- CONVERSÃO DE FUSO HORÁRIO GLOBAL (UTC -> SÃO PAULO) ---
-            for df in [df_ouro, df_pers, df_fon, df_est, df_nuan, df_img]:
-                if not df.empty and 'criado_em' in df.columns:
-                    df['criado_em'] = df['criado_em'].apply(convert_to_sp_time)
+            if df_fb.empty:
+                df_fb = pd.DataFrame(columns=['criado_em', 'estrela', 'categoria', 'avaliacao_label', 'aprendizado', 'roteiro_original_ia', 'roteiro_perfeito'])
             
             # A coluna 'categoria' já foi mapeada acima na nova lógica
             total_ouro = len(df_ouro)
@@ -2674,7 +2722,8 @@ elif page == "Dashboard":
                     periodo = st.date_input(
                         "📅 Período de Análise:",
                         value=(um_ano_atras, hoje),
-                        format="DD/MM/YYYY"
+                        max_value=hoje,
+                        key="periodo_dash"
                     )
                 with col_f2:
                     search_dash = st.text_input("🔍 Busca Global (Código/Termo):", placeholder="Filtrar tabelas e métricas...")
@@ -2704,6 +2753,7 @@ elif page == "Dashboard":
                 df_hist_dash = safe_filter(df_hist_dash, start_date, end_date)
                 df_nuan = safe_filter(df_nuan, start_date, end_date)
                 df_img = safe_filter(df_img, start_date, end_date)
+                df_fb = safe_filter(df_fb, start_date, end_date)
 
             # Aplicar Filtro de Busca
             if search_dash:
@@ -2719,6 +2769,7 @@ elif page == "Dashboard":
                 df_hist_dash = filter_search(df_hist_dash, search_dash)
                 df_nuan = filter_search(df_nuan, search_dash)
                 df_img = filter_search(df_img, search_dash)
+                df_fb = filter_search(df_fb, search_dash)
 
             # Recalcular métricas após filtros
             if not df_ouro.empty and 'nota_percentual' in df_ouro.columns:
@@ -3010,17 +3061,17 @@ elif page == "Dashboard":
             st.markdown("### 📋 Dados Detalhados")
             tab_hist, tab_ouro, tab_feed, tab_est_dash, tab_nuan, tab_img_dash, tab_pers, tab_fon = st.tabs(["💵 Histórico", "🏆 Roteiros Ouro", "⚖️ Feedbacks", "🏗️ Estruturas", "🧠 Nuances", "📸 Imagens", "💃 Persona", "🗣️ Fonética"])
             
+            # Data format safe parser
+            def safe_format_date(val):
+                try:
+                    return pd.to_datetime(val, utc=True).tz_convert('America/Sao_Paulo').strftime('%d/%m/%y às %H:%M')
+                except:
+                    return val
+
             with tab_hist:
                 if not df_hist_dash.empty:
                     df_show_hist = df_hist_dash.copy()
                     
-                    # Data format safe parser
-                    def safe_format_date(val):
-                        try:
-                            return pd.to_datetime(val, utc=True).tz_convert('America/Sao_Paulo').strftime('%d/%m/%y às %H:%M')
-                        except:
-                            return val
-
                     # Formatação de colunas
                     if 'criado_em' in df_show_hist.columns:
                         df_show_hist['criado_em'] = df_show_hist['criado_em'].apply(safe_format_date)
@@ -3047,7 +3098,7 @@ elif page == "Dashboard":
                     df_e = df_est.copy()
                     if 'criado_em' in df_e.columns:
                         df_e['criado_em'] = df_e['criado_em'].apply(safe_format_date)
-                    available_cols = [c for c in ['criado_em', 'tipo_estrutura', 'texto_ia_rejeitado', 'texto_ouro'] if c in df_e.columns]
+                    available_cols = [c for c in ['criado_em', 'tipo_estrutura', 'texto_ia_rejeitado', 'texto_ouro', 'aprendizado'] if c in df_e.columns]
                     st.dataframe(df_e[available_cols].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhuma estrutura cadastrada.")
