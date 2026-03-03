@@ -900,7 +900,7 @@ with st.sidebar:
     st.markdown("<div style='margin-bottom: 5px; font-weight: 600; font-size: 14px; color: #b0bdd0;'>📁 Ambiente (Tabelas):</div>", unsafe_allow_html=True)
     active_env = st.radio(
         "Ambiente de Trabalho",
-        ["NW Padrão", "NW 3D", "Discovery (SOCIAL)"],
+        ["NW Padrão", "NW 3D", "SOCIAL"],
         horizontal=True,
         label_visibility="collapsed",
         key="active_mode_radio"
@@ -912,8 +912,10 @@ with st.sidebar:
         st.session_state['table_prefix'] = "nw_"
     elif active_env == "NW 3D":
         st.session_state['table_prefix'] = "nw3d_"
-    else:
+    elif active_env == "SOCIAL":
         st.session_state['table_prefix'] = "social_"
+    else:
+        st.session_state['table_prefix'] = "nw_" # Fallback de segurança
 
     # --- SELETOR DE MODELO LLM ---
     # Usamos uma chave para detectar mudança
@@ -1129,7 +1131,7 @@ if page == "Criar Roteiros":
             # Formatos de trabalho
             modos_trabalho = {
                 "📄 NW (NewWeb)": "NW (NewWeb)",
-                "📱 SOCIAL (Reels)": "SOCIAL (Reels/TikTok)",
+                "📱 SOCIAL (Reels)": "SOCIAL",
                 "🎮 3D (NewWeb 3D)": "3D (NewWeb 3D)",
                 "🎙️ Review": "Review (NwReview)"
             }
@@ -1395,7 +1397,7 @@ if page == "Criar Roteiros":
             # Seletor de modo manual
             st.markdown("**Formato do Roteiro (Manual)**")
             modo_manual_input = st.selectbox("Selecione:", list(modos_trabalho.keys()), key="modo_man")
-            modo_man_selecionado = modos_trabalho[modo_manual_input]
+            modo_man_selecionado = "SOCIAL" if modo_manual_input == "📱 SOCIAL (Reels)" else modos_trabalho[modo_manual_input]
 
             if st.button("🚀 Gerar Roteiros a partir de Fichas", use_container_width=True, type="primary", key="btn_manual"):
                 fichas_validas = [f for f in fichas_informadas if f["ficha"].strip() and f["sku"].strip()]
@@ -2647,8 +2649,8 @@ elif page == "Dashboard":
         
         # MODO SOCIAL: Se for modo Social, usamos as tabelas nw_ mas com filtro de visualização
         fetch_prefix = prefix
-        if active_mode == "Discovery (SOCIAL)":
-            fetch_prefix = "nw_" # Fallback para usar tabelas existentes enquanto social_ não são criadas
+        if active_mode == "SOCIAL":
+            fetch_prefix = "social_" # Usa tabelas social_ específicas agora que existem 
 
         # Tabelas que variam por prefixo
         ouro_data = safe_fetch(f"{fetch_prefix}roteiros_ouro")
@@ -2681,7 +2683,7 @@ elif page == "Dashboard":
         df_img = safe_df(img_data, ['criado_em', 'codigo_produto', 'descricao_ia', 'descricao_humano', 'aprendizado'])
         
         # Filtro Global para Modo SOCIAL no Histórico
-        if active_mode == "Discovery (SOCIAL)":
+        if active_mode == "SOCIAL":
             if not df_hist_dash.empty:
                 df_hist_dash = df_hist_dash[df_hist_dash['modo_trabalho'] == 'SOCIAL'].copy()
 

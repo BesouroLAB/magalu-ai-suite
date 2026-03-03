@@ -17,8 +17,8 @@ PRICING_USD_PER_1M = {
     "gemini-2.5-flash":         {"input": 0.10, "output": 0.40},
     "gemini-2.5-flash-lite":    {"input": 0.10, "output": 0.40},
     # Modelos gratuitos (via Puter, OpenRouter, Z.ai, Kimi)
-    "gpt-4o-mini": {"input": 0.00, "output": 0.00},
-    "x-ai/grok-4-1-fast": {"input": 0.00, "output": 0.00},
+    "gpt-4o-mini": {"input": 0.15, "output": 0.60},     # Preço Puter/Market
+    "x-ai/grok-4-1-fast": {"input": 0.20, "output": 0.50}, # Preço xAI/Puter
     "moonshot-v1-8k": {"input": 0.00, "output": 0.00},
     "glm-4.5-flash": {"input": 0.00, "output": 0.00},
     "deepseek/deepseek-r1": {"input": 0.00, "output": 0.00},
@@ -26,7 +26,7 @@ PRICING_USD_PER_1M = {
     "google/gemma-3-27b:free": {"input": 0.00, "output": 0.00},
     "meta-llama/llama-3.3-70b-instruct:free": {"input": 0.00, "output": 0.00},
     "meta-llama/llama-3.1-70b-instruct": {"input": 0.00, "output": 0.00},
-    "claude-3-5-sonnet": {"input": 0.00, "output": 0.00},
+    "claude-3-5-sonnet": {"input": 3.00, "output": 15.00},
 }
 USD_TO_BRL = 5.80
 
