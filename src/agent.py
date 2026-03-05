@@ -185,7 +185,7 @@ class RoteiristaAgent:
                     sb_parts.append(f"- Pilar: {p['pilar_persona']}\n  Erro Anterior: {p['erro_cometido']}\n  Correção Master: {p['texto_corrigido_humano']}")
 
             # 3. Novas Regras Fonéticas (SHARED ACROSS MODES)
-            res_fon = self.supabase.table("nw_treinamento_fonetica").select("*").order('criado_em', desc=True).limit(30).execute()
+            res_fon = self.supabase.table("nw_treinamento_fonetica").select("*").execute()
             if res_fon.data:
                 sb_parts.append("\n**NOVAS REGRAS DE FONÉTICA (OBRIGATÓRIO):**")
                 for f in res_fon.data:
