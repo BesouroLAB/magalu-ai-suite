@@ -199,7 +199,7 @@ class RoteiristaAgent:
                     sb_parts.append(f"- [{est['tipo_estrutura']}] {est['texto_ouro']}")
                     
             # 5. Nuances de Linguagem (O que evitar e como melhorar)
-            res_nuan = self.supabase.table(f"{self.table_prefix}treinamento_nuances").select("*").limit(5).order('criado_em', desc=True).execute()
+            res_nuan = self.supabase.table(f"{self.table_prefix}treinamento_nuances").select("*").limit(20).order('criado_em', desc=True).execute()
             if res_nuan.data:
                 sb_parts.append("\n**NUANCES E REFINAMENTO DE ESTILO (LIÇÕES DE REDAÇÃO):**")
                 for n in res_nuan.data:
