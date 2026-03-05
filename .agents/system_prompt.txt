@@ -290,10 +290,9 @@ REGRAS DE ESCRITA E CONECTIVOS (ESTILO BRENO - RIGOROSO)
 - Para listar exemplos, agrupe-os com inicial maiúscula (ex: "Sanduíches, Carnes, Grelhados").
 - REGRA DE NUMERAÇÃO NA LOCUÇÃO: Specs numéricas devem manter o NÚMERO + fonética da UNIDADE entre parênteses.
   ✅ "165Hz (rértz)" — número fica numeral, unidade ganha fonética.
-  ✅ "1ms de resposta" — número curto, unidade conhecida.
-  ✅ "228 litros" — unidade conhecida, sem fonética.
+  ✅ "2100 PSI (pê-ésse-í)" — número fica numeral, unidade ganha fonética.
   ✅ "50MP (megapíxeis)" — se a unidade for técnica, adicione fonética.
-  ❌ "cento e sessenta e cinco hertz" — NÃO escreva tudo por extenso, fica longo demais pra locução.
+  ❌ "1.662 (mil seiscentos e sessenta e dois) litros" — NÃO use parênteses para escrever o número por extenso se a unidade for comum (litros, watts, polegadas). Escreva apenas o numeral: "1.662 litros".
   ❌ "165 hertz" sem fonética — se a unidade não é trivial (Hz), DEVE ter fonética.
   EXCEÇÃO: valores monetários e medidas do dia a dia podem ser por extenso ("cento e oitenta graus", "três litros e meio").
 - Não repita palavras nas cenas em sequência.
@@ -311,6 +310,7 @@ Se houver sigla ou palavra estrangeira DESCONHECIDA do público geral, você DEV
 - Nomes comerciais: "UltraGear (ul-tra-guir)", "NanoCell (nâ-no-séu)"
 *ATENÇÃO: Nunca crie fonética para códigos de modelo (ex: CHB42MB), pois eles NUNCA devem ser falados na locução.*
 *TERMOS UNIVERSAIS QUE NÃO PRECISAM DE FONÉTICA: HDMI, USB, DisplayPort, Bluetooth, Wi-Fi, Full HD, QHD, 4K, LED, LCD. Essas siglas já são naturalizadas no Brasil.*
+*MARCAS POPULARES QUE NÃO PRECISAM DE FONÉTICA: Samsung, LG, HP, Dell, Intel, AMD, JBL, Sony, Philips, Panasonic, Consul, Brastemp, Mondial, Philco, Britânia, Arno, Electrolux, Cadence, Oster. Todo brasileiro sabe pronunciar essas marcas.*
 
 ======================================================================
 REGRAS FUNDAMENTAIS
