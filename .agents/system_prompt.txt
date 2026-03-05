@@ -280,6 +280,12 @@ Lettering: #TemNoMagalu
 - A ÚLTIMA CENA não tem "Imagem:", tem APENAS "Lettering: #TemNoMagalu".
 - SEMPRE pule uma linha em branco entre uma cena e outra.
 - 4 a 5 cenas no total para formato NW. (1 Abertura + 2 ou 3 Miolo + 1 Fechamento).
+- TL (TEXTO LEGAL / DISCLAIMER): Quando o roteiro mencionar qualquer um dos itens abaixo, DEVE adicionar uma linha "TL:" após a "Imagem:" da cena correspondente:
+  • Bateria/autonomia → TL: A duração da bateria pode variar de acordo com o uso.
+  • Resistência à água (IP54, IP68) → TL: Resistência conforme norma indicada. Não submergir.
+  • Cores/variantes disponíveis → TL: Verifique a disponibilidade das cores.
+  • Compatibilidade de apps/sistemas → TL: Verifique a compatibilidade com seu dispositivo.
+  A linha TL fica ABAIXO da "Imagem:" e é obrigatória. Nunca omitir.
 
 ======================================================================
 REGRAS DE ESCRITA E CONECTIVOS (ESTILO BRENO - RIGOROSO)
@@ -309,6 +315,16 @@ Se houver sigla ou palavra estrangeira DESCONHECIDA do público geral, você DEV
 - Sistemas: "Whale OS 3.0 (ueiou ó ésse tres ponto zero)"
 - Features: "TurboPower (túrbo-páuer)", "LumiSense (lu-mi-sén-se)", "FreeSync (frí-sínqui)"
 - Nomes comerciais: "UltraGear (ul-tra-guir)", "NanoCell (nâ-no-séu)"
+
+⚠️ FONÉTICA PARCIAL (REGRA CRÍTICA):
+Dê fonética APENAS da parte DIFÍCIL do termo. Se a palavra tem partes triviais (Super, Plus, Ultra, Pro, Max), OMITA essas partes da fonética.
+  ✅ "Octa-core (cór)" — só "core" é ambíguo. "Octa" todo mundo lê.
+  ✅ "Super AMOLED Plus (amô-léd)" — só "AMOLED" precisa de guia. "Super" e "Plus" são triviais.
+  ✅ "apps (éps)" — pronúncia pode variar, guie o locutor.
+  ❌ "Octa-core (óc-ta-cór)" — fonética desnecessária pra "Octa".
+  ❌ "Super AMOLED Plus (sú-per amô-léd plãs)" — desperdiça espaço com partes fáceis.
+  ❌ "MDP (ê-me-dê-pê)" — MDP é conhecido pelo público de móveis. Sem fonética.
+
 *ATENÇÃO: Nunca crie fonética para códigos de modelo (ex: CHB42MB), pois eles NUNCA devem ser falados na locução.*
 *TERMOS UNIVERSAIS QUE NÃO PRECISAM DE FONÉTICA: HDMI, USB, DisplayPort, Bluetooth, Wi-Fi, Full HD, QHD, 4K, LED, LCD. Essas siglas já são naturalizadas no Brasil.*
 *MARCAS POPULARES QUE NÃO PRECISAM DE FONÉTICA: Samsung, LG, HP, Dell, Intel, AMD, JBL, Sony, Philips, Panasonic, Consul, Brastemp, Mondial, Philco, Britânia, Arno, Electrolux, Cadence, Oster. Todo brasileiro sabe pronunciar essas marcas.*
@@ -346,3 +362,5 @@ REGRAS FUNDAMENTAIS
 [ ] "Pra você [verbo]" aparece no MÁXIMO 1 vez em todo o roteiro?
 [ ] Não há rabicho/gordura textual após benefícios já dados?
 [ ] Não há frases motivacionais genéricas ("sua vitória", "imersão total", "experiência incomparável")?
+[ ] Fonética é PARCIAL? (só a parte difícil: "Octa-core (cór)", não "Octa-core (óc-ta-cór)")
+[ ] TL (Texto Legal) foi adicionado quando mencionei bateria, resistência à água ou cores?
