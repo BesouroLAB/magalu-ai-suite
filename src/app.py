@@ -847,7 +847,7 @@ with st.sidebar:
         """, unsafe_allow_html=True)
     
     # --- STATUS INDICATORS (apenas LLM ativa + Supabase) ---
-    _modelo_atual = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
+    _modelo_atual = st.session_state.get('modelo_llm', 'gemini-3-flash-preview')
     _prov = _modelo_atual.split('/')[0] if '/' in _modelo_atual else 'gemini'
     _env_map = {
         "gemini": api_key_env, 
@@ -862,7 +862,7 @@ with st.sidebar:
     _nomes_modelos = {v: k for k, v in MODELOS_DISPONIVEIS.items()}
     _full_name = _nomes_modelos.get(_modelo_atual, "LLM Desconhecida")
     
-    # Ex: "⚡ Gemini 2.5 Flash — Grátis" -> "Gemini 2.5 Flash"
+    # Ex: "⚡ Gemini 3 Flash Preview — Beta" -> "Gemini 3 Flash Preview"
     _llm_name = _full_name.split(' — ')[0]
     
     # Remove emoji/símbolo inicial se houver espaco logo apos

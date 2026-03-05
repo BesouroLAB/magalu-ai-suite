@@ -14,8 +14,6 @@ PRICING_USD_PER_1M = {
     "gemini-3.1-pro-preview":   {"input": 3.50, "output": 10.50},
     "gemini-3-flash-preview":   {"input": 0.70, "output": 2.10},
     "gemini-2.0-flash":         {"input": 0.10, "output": 0.40},
-    "gemini-2.5-flash":         {"input": 0.10, "output": 0.40},
-    "gemini-2.5-flash-lite":    {"input": 0.10, "output": 0.40},
     # Modelos gratuitos (via Puter, OpenRouter, Z.ai, Kimi)
     "gpt-4o-mini": {"input": 0.15, "output": 0.60},     # Preço Puter/Market
     "x-ai/grok-4-1-fast": {"input": 0.20, "output": 0.50}, # Preço xAI/Puter
@@ -31,10 +29,9 @@ PRICING_USD_PER_1M = {
 USD_TO_BRL = 5.80
 
 MODELOS_DISPONIVEIS = {
-    "🚀 Gemini 2.5 Flash [ESTÁVEL] — ~R$0,005/roteiro": "gemini-2.5-flash",
-    "⚡ Gemini 3 Flash Preview [BETA] — ~R$0,02/roteiro": "gemini-3-flash-preview",
-    "👑 Gemini 3.1 Pro Preview [PAGO] — ~R$0,19/roteiro": "gemini-3.1-pro-preview",
-    "💰 Gemini 2.0 Flash [PAGO] — ~R$0,005/roteiro": "gemini-2.0-flash",
+    "⚡ Gemini 3 Flash Preview [PADRÃO] — ~R$0,02/roteiro": "gemini-3-flash-preview",
+    "👑 Gemini 3.1 Pro Preview [ALTO NÍVEL] — ~R$0,19/roteiro": "gemini-3.1-pro-preview",
+    "💰 Gemini 2.0 Flash [ESTÁVEL] — ~R$0,005/roteiro": "gemini-2.0-flash",
     "⚖️ OpenRouter Auto-Free [GRÁTIS] — Múltiplos": "openrouter/free",
     "🔥 Grok 4.1 Fast [GRÁTIS] — Criativo (Puter)": "puter/x-ai/grok-4-1-fast",
     "🤖 GPT-4o Mini [GRÁTIS] — Fluído (Puter)": "puter/gpt-4o-mini",
@@ -43,8 +40,7 @@ MODELOS_DISPONIVEIS = {
 
 MODELOS_DESCRICAO = {
     "gemini-3.1-pro-preview": "[O SUPERIOR] (Fev/2026) Inteligência de ponta absoluta. Melhor estruturação, obediência de formatação e raciocínio hiper avançado. Perfeito para 3D. Custo: ~R$ 0,19.",
-    "gemini-3-flash-preview": "[O FRONTEIRA] (Dez/2025) Versão mais recente e experimental. Altíssimo raciocínio, mas pode apresentar instabilidade na API (erro 503). Custo: ~R$ 0,02.",
-    "gemini-2.5-flash": "[O EQUILIBRADO] (Mar/2026) Nova baseline estável. Rápido, preciso e com custo baixíssimo. Recomendado para uso diário. Custo: ~R$ 0,005.",
+    "gemini-3-flash-preview": "[O MOTOR OFICIAL] (Dez/2025) Versão mais recente e calibrada. Altíssimo raciocínio e obediência total às regras de síntese. Custo: ~R$ 0,02.",
     "gemini-2.0-flash": "[LEGADO ESTÁVEL] (2025) Versão anterior mas muito robusta. Custo: ~R$ 0,005.",
     "openrouter/free": "[O CAMALEÃO] (2026) Seleciona automaticamente o melhor modelo gratuito disponível (Llama 3.3, Gemma 3, etc). Ótimo fallback sem custo.",
     "puter/gpt-4o-mini": "[O DESOBEDIENTE] (2024) Bom nos benefícios, mas costuma quebrar regras de cabeçalho e errar pronúncias. Use como estepe.",
