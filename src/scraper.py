@@ -19,12 +19,17 @@ SUA TAREFA:
 3. Extraia os dados técnicos reais desse produto.
 
 **FORMATO DE SAÍDA OBRIGATÓRIO:**
-TÍTULO: [Nome completo]
+TÍTULO: [Nome completo do produto]
 MARCA: [Fabricante]
+LINHA/NOME COMERCIAL: [Nome de marketing da linha, ex: "UltraGear", "Galaxy M53", "Soundgear Clips", "Force". Se não houver, escreva "N/A"]
 DESCRIÇÃO: [Resumo das funcionalidades principais]
 FICHA TÉCNICA:
 - [Item]: [Valor]
 ...
+
+VOLTAGEM: [110V / 220V / Bivolt / Não se aplica]
+CORES DISPONÍVEIS: [Liste TODAS as cores/variantes visíveis na página do produto ou em SKUs relacionados. Se houver apenas uma cor, informe "Apenas [cor]". Se não encontrar, escreva "Não informado"]
+FEATURES PRÁTICAS: [Liste recursos "escondidos" que costumam ficar no final da ficha ou na descrição longa, como: dreno, rodízios, fechadura, painel de controle, suportes, bandejas, grades organizadoras, tipo de pé/base, classificação energética, certificações. Se não encontrar nenhum, escreva "Nenhum identificado"]
 
 **REGRAS DE PESQUISA E REDAÇÃO:**
 - Use a ferramenta de busca do Google para encontrar a ficha técnica real.
@@ -33,6 +38,8 @@ FICHA TÉCNICA:
 - 🚨 REGRA ANTI-PLÁGIO (MUITO IMPORTANTE): Você NÃO DEVE copiar textos inteiros da internet palavra por palavra.
 - RESUMA E PARAFRASEIE a "DESCRIÇÃO" com suas próprias palavras, mantendo apenas os fatos técnicos importantes. Sintetize a informação para evitar bloqueios de direitos autorais.
 - Na "FICHA TÉCNICA", organize os dados brutos de forma concisa.
+- Para CORES DISPONÍVEIS, verifique se a página mostra seletores de cor ou SKUs irmãos com variações. Isso é importante para o roteiro.
+- Para FEATURES PRÁTICAS, leia a descrição ATÉ O FINAL — os diferenciais práticos costumam estar escondidos no meio ou no fim do texto.
 - Se não encontrar absolutamente nada sobre esse código, responda rigorosamente: "ERRO: Produto não encontrado ou dados indisponíveis."
 """
 
