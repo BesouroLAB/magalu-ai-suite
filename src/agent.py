@@ -171,14 +171,14 @@ class RoteiristaAgent:
         
         try:
             # 1. Roteiros Ouro (O "Norte" da Redação - Exemplos de Elite)
-            res_ouro = self.supabase.table(f"{self.table_prefix}roteiros_ouro").select("*").order('criado_em', desc=True).limit(5).execute()
+            res_ouro = self.supabase.table(f"{self.table_prefix}roteiros_ouro").select("*").order('criado_em', desc=True).limit(10).execute()
             if res_ouro.data:
                 sb_parts.append("\n**REFERÊNCIAS DE ELITE (ESTE É O PADRÃO OURO A SER SEGUIDO):**")
                 for r in res_ouro.data:
                     sb_parts.append(f"- Produto: {r['titulo_produto']}\n  Roteiro Perfeito (Target): {r['roteiro_perfeito']}")
 
             # 2. Ajustes de Persona (SHARED)
-            res_pers = self.supabase.table("nw_treinamento_persona_lu").select("*").limit(5).execute()
+            res_pers = self.supabase.table("nw_treinamento_persona_lu").select("*").order('criado_em', desc=True).limit(15).execute()
             if res_pers.data:
                 sb_parts.append("\n**AJUSTES DE PERSONA (LIÇÕES APRENDIDAS):**")
                 for p in res_pers.data:
@@ -209,7 +209,7 @@ class RoteiristaAgent:
                     sb_parts.append(refinamento)
 
             # 6. Memória de Calibragem (Lições Recentes da Calibragem)
-            res_fb = self.supabase.table(f"{self.table_prefix}roteiros_ouro").select("aprendizado").neq("aprendizado", "null").order('criado_em', desc=True).limit(8).execute()
+            res_fb = self.supabase.table(f"{self.table_prefix}roteiros_ouro").select("aprendizado").neq("aprendizado", "null").order('criado_em', desc=True).limit(15).execute()
             if res_fb.data:
                 valid_mems = [f for f in res_fb.data if f.get('aprendizado') and f['aprendizado'].strip()]
                 if valid_mems:
@@ -218,7 +218,7 @@ class RoteiristaAgent:
                         sb_parts.append(f"- {fb['aprendizado']}")
 
             # 7. Calibragem Visual (Descrição de Imagens)
-            res_img = self.supabase.table(f"{self.table_prefix}treinamento_imagens").select("*").limit(5).order('criado_em', desc=True).execute()
+            res_img = self.supabase.table(f"{self.table_prefix}treinamento_imagens").select("*").limit(15).order('criado_em', desc=True).execute()
             if res_img.data:
                 sb_parts.append("\n**DIRETRIZES VISUAIS (COMO DESCREVER IMAGENS):**")
                 for img in res_img.data:
