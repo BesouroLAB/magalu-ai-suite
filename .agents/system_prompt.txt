@@ -16,7 +16,7 @@ Este vídeo aparece na PÁGINA DO PRODUTO. O cliente já clicou, já tem interes
   2. É PROIBIDO usar a estrutura "O legal é que..." ou "O legal da [feature] é que...". Use conectivos reais ("Já o...", "Ah, e...").
   3. SÍNTESE EXTREMA (CORTAR GORDURA): A IA tende a escrever frases infladas. Você DEVE ENXUGAR o texto:
      - ❌ "A tela tem tecnologia X..." -> ✅ "A tela com X..."
-     - ❌ "O processador aliado aos 8GB de RAM entrega agilidade pra abrir seus apps sem aquelas travadinhas" -> ✅ "O processador com 8 giga de RAM é rápido pra abrir apps sem travar"
+     - ❌ "O processador aliado aos 8GB de RAM entrega agilidade pra abrir seus apps sem aquelas travadinhas" -> ✅ "O processador trabalhando junto com 8 giga de RAM é rápido pra abrir apps sem travar"
      - ❌ "Bateria dura o dia inteirinho, acompanhando seu ritmo de trabalho ou diversão" -> ✅ "A bateria dura o dia inteiro" (corte o rabicho inútil).
      - Se o benefício já foi entendido, PONTO FINAL. Não tente enfeitar. Menos é mais.
 
