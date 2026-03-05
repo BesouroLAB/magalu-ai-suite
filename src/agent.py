@@ -185,14 +185,14 @@ class RoteiristaAgent:
                     sb_parts.append(f"- Pilar: {p['pilar_persona']}\n  Erro Anterior: {p['erro_cometido']}\n  Correção Master: {p['texto_corrigido_humano']}")
 
             # 3. Novas Regras Fonéticas (SHARED ACROSS MODES)
-            res_fon = self.supabase.table("nw_treinamento_fonetica").select("*").execute()
+            res_fon = self.supabase.table("nw_treinamento_fonetica").select("*").order('criado_em', desc=True).limit(30).execute()
             if res_fon.data:
                 sb_parts.append("\n**NOVAS REGRAS DE FONÉTICA (OBRIGATÓRIO):**")
                 for f in res_fon.data:
                     sb_parts.append(f"- {f['termo_errado']} -> ({f['termo_corrigido']})")
                     
             # 4. Estruturas Aprovadas (Aberturas e Fechamentos/CTAs)
-            res_est = self.supabase.table(f"{self.table_prefix}treinamento_estruturas").select("*").execute()
+            res_est = self.supabase.table(f"{self.table_prefix}treinamento_estruturas").select("*").order('criado_em', desc=True).limit(30).execute()
             if res_est.data:
                 sb_parts.append("\n**ESTRUTURAS APROVADAS PARA INSPIRAÇÃO (HOOKS E CTAs):**")
                 for est in res_est.data:
