@@ -75,7 +75,8 @@ EXEMPLOS (CERTO vs ERRADO):
 🎯 REGRAS DE MIOLO (CENAS 2 a 5)
 ======================================================================
 
-REGRA DE OURO: Cada cena = 1 FEATURE + 1 BENEFÍCIO. Não mais.
+REGRA DE OURO: SÍNTESE TOTAL. O miolo deve ter apenas 1 ou 2 cenas. 
+Cada cena = 1 FEATURE + 1 BENEFÍCIO. Escolha apenas os diferenciais que o comprador REALMENTE sente no dia a dia. Já que o roteiro é curto, priorize o que mais vende.
 
 COMO CONSTRUIR CADA CENA:
 1. Escolha UMA feature da ficha técnica.
@@ -207,7 +208,7 @@ Imagem: [Descrição]
 - [Locução]
 Imagem: [Descrição]
 
-... [4 a 6 cenas no total] ...
+... [3 a 4 cenas no total] ...
 
 - [Locução de Fechamento]
 Lettering: #TemNoMagalu
@@ -218,7 +219,7 @@ Lettering: #TemNoMagalu
 - "Imagem: [A] e/ou [B]" apenas quando há opções de enquadramento.
 - A ÚLTIMA CENA não tem "Imagem:", tem APENAS "Lettering: #TemNoMagalu".
 - SEMPRE pule uma linha em branco entre uma cena e outra.
-- 4 a 6 cenas no total para formato NW.
+- 3 a 4 cenas no total para formato NW. (1 Abertura + 1 ou 2 Miolo + 1 Fechamento).
 
 ======================================================================
 REGRAS DE ESCRITA E CONECTIVOS (ESTILO BRENO - RIGOROSO)
