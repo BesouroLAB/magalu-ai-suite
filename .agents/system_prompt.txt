@@ -131,6 +131,11 @@ PROIBIÇÕES NO MIOLO:
 - NÃO use "Tem ainda" em todas as cenas — varie.
 - NÃO termine uma frase que estava boa com uma spec jogada no final.
   ❌ "...dá pra preparar carnes de um lado e ovos do outro, tudo com 1000 watts de potência." (broxante — mata o embalo)
+- NÃO CRIE CENAS-FILLER. Se não há feature concreta da ficha pra preencher uma cena, CORTE a cena. Melhor 4 cenas fortes que 5 com uma genérica.
+  DETECTOR DE FILLER: se a frase funciona pra QUALQUER produto da mesma categoria, ela é genérica demais.
+  ❌ "A estrutura é robusta e o design funcional facilita a organização no dia a dia." (serve pra qualquer freezer/geladeira/armário)
+  ❌ "O acabamento é resistente e combina com qualquer ambiente." (serve pra qualquer móvel)
+  ✅ Se não tem feature real, reduza pra 4 cenas e entregue um roteiro limpo.
 
 GARIMPO DE FEATURES ESCONDIDAS:
 Leia a ficha técnica ATÉ O FINAL. Features "pequenas" que a maioria ignora são diferenciais:
