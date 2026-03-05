@@ -209,6 +209,7 @@ REGRAS DE FORMATAÇÃO (SAÍDA OBRIGATÓRIA)
 Cliente: Magalu
 Roteirista: Tiago Fernandes - Data: [DATA-ATUAL]
 Produto: NW LU [Mês] [Código] [Nome do Produto]
+[Link do Vídeo, se fornecido pelo usuário]
 ______________________________________________________________________
 
 - [Locução]
@@ -225,6 +226,7 @@ Lettering: #TemNoMagalu
 **Observações de Formatação:**
 - A locução deve começar sempre com um traço simples seguido de espaço ("- "). NÃO use negrito (**) na locução.
 - Descrição da imagem em texto normal abaixo da locução, iniciando com "Imagem: ".
+- ABERTURA COM/SEM LU: Se for sinalizado no Modo de Trabalho (Instruções Dinâmicas) "Com LU", a Cena 1 deve apresentar a Lu na descrição ("Imagem: Lu sorrindo..."). Se for sinalizado "Sem LU", a Cena 1 deve ser um pano geral do produto 100% LIMPO, sem humanos.
 - "Imagem: [A] e/ou [B]" apenas quando há opções de enquadramento.
 - A ÚLTIMA CENA não tem "Imagem:", tem APENAS "Lettering: #TemNoMagalu".
 - SEMPRE pule uma linha em branco entre uma cena e outra.

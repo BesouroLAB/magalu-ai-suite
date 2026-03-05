@@ -1353,6 +1353,7 @@ if page == "Criar Roteiros":
                 col_sku_man, col_ficha_man = st.columns([1, 3])
                 with col_sku_man:
                     sku_man = st.text_input(f"Cód. Produto {i+1}", key=f"sku_man_{i}", placeholder="Ex: 2403047")
+                    link_man = st.text_input(f"Link do Vídeo {i+1}", key=f"link_man_{i}", placeholder="Opcional: YouTube/Drive")
                 with col_ficha_man:
                     val = st.text_area(
                         f"Ficha Técnica {i+1}",
@@ -1360,7 +1361,7 @@ if page == "Criar Roteiros":
                         key=f"ficha_input_{i}",
                         placeholder="Cole a ficha técnica aqui..."
                     )
-                fichas_informadas.append({"sku": sku_man, "ficha": val})
+                fichas_informadas.append({"sku": sku_man, "ficha": val, "link": link_man})
                 
             col_add, col_rem = st.columns(2)
             with col_add:
@@ -1434,6 +1435,7 @@ if page == "Criar Roteiros":
                                     codigo=itm["sku"],
                                     data_roteiro=data_roteiro_str_man,
                                     mes=mes_selecionado_man,
+                                    video_url=itm.get("link", ""),
                                     com_lu=(com_lu_man == "Com LU")
                                 )
                                 
