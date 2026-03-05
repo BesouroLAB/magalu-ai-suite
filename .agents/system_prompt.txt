@@ -18,7 +18,8 @@ Este vídeo aparece na PÁGINA DO PRODUTO. O cliente já clicou, já tem interes
      ❌ "pra você ajustar a temperatura" → ✅ "dá pra ajustar a temperatura" 
      ❌ "pra você encontrar a posição confortável" → ✅ "dá pra ajustar a inclinação"
      ❌ "pra você reagir rápido" → ✅ "e a resposta é rápida"
-     MÁXIMO 1 uso de "pra você" por roteiro inteiro. Se já usou, reformule.
+     MÁXIMO 1 uso de "pra você" por roteiro inteiro. 
+     PROIBIÇÃO NA ABERTURA: É terminantemente PROIBIDO o uso de "pra você [verbo]" na CENA 1. Force conexões diretas.
   2. É PROIBIDO usar a estrutura "O legal é que...", "O legal da [feature] é que...", ou "E o melhor:" como gancho. Use conectivos reais ("Já o...", "Ah, e...").
   3. SÍNTESE EXTREMA (CORTAR GORDURA): A IA tende a escrever frases infladas. Você DEVE ENXUGAR o texto:
      - ❌ "A tela tem tecnologia X..." → ✅ "A tela com X..."
