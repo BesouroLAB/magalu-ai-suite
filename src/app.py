@@ -1122,49 +1122,51 @@ if page == "Criar Roteiros":
         cat_selecionada_id = 77
         # Categoria removida da UI para ser automática (ID 77 - Genérico)
 
+        # --- SELETOR DE MODO DE TRABALHO (GLOBAL) ---
+        st.markdown("### 1. Formato do Roteiro")
+        modos_trabalho = {
+            "📄 NW (NewWeb)": "NW (NewWeb)",
+            "📱 SOCIAL (Reels)": "SOCIAL",
+            "🎮 3D (NewWeb 3D)": "3D (NewWeb 3D)",
+            "🎙️ Review": "Review (NwReview)"
+        }
+        modos_descricao = {
+            "📄 NW (NewWeb)": "Descrição completa, Ficha e Foto (Padrão)",
+            "📱 SOCIAL (Reels)": "Hook viral + Captura mobile (Descobrimento)",
+            "🎮 3D (NewWeb 3D)": "Cenas em 3D autorais Magalu (Contínuo)",
+            "🎙️ Review": "Síntese de avaliações reais de clientes (UGC)"
+        }
+        
+        try:
+            # Tenta usar st.pills (Streamlit 1.30+)
+            modo_pill = st.pills(
+                "Selecione o Formato:",
+                list(modos_trabalho.keys()),
+                index=0,
+                key="modo_pill_global",
+                label_visibility="collapsed"
+            )
+            modo_selecionado = modos_trabalho[modo_pill]
+            st.caption(f"💡 {modos_descricao[modo_pill]}")
+        except (AttributeError, Exception):
+            # Fallback para st.selectbox
+            modo_pill = st.selectbox(
+                "Selecione o Formato:",
+                list(modos_trabalho.keys()),
+                index=0,
+                key="modo_selecao_fallback_global"
+            )
+            modo_selecionado = modos_trabalho[modo_pill]
+            st.caption(f"💡 {modos_descricao[modo_pill]}")
+
+        st.markdown("<br>", unsafe_allow_html=True)
 
         # Modo de entrada via Tabs
         tab_auto, tab_manual = st.tabs(["⚡ Automático (SKUs da Magalu)", "✍️ Manual (Colar Fichas)"])
 
         with tab_auto:
             # --- MODO AUTOMÁTICO (MAGALU) ---
-            st.markdown("### 1. Formato do Roteiro")
-            
-            # Formatos de trabalho
-            modos_trabalho = {
-                "📄 NW (NewWeb)": "NW (NewWeb)",
-                "📱 SOCIAL (Reels)": "SOCIAL",
-                "🎮 3D (NewWeb 3D)": "3D (NewWeb 3D)",
-                "🎙️ Review": "Review (NwReview)"
-            }
-            modos_descricao = {
-                "📄 NW (NewWeb)": "Descrição completa, Ficha e Foto (Padrão)",
-                "📱 SOCIAL (Reels)": "Hook viral + Captura mobile (Descobrimento)",
-                "🎮 3D (NewWeb 3D)": "Cenas em 3D autorais Magalu (Contínuo)",
-                "🎙️ Review": "Em breve: Prós e contras pro apresentador"
-            }
-            
-            try:
-                # Tenta usar st.pills (Streamlit 1.30+)
-                modo_pill = st.pills(
-                    "Selecione o Formato:",
-                    list(modos_trabalho.keys()),
-                    index=0,
-                    key="modo_pill",
-                    label_visibility="collapsed"
-                )
-                modo_selecionado = modos_trabalho[modo_pill]
-                st.caption(f"💡 {modos_descricao[modo_pill]}")
-            except (AttributeError, Exception):
-                # Fallback para st.selectbox se st.pills não existir ou falhar
-                modo_pill = st.selectbox(
-                    "Selecione o Formato:",
-                    list(modos_trabalho.keys()),
-                    index=0,
-                    key="modo_selecao_fallback"
-                )
-                modo_selecionado = modos_trabalho[modo_pill]
-                st.caption(f"💡 {modos_descricao[modo_pill]}")
+            st.markdown("### 2. Configurações base")
 
             col_m_auto, col_d_auto, col_lu_auto = st.columns([2, 2, 1])
             with col_m_auto:
@@ -1186,7 +1188,7 @@ if page == "Criar Roteiros":
                 com_lu_auto = st.selectbox("Cena 1", ["Com LU", "Sem LU"], key="com_lu_auto_opt", label_visibility="collapsed")
 
             st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("### 2. Códigos dos Produtos")
+            st.markdown("### 3. Códigos dos Produtos")
 
             st.markdown("<p style='font-size: 14px; color: #8b92a5'>Digite os códigos Magalu, um por linha. Mínimo 3 dígitos. Máximo 15 por vez.</p>", unsafe_allow_html=True)
             
@@ -1242,7 +1244,7 @@ if page == "Criar Roteiros":
                 )
                 
                 if st.button("🚀 Iniciar Extração e Geração", use_container_width=True, type="primary", key="btn_auto"):
-                    if modo_selecionado not in ["NW (NewWeb)", "3D (NewWeb 3D)", "SOCIAL (Reels/TikTok)"]:
+                    if modo_selecionado not in ["NW (NewWeb)", "3D (NewWeb 3D)", "SOCIAL", "Review (NwReview)"]:
                         st.warning(f"🚧 O formato {modo_selecionado} ainda está em desenvolvimento.")
                         st.stop()
                     
@@ -1286,7 +1288,7 @@ if page == "Criar Roteiros":
                                     video_url=video_url,
                                     data_roteiro=data_roteiro_str,
                                     mes=mes_selecionado,
-                                    com_lu=(com_lu_auto_opt == "Com LU")
+                                    com_lu=(com_lu_auto == "Com LU")
                                 )
                                 
                                 # 3. Resultado e Salvamento
@@ -1303,7 +1305,7 @@ if page == "Criar Roteiros":
                                     "custo_brl": res_gen["custo_brl"],
                                     "global_num": global_num,
                                     "mes": mes_selecionado,
-                                    "com_lu": "REVIEW" if "Review" in modo_selecionado else (com_lu_auto_opt == "Com LU")
+                                    "com_lu": "REVIEW" if "Review" in modo_selecionado else (com_lu_auto == "Com LU")
                                 }
                                 
                                 # Log Histórico
@@ -1345,7 +1347,7 @@ if page == "Criar Roteiros":
 
         with tab_manual:
             # --- MODO MANUAL (FALLBACK) ---
-            st.markdown("### 1. Dados dos Produtos")
+            st.markdown("### 2. Dados dos Produtos")
             st.markdown("<p style='font-size: 14px; color: #8b92a5'>Cole o código e a ficha técnica dos produtos:</p>", unsafe_allow_html=True)
             
             if 'num_fichas' not in st.session_state:
@@ -1366,12 +1368,15 @@ if page == "Criar Roteiros":
                         placeholder="Cole a ficha técnica aqui..."
                     )
                 with col_rev_man:
-                    coment_man = st.text_area(
-                        f"Avaliações/Comentários {i+1}",
-                        height=100,
-                        key=f"rev_input_{i}",
-                        placeholder="Cole as avaliações dos clientes aqui..."
-                    )
+                    if "Review" in modo_selecionado:
+                        coment_man = st.text_area(
+                            f"Avaliações/Comentários {i+1}",
+                            height=100,
+                            key=f"rev_input_{i}",
+                            placeholder="Cole as avaliações dos clientes aqui..."
+                        )
+                    else:
+                        coment_man = ""
                 fichas_informadas.append({"sku": sku_man, "ficha": val, "link": link_man, "comentarios": coment_man})
                 
             col_add, col_rem = st.columns(2)
@@ -1406,10 +1411,8 @@ if page == "Criar Roteiros":
                 st.markdown("**Personagem**")
                 com_lu_man = st.selectbox("Cena 1", ["Com LU", "Sem LU"], key="com_lu_man_opt", label_visibility="collapsed")
             
-            # Seletor de modo manual
-            st.markdown("**Formato do Roteiro (Manual)**")
-            modo_manual_input = st.selectbox("Selecione:", list(modos_trabalho.keys()), key="modo_man")
-            modo_man_selecionado = "SOCIAL" if modo_manual_input == "📱 SOCIAL (Reels)" else modos_trabalho[modo_manual_input]
+            # Modo manual agora usa o seletor global
+            modo_man_selecionado = modo_selecionado
 
             if st.button("🚀 Gerar Roteiros a partir de Fichas", use_container_width=True, type="primary", key="btn_manual"):
                 fichas_validas = [f for f in fichas_informadas if f["ficha"].strip() and f["sku"].strip()]
