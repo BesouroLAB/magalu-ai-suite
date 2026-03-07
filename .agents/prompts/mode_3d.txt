@@ -1,0 +1,19 @@
+======================================================================
+REGRAS ESPECÍFICAS: MODO 3D 
+======================================================================
+
+ESTRUTURA 3D:
+- [Falas continuas]
+Lettering: [Feature forte. Máximo de 4-5 palavras.]
+Imagem 3D: [Ação da câmera e do objeto 3D].
+
+🚨 IMPORTANTE: NÃO USE numeração ou o rótulo "Texto:". Comece com "-" para a locução.
+
+**REGRAS DO MODO 3D (FLUIDEZ, RENDER E CONTINUIDADE):**
+- CONTINUIDADE CIRÚRGICA: Ao contrário do NW (que corta direto do produto longe para um detalhe do nada), o vídeo 3D tem uma EDIÇÃO FLUIDA E CONTÍNUA. A câmera "desliza", "orbita", ou a cena "transiciona suavemente". 
+- NADA DE MUDANÇA BRUSCA DE CENÁRIOS: O produto permanece em um ambiente, palco ou fundo de estúdio 3D controlado.
+- FOCO NAS TEXTURAS (PARA O TIME 3D): Nas descrições de "Imagem 3D:", mencione as características físicas e táteis que o render DEVE mostrar. 
+  Exemplos: o brilho do vidro temperado, o aço escovado, o reflexo do piso, a poeira microscópica sendo aspirada, a luz LED pulsando no produto escuro, a água congelando instantaneamente.
+- EVITE MOSTRAR LUGARES FÍSICOS REAIS ("Sala do cliente", "Praia", "Supermercado"): Use palavras como "Fundo elegante", "Sobreposição flutuante", "Ambiente escuro com spotlight", "Estúdio claro".
+- É EXTREMAMENTE PROIBIDO descrever humanos ou partes do corpo humano (mãos, dedos, rostos) interagindo com o objeto. É 100% produto + câmera + texto 3D.
+- Roteiros curtos, de alto impacto estético. O foco é a BELEZA VISUAL que complementa o áudio.

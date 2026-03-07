@@ -136,10 +136,14 @@ class RoteiristaAgent:
             )
             self.model_id = self.model_id.replace("kimi/", "")
 
-        # Carrega toda a base de conhecimento estática (Apenas prompts e fonética base)
-        self.system_prompt = self._load_file(
-            os.path.join(PROJECT_ROOT, ".agents", "system_prompt.txt"), ""
-        )
+        # Carrega a base de conhecimento estática (Prompts modulares e fonética base)
+        self.prompts = {
+            "base": self._load_file(os.path.join(PROJECT_ROOT, ".agents", "prompts", "base.txt"), ""),
+            "nw": self._load_file(os.path.join(PROJECT_ROOT, ".agents", "prompts", "mode_nw.txt"), ""),
+            "social": self._load_file(os.path.join(PROJECT_ROOT, ".agents", "prompts", "mode_social.txt"), ""),
+            "3d": self._load_file(os.path.join(PROJECT_ROOT, ".agents", "prompts", "mode_3d.txt"), ""),
+            "review": self._load_file(os.path.join(PROJECT_ROOT, ".agents", "prompts", "mode_review.txt"), "")
+        }
         self.phonetics = {}
         # Ouro e Calibragem agora são 100% dinâmicos via Supabase
         self.few_shot_examples = [] 
@@ -159,15 +163,26 @@ class RoteiristaAgent:
             return fallback
 
 
-    def _fetch_supabase_context(self):
+    def _fetch_supabase_context(self, modo_trabalho: str = ""):
         """Busca aprendizado dinâmico no Supabase."""
         sb_parts = []
         if not self.supabase:
             return ""
+            
+        # Determina o prefixo da tabela baseado no modo selecionado
+        modo_u = str(modo_trabalho).upper()
+        if "REVIEW" in modo_u:
+            prefix = "review_"
+        elif "SOCIAL" in modo_u:
+            prefix = "social_"
+        elif "3D" in modo_u:
+            prefix = "3d_"
+        else:
+            prefix = "nw_"
         
         try:
             # 1. Roteiros Ouro (O "Norte" da Redação - Exemplos de Elite)
-            res_ouro = self.supabase.table(f"{self.table_prefix}roteiros_ouro").select("*").order('criado_em', desc=True).limit(10).execute()
+            res_ouro = self.supabase.table(f"{prefix}roteiros_ouro").select("*").order('criado_em', desc=True).limit(10).execute()
             if res_ouro.data:
                 sb_parts.append("\n**REFERÊNCIAS DE ELITE (ESTE É O PADRÃO OURO A SER SEGUIDO):**")
                 for r in res_ouro.data:
@@ -188,14 +203,14 @@ class RoteiristaAgent:
                     sb_parts.append(f"- {f['termo_errado']} -> ({f['termo_corrigido']})")
                     
             # 4. Estruturas Aprovadas (Aberturas e Fechamentos/CTAs)
-            res_est = self.supabase.table(f"{self.table_prefix}treinamento_estruturas").select("*").order('criado_em', desc=True).limit(30).execute()
+            res_est = self.supabase.table(f"{prefix}treinamento_estruturas").select("*").order('criado_em', desc=True).limit(30).execute()
             if res_est.data:
                 sb_parts.append("\n**ESTRUTURAS APROVADAS PARA INSPIRAÇÃO (HOOKS E CTAs):**")
                 for est in res_est.data:
                     sb_parts.append(f"- [{est['tipo_estrutura']}] {est['texto_ouro']}")
                     
             # 5. Nuances de Linguagem (O que evitar e como melhorar)
-            res_nuan = self.supabase.table(f"{self.table_prefix}treinamento_nuances").select("*").limit(20).order('criado_em', desc=True).execute()
+            res_nuan = self.supabase.table(f"{prefix}treinamento_nuances").select("*").limit(20).order('criado_em', desc=True).execute()
             if res_nuan.data:
                 sb_parts.append("\n**NUANCES E REFINAMENTO DE ESTILO (LIÇÕES DE REDAÇÃO):**")
                 for n in res_nuan.data:
@@ -205,7 +220,7 @@ class RoteiristaAgent:
                     sb_parts.append(refinamento)
 
             # 6. Memória de Calibragem (Lições Recentes da Calibragem)
-            res_fb = self.supabase.table(f"{self.table_prefix}roteiros_ouro").select("aprendizado").neq("aprendizado", "null").order('criado_em', desc=True).limit(15).execute()
+            res_fb = self.supabase.table(f"{prefix}roteiros_ouro").select("aprendizado").neq("aprendizado", "null").order('criado_em', desc=True).limit(15).execute()
             if res_fb.data:
                 valid_mems = [f for f in res_fb.data if f.get('aprendizado') and f['aprendizado'].strip()]
                 if valid_mems:
@@ -214,7 +229,7 @@ class RoteiristaAgent:
                         sb_parts.append(f"- {fb['aprendizado']}")
 
             # 7. Calibragem Visual (Descrição de Imagens)
-            res_img = self.supabase.table(f"{self.table_prefix}treinamento_imagens").select("*").limit(15).order('criado_em', desc=True).execute()
+            res_img = self.supabase.table(f"{prefix}treinamento_imagens").select("*").limit(15).order('criado_em', desc=True).execute()
             if res_img.data:
                 sb_parts.append("\n**DIRETRIZES VISUAIS (COMO DESCREVER IMAGENS):**")
                 for img in res_img.data:
@@ -224,13 +239,23 @@ class RoteiristaAgent:
             
         return "\n".join(sb_parts)
 
-    def _build_context(self):
+    def _build_context(self, modo_trabalho: str = ""):
         """Monta o contexto completo: Prompt + KB Estratégica + Fonética + Few-Shot + Supabase."""
         parts = []
 
-        # 1. System Prompt (Regras de Ouro do Breno)
-        if self.system_prompt:
-            parts.append(self.system_prompt)
+        # 1. System Prompt Base
+        parts.append(self.prompts.get("base", ""))
+        
+        # 2. System Prompt Específico do Modo
+        modo_u = str(modo_trabalho).upper()
+        if "SOCIAL" in modo_u:
+            parts.append(self.prompts.get("social", ""))
+        elif "3D" in modo_u:
+            parts.append(self.prompts.get("3d", ""))
+        elif "REVIEW" in modo_u:
+            parts.append(self.prompts.get("review", ""))
+        else:
+            parts.append(self.prompts.get("nw", ""))
 
         # 2. Dicionário de fonética (Estático)
         if self.phonetics:
@@ -246,8 +271,8 @@ class RoteiristaAgent:
                 parts.append(f"❌ TEXTO IA: {ex.get('output_antes_ia_ruim', '')}")
                 parts.append(f"✅ COMO O BRENO QUER: {ex.get('output_depois_breno_aprovado', '')}")
 
-        # 5. Aprendizado em Tempo Real (Supabase)
-        supabase_context = self._fetch_supabase_context()
+        # 3. Aprendizado em Tempo Real (Supabase)
+        supabase_context = self._fetch_supabase_context(modo_trabalho)
         if supabase_context:
             parts.append(supabase_context)
 
@@ -317,9 +342,9 @@ class RoteiristaAgent:
 
         return "Erro: Nenhum provedor disponível para gerar memória de calibragem."
 
-    def gerar_roteiro(self, scraped_data, modo_trabalho="NW (NewWeb)", mes="MAR", data_roteiro=None, codigo=None, nome_produto=None, sub_skus=None, video_url=None, com_lu=True):
+    def gerar_roteiro(self, scraped_data, modo_trabalho="NW (NewWeb)", mes="MAR", data_roteiro=None, codigo=None, nome_produto=None, sub_skus=None, video_url=None, com_lu=True, **kwargs):
         """Envia a requisição para o Gemini gerar o roteiro. Suporta Multimodal e Modos de Trabalho."""
-        context = self._build_context()
+        context = self._build_context(modo_trabalho)
 
         # Verifica se o input tem imagem (novo fluxo do scraper)
         if isinstance(scraped_data, dict):
@@ -329,69 +354,55 @@ class RoteiristaAgent:
             text_data = str(scraped_data)
             images_list = []
             
-        # Roteamento básico de Prompt baseado no Modo (Expansão Futura)
-        diretriz_modo = f"Crie um roteiro focado no formato padrão NewWeb (descrição rica e completa)."
+        # Preparação de Metadados Dinâmicos
+        data_str = data_roteiro if data_roteiro else "07/03/2026"
+        cod_str = str(codigo).strip() if codigo else "[CÓDIGO_AQUI]"
+        if cod_str.isdigit() and len(cod_str) < 9:
+            cod_str = cod_str.ljust(9, '0')
         
-        # INJEÇÃO DAS TÁTICAS NW LU (Mês e Cena Obrigatória)
-        if "NW" in modo_trabalho:
-            data_str = data_roteiro if data_roteiro else "[DATA_ATUAL]"
-            # Garante que o código tenha 9 dígitos (preenche com 0 à direita)
-            cod_str = str(codigo).strip() if codigo else "[CÓDIGO_AQUI]"
-            if cod_str.isdigit() and len(cod_str) < 9:
-                cod_str = cod_str.ljust(9, '0')
-            
-            sub_skus_str = f" {sub_skus}" if (sub_skus and str(sub_skus).lower() != 'nan') else ""
-            video_ref_str = f"\n   {video_url}" if (video_url and str(video_url).lower() != 'nan') else ""
-            
-            lu_constraint = (
-                f"2. A CENA 1 (Primeira cena do vídeo) DEVE OBRIGATORIAMENTE mostrar a 'Lu' em ação, interagindo com o produto ou apresentando-o.\n"
-                f"3. A partir da CENA 2, CORTE para imagens do produto. REGRA CRÍTICA DE IMAGEM: É ESTRITAMENTE PROIBIDO sugerir ações humanas nas Colunas de Imagem (ex: 'mão segurando o celular', 'pessoa bebendo café', 'cliente usando'). O vídeo NW é feito APENAS com fotos estáticas do fornecedor, animações gráficas (GCs) e recortes do vídeo oficial. IMAGENS 100% LIMPAS DE HUMANOS."
-            ) if com_lu else (
-                 f"2. A CENA 1 (Primeira cena do vídeo) DEVE OBRIGATORIAMENTE ser um PLANO GERAL DO PRODUTO (sem a Lu). A Lu NÃO deve aparecer visualmente nesta cena nem nas seguintes.\n"
-                 f"3. REGRA CRÍTICA DE IMAGEM: É ESTRITAMENTE PROIBIDO sugerir a Lu ou ações humanas nas Colunas de Imagem (ex: 'Lu apontando', 'mão segurando o celular', 'pessoa bebendo café'). O vídeo NW é feito APENAS com fotos estáticas do fornecedor, animações gráficas (GCs) e recortes do vídeo oficial. IMAGENS 100% LIMPAS DE HUMANOS."
-            )
+        sub_skus_str = f" {sub_skus}" if (sub_skus and str(sub_skus).lower() != 'nan' and str(sub_skus).strip()) else ""
+        video_ref_str = f"\n   {video_url}" if (video_url and str(video_url).lower() != 'nan' and str(video_url).strip()) else ""
+        
+        # Determinação da Taxonomia
+        modo_u = str(modo_trabalho).upper()
+        if "REVIEW" in modo_u:
+            prefixo_taxonomia = "NW REVIEW"
+        elif "SOCIAL" in modo_u:
+            prefixo_taxonomia = "SOCIAL"
+        elif "3D" in modo_u:
+            prefixo_taxonomia = "NW 3D"
+        else:
+            prefixo_taxonomia = "NW LU" if com_lu else "NW"
 
-            diretriz_modo += (
-                f"\n\n🚨 REGRA ABSOLUTA DE FORMATAÇÃO E ESTRUTURA (NW LU):\n"
-                f"1. O TEXTO DEVE COMEÇAR COM O CABEÇALHO EXATAMENTE ABAIXO (PROIBIDO COPIAR A DATA OU MÊS DOS EXEMPLOS, USE EXATAMENTE O QUE ESTÁ AQUI):\n"
-                f"   Cliente: Magalu\n"
-                f"   Roteirista: Tiago Fernandes - Data: {data_str}\n"
-                f"   Produto: NW LU {mes} {cod_str}{sub_skus_str} [INSERIR NOME RESUMIDO DO PRODUTO AQUI]{video_ref_str}\n"
-                f"{lu_constraint}"
-            )
+        # Montagem do Cabeçalho Obrigatório
+        cabecalho = (
+            f"Cliente: Magalu\n"
+            f"Roteirista: Tiago Fernandes - Data: {data_str}\n"
+            f"Produto: {prefixo_taxonomia} {mes} {cod_str}{sub_skus_str} [NOME DO PRODUTO]{video_ref_str}\n"
+            f"______________________________________________________________________"
+        )
 
-        if "SOCIAL" in modo_trabalho:
-            diretriz_modo = f"ATENÇÃO: Este formato é para SOCIAL (Reels/TikTok). O roteiro deve ser EXTREMAMENTE curto, dinâmico e focado em retenção nos primeiros 3 segundos."
-        elif "3D" in modo_trabalho:
-            diretriz_modo += (
-                f"\n\nATENÇÃO: Este formato é para VÍDEO 3D. O estilo de vídeo será feito APENAS com cenas 3D autorais da Magalu. "
-                f"Por isso, o roteiro PRECISA ter uma sequência LÓGICA natural, fluida e contínua. NÃO pode ficar 'picotado' "
-                f"como o tradicional NewWeb.\nFoque muito em descrever as texturas, cores exatas, reflexos e ângulos de câmera importantes para o time de modelagem."
-            )
-        elif "Review" in modo_trabalho:
-            diretriz_modo += f"\n\nATENÇÃO: Este formato é um REVIEW. Foque em prós, contras, uso prático diário e uma opinião direta para quem vai gravar no estúdio."
+        diretriz_modo = f"VOCÊ DEVE SEGUIR A ESTRUTURA DO CABEÇALHO ABAIXO:\n{cabecalho}\n\n"
+        
+        if "REVIEW" in modo_u:
+            comentarios = kwargs.get('comentarios', '')
+            if comentarios:
+                diretriz_modo += f"ESTES SÃO OS COMENTÁRIOS REAIS PARA SINTETIZAR NO ROTEIRO:\n{comentarios}\n\n"
 
         final_prompt = (
-            f"**CONTEXTO ESTRATÉGICO E APRENDIZADOS DINÂMICOS:**\n"
-            f"Abaixo estão as diretrizes extraídas das calibragens humanas. Siga-as RIGOROSAMENTE.\n"
+            f"**CONTEXTO ESTRATÉGICO E APRENDIZADOS DINÂMICOS (SUPABASE):**\n"
             f"{context}\n\n"
-            f"**MODO DE TRABALHO SOLICITADO:** {modo_trabalho}\n"
-            f"-> {diretriz_modo}\n\n"
-            f"**FICHA TÉCNICA E DESCRIÇÃO DO PRODUTO (FONTE ÚNICA DE VERDADE):**\n"
+            f"**MODO DE TRABALHO:** {modo_trabalho}\n"
+            f"{diretriz_modo}\n\n"
+            f"**FONTE ÚNICA DE VERDADE (FICHA TÉCNICA):**\n"
             f"{text_data}\n\n"
-            f"**INSTRUÇÕES DE EXECUÇÃO (ORDEM DE PRECEDÊNCIA):**\n"
-            f"1. **PROIBIÇÃO ABSOLUTA DE DADOS HIPOTÉTICOS:** É terminantemente proibido inventar, deduzir ou 'enriquecer' o roteiro com dados técnicos, medidas ou características que NÃO estejam na Ficha Técnica. Se não está no texto acima, NÃO pode estar no roteiro.\n"
-            f"2. **BUSCA DINÂMICA EM TABELAS:** Antes de escrever, consulte o bloco 'CONTEXTO ESTRATÉGICO':\n"
-            f"   - **Persona Lu:** Aplique as 'Correções Master' no lugar dos 'Erros Anteriores' listados.\n"
-            f"   - **Fonética:** Sempre que encontrar um termo listado, use a pronúncia indicada.\n"
-            f"   - **Ganchos/CTAs:** Se houver ganchos aprovados em 'ESTRUTURAS', use-os como modelo de estilo.\n"
-            f"   - **Imagens:** Descreva as cenas seguindo os padrões 'USE PREFERENCIALMENTE'.\n"
-            f"3. **PERSONA DA LU:** Seja acolhedora, direta e prestativa. Use 'pra' no lugar de 'para'. Coloque a marca entre vírgulas.\n"
-            f"4. **REDUNÂNCIA:** Não repita o mesmo assunto. Cada cena deve trazer uma informação NOVA.\n"
-            f"5. **COMPLETUDE:** Não omita diferenciais vitais (proteção antiácaro, kits, acessórios) presentes na ficha técnica.\n"
-            f"6. **PRONÚNCIA:** Para nomes estrangeiros novos, preveja a pronúncia em parênteses como um brasileiro falaria.\n"
-            f"7. **SCRIPTS HIPOTÉTICOS:** Se a ficha for insuficiente, responda: 'ERRO: Dados insuficientes do produto para geração automática.'\n"
+            f"**REGRAS CRÍTICAS DE EXECUÇÃO:**\n"
+            f"1. **PROIBIÇÃO DE DADOS HIPOTÉTICOS:** Não invente specs.\n"
+            f"2. **REGRAS DE FORMATAÇÃO:** SIGA RIGOROSAMENTE as regras de estrutura (como usar o dash '-' para falas) enviadas no início deste prompt (System Prompt).\n"
+            f"3. **PERSONA DA LU:** Use 'pra', seja direta e não use muletas como 'O legal é que'.\n"
+            f"4. **ZERO REDUNDÂNCIA VISUAL:** Não descreva cores se já estiverem no nome.\n"
         )
+
 
         if self.client_gemini:
             contents = [final_prompt]
@@ -487,8 +498,8 @@ class RoteiristaAgent:
                             # Tenta detectar e remover qualquer prefixo NW / NW LU / NW 3D etc até chegar no nome real
                             nome_purificado = re.sub(r'^(NW\s*(3D)?\s*(LU)?\s*[A-Z]{3}\s*\d+\s+)', '', prod_str)
                             
-                            prefixo_lu = "LU " if com_lu else ""
-                            linhas[i+2] = f"Produto: NW {prefixo_lu}{mes} {cod_s}{sub_s} {nome_purificado}{vid_s}"
+                            prefixo_taxonomia = "NW LU" if com_lu else "NW"
+                            linhas[i+2] = f"Produto: {prefixo_taxonomia} {mes} {cod_s}{sub_s} {nome_purificado}{vid_s}"
                         roteiro = "\n".join(linhas)
                         break
             except Exception as e:

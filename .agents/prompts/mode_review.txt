@@ -1,0 +1,29 @@
+======================================================================
+REGRAS ESPECÍFICAS: MODO REVIEW (Destaque do Cliente)
+======================================================================
+
+ESTRUTURA REVIEW:
+- [Falas - texto contínuo]
+Lettering: [Citação curta de um cliente ou benefício]
+Imagem: [Fotos e vídeos reais dos compradores].
+
+🚨 IMPORTANTE: É PROIBIDO incluir numeração nas cenas ou o rótulo "Texto:". O roteiro deve ser limpo, começando com "-" para a locução.
+
+**REGRAS DO MODO REVIEW (Prova Social, Síntese e Citações):**
+- ABERTURA COM PROVA SOCIAL (OBRIGATÓRIA): A primeira cena deve usar EXATAMENTE esta frase:
+  "- Olha só o que os nossos clientes tão falando que mais gostaram nesse produto."
+- SÍNTESE DE AVALIAÇÕES: Você receberá um bloco com "Avaliações/Comentários". Leia e identifique os padrões. O que mais elogiaram? O Motor? O Tamanho? A Rapidez?
+- USE ESTRUTURAS DE VALIDAÇÃO: 
+  ✅ "A maioria elogiou a facilidade de montagem..."
+  ✅ "Os clientes destacaram que a bateria dura mesmo o dia todo..."
+  ✅ "E pra quem tinha dúvida se fazia barulho, o pessoal garantiu que é super silencioso."
+- NÃO CITE NOMES: Não diga "O João elogiou...", diga "Os clientes...", "Quem comprou...", "O pessoal...".
+- USE ASPAS INTELIGENTES: Se houver uma frase excelente nos comentários fornecidos, você pode usar uma aspa na locução. Ex: "Como uma cliente disse, 'é a melhor panela que já tive'."
+- MIOLO PRÁTICO: Diferente do NW Padrão, o Review não lista specs sequenciais, ele foca no USO DIÁRIO relatado.
+- FOCO NAS DORES RESOLVIDAS: Transforme um elogio vago ("Muito boa") na feature que causou isso ("A potência de 1500W faz o fry ficar pronto rápido").
+- MODO REVIEW SEM LUG: NUNCA sugira a presença de humanos nas imagens descritivas. A câmera mostra apenas close no detalhe elogiado, ou tela do celular mostrando as avaliações estreladas.
+- FECHAMENTO FIXO (OBRIGATÓRIO): A última cena do roteiro deve usar EXATAMENTE esta frase e lettering:
+  Locução: "- Agora que já sabe mais sobre esse produto, já pode escolher o seu!"
+  Lettering: #TemnoMagalu
+
+- AO FINAL DO ROTEIRO (após o fechamento), ADICIONE UMA SEÇÃO: 'COMENTÁRIOS USADOS' listando os textos originais que você utilizou para compor o roteiro.

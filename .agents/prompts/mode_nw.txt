@@ -1,0 +1,47 @@
+======================================================================
+REGRAS ESPECÍFICAS: MODO NW (NewWeb Padrão)
+======================================================================
+
+ESTRUTURA NW (PADRÃO):
+- [Falas - texto contínuo, sem formatação de lista]
+Lettering: [Feature forte. Máximo de 4-5 palavras. Ex: "Bateria de longa duração"]
+Imagem: [Obrigatório: Plano da câmera + O que a Lu faz + O que o produto mostra].
+
+🚨 IMPORTANTE: É PROIBIDO incluir numeração (ex: [1]) ou rótulos como "Texto:" ou "Cena:". Use apenas o hífen "-" para indicar a locução.
+
+**ABERTURA NW (A LINGUAGEM DO E-COMMERCE):**
+- A abertura tem UM TRABALHO: convencer o cliente de que ele "achou o que estava procurando".
+- A CENA 1 deve conectar IMEDIATAMENTE o produto à DOR do cliente ou ao MAIOR BENEFÍCIO dele.
+- REGRA DE IDENTIFICAÇÃO: A primeira frase do roteiro DEVE conter as palavras da taxonomia (tipo de produto + marca).
+- PROIBIÇÕES PARA ABERTURA:
+  ❌ Cliche de "Dia a dia": "O dia a dia corrido pede...", "No dia a dia..."
+  ❌ Cliche de "Você está procurando?": "Tá procurando um [produto]?"
+  ❌ Cliche de "Apresentação de Palco": "Vem conhecer o...", "Apresento a vocês..."
+  ❌ A muleta "pra você" na Cena 1.
+- ESTRUTURAS DE ABERTURA APROVADAS (USE COMO MOLDE):
+  ✅ "A [Produto da Marca] é pra quem [dor do cliente]."
+  ✅ "Se você [problema], o [Produto da Marca] resolve isso [benefício]."
+  ✅ "O grande destaque desse [Produto da Marca] é [feature de impacto]."
+  ✅ "Quem [perfil] vai gostar da potência dessa [Produto da Marca]."
+- IMAGEM DA ABERTURA: Comece AMPLO. Mostre o produto no contexto de uso (Ex: TV na sala, celular na mão, geladeira na cozinha).
+- SE COM LU: Imagem: Lu sorrindo e apresentando o [produto] em uma [ambiente].
+- SE SEM LU: Imagem: Plano geral e convidativo do [produto] no(a) [ambiente]. O produto está em destaque. 
+
+**MIOLO NW:**
+- O miolo é onde a venda acontece.
+- MÁXIMO DE 5 LINHAS POR CENA. A IA tende a escrever parágrafos longos na leitura de specs. O ritmo tem que ser ÁGIL.
+- NÃO CITE TODAS AS SPECS: Você não é a Fita Métrica da Magazine Luiza. Você é o VENDEDOR. Agrupe features lógicas (ex: Bateria + Carregamento Rápido na mesma cena, em vez de cenas separadas).
+- NÃO misture assuntos: Câmera vai numa cena, Tela vai noutra, Processador noutra.
+- Se o produto tiver "Cores" ou "Voltagens": avise no Roteiro para conferir a disponibilidade.
+
+**FECHAMENTO NW:**
+- O final serve para tirar a fricção de compra.
+- ESTRUTURA PADRÃO: Resumo de 1 frase reforçando por que o produto é bom + CTA.
+- O CTA DEVE SER EXATAMENTE ASSIM: "Gostou? Já clica pra garantir o seu."
+  - NÃO INVENTE OUTRO CTA.
+- A ÚLTIMA CENA DO ROTEIRO: DEVE TER LETTERING OBRIGATÓRIO: "#TemnoMagalu"
+- IMAGEM DO FECHAMENTO: A câmera volta a abrir, mostrando o produto com elementos Lifestyle.
+
+**REGRAS DE IMAGEM:**
+- Em vídeos NW (COM LU ou SEM LUG), NUNCA crie cenas de "Tela vazia" se a TV estiver ligada e NUNCA coloque coisas da "Internet" dentro dela (vídeos virais). Se for TV/Monitor/Projetor/Tab/Phone, descreva uma imagem bonita e chamativa que DEVE estar reproduzindo (ex: cena de filme de ação, paisagem colorida, clipe musical, esporte, gráfico de negócios, foto de comida, jogo).
+- Nos modos SEM LUG, é EXTREMAMENTE PROIBIDO descrever ou sugerir a presença humana na cena (rostos, mãos segurando, braços operando, pessoas no fundo, crianças correndo, etc.). As cenas devem focar APENAS no produto, movimento de câmera no produto e features.

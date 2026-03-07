@@ -883,7 +883,7 @@ with st.sidebar:
 
     st.markdown(f"""
         <div style='font-size: 13px; color: #8b92a5; margin-bottom: 25px; margin-top: 5px; display: flex; align-items: center; gap: 8px;'>
-            <span style='font-weight: 400; letter-spacing: 0.5px;'>V2.8</span>
+            <span style='font-weight: 400; letter-spacing: 0.5px;'>V 3.0</span>
             <span style='color: #2A3241;'>|</span>
             <div style='display: flex; align-items: center; gap: 4px;'>
                 <span style='color: {sc_llm}; font-weight: 400; font-size: 14px;'>{_llm_name}</span>
@@ -900,7 +900,7 @@ with st.sidebar:
     st.markdown("<div style='margin-bottom: 5px; font-weight: 600; font-size: 14px; color: #b0bdd0;'>📁 Ambiente (Tabelas):</div>", unsafe_allow_html=True)
     active_env = st.radio(
         "Ambiente de Trabalho",
-        ["NW Padrão", "NW 3D", "SOCIAL"],
+        ["NW Padrão", "NW 3D", "SOCIAL", "REVIEW"],
         horizontal=True,
         label_visibility="collapsed",
         key="active_mode_radio"
@@ -914,6 +914,8 @@ with st.sidebar:
         st.session_state['table_prefix'] = "nw3d_"
     elif active_env == "SOCIAL":
         st.session_state['table_prefix'] = "social_"
+    elif active_env == "REVIEW":
+        st.session_state['table_prefix'] = "review_"
     else:
         st.session_state['table_prefix'] = "nw_" # Fallback de segurança
 
@@ -1283,7 +1285,8 @@ if page == "Criar Roteiros":
                                     sub_skus=sub_skus,
                                     video_url=video_url,
                                     data_roteiro=data_roteiro_str,
-                                    mes=mes_selecionado
+                                    mes=mes_selecionado,
+                                    com_lu=(com_lu_auto_opt == "Com LU")
                                 )
                                 
                                 # 3. Resultado e Salvamento
@@ -1299,7 +1302,8 @@ if page == "Criar Roteiros":
                                     "tokens_out": res_gen["tokens_out"],
                                     "custo_brl": res_gen["custo_brl"],
                                     "global_num": global_num,
-                                    "mes": mes_selecionado
+                                    "mes": mes_selecionado,
+                                    "com_lu": "REVIEW" if "Review" in modo_selecionado else (com_lu_auto_opt == "Com LU")
                                 }
                                 
                                 # Log Histórico
@@ -1350,7 +1354,7 @@ if page == "Criar Roteiros":
             fichas_informadas = []
             
             for i in range(st.session_state['num_fichas']):
-                col_sku_man, col_ficha_man = st.columns([1, 3])
+                col_sku_man, col_ficha_man, col_rev_man = st.columns([1, 2, 2])
                 with col_sku_man:
                     sku_man = st.text_input(f"Cód. Produto {i+1}", key=f"sku_man_{i}", placeholder="Ex: 2403047")
                     link_man = st.text_input(f"Link do Vídeo {i+1}", key=f"link_man_{i}", placeholder="Opcional: YouTube/Drive")
@@ -1361,7 +1365,14 @@ if page == "Criar Roteiros":
                         key=f"ficha_input_{i}",
                         placeholder="Cole a ficha técnica aqui..."
                     )
-                fichas_informadas.append({"sku": sku_man, "ficha": val, "link": link_man})
+                with col_rev_man:
+                    coment_man = st.text_area(
+                        f"Avaliações/Comentários {i+1}",
+                        height=100,
+                        key=f"rev_input_{i}",
+                        placeholder="Cole as avaliações dos clientes aqui..."
+                    )
+                fichas_informadas.append({"sku": sku_man, "ficha": val, "link": link_man, "comentarios": coment_man})
                 
             col_add, col_rem = st.columns(2)
             with col_add:
@@ -1436,7 +1447,8 @@ if page == "Criar Roteiros":
                                     data_roteiro=data_roteiro_str_man,
                                     mes=mes_selecionado_man,
                                     video_url=itm.get("link", ""),
-                                    com_lu=(com_lu_man == "Com LU")
+                                    com_lu=(com_lu_man == "Com LU"),
+                                    comentarios=itm.get("comentarios", "")
                                 )
                                 
                                 # 3. Salvamento
@@ -1452,7 +1464,8 @@ if page == "Criar Roteiros":
                                     "tokens_out": res_gen["tokens_out"],
                                     "custo_brl": res_gen["custo_brl"],
                                     "global_num": global_num,
-                                    "mes": mes_selecionado_man
+                                    "mes": mes_selecionado_man,
+                                    "com_lu": "REVIEW" if "Review" in modo_man_selecionado else (com_lu_man == "Com LU")
                                 }
                                 st.session_state['roteiros'].insert(0, novo_roteiro)
                                 
@@ -1780,8 +1793,8 @@ if page == "Criar Roteiros":
         # Botão para baixar todos os roteiros em um ZIP (Full Width)
         zip_bytes, zip_filename = export_all_roteiros_zip(
             st.session_state['roteiros'], 
-            selected_month=st.session_state.get('mes_global', 'FEV'),
-            selected_date=st.session_state.get('data_roteiro_global')
+            selected_month=st.session_state.get('mes_auto', 'MAR'),
+            selected_date=st.session_state.get('data_auto')
         )
         num_roteiros_sessao = len(st.session_state['roteiros'])
         st.download_button(
@@ -1865,9 +1878,10 @@ if page == "Criar Roteiros":
                     edited_val,
                     code=codigo_produto,
                     product_name=titulo_curto,
-                    selected_month=item.get('mes', st.session_state.get('mes_global', 'FEV')),
-                    selected_date=st.session_state.get('data_roteiro_global'),
-                    model_id=item.get('model_id', '')
+                    selected_month=item.get('mes', st.session_state.get('mes_auto', 'MAR')),
+                    selected_date=st.session_state.get('data_auto'),
+                    model_id=item.get('model_id', ''),
+                    com_lu=item.get('com_lu', True)
                 )
                 st.download_button(
                     label="📥 Baixar DOCX",
@@ -2415,6 +2429,7 @@ elif page == "Como Funciona":
             st.markdown("### 🚀 Evolução do Projeto")
             st.info("""
                 **v1.0 - Fundação:** Estabelecimento do core em Python e integração inicial com Supabase para persistência de roteiros.  
+                **v3.0 - Modularidade & Review:** Refatoração completa do motor de prompts em módulos (`.txt`). Implementação do Modo Review ( síntese de UGC) e integração 3D.
                 **v2.0 - UI & Persona:** Saída do layout padrão para o design 'Galactic Dark'. Implementação do motor de Persona da Lu com diretrizes de tom de voz.  
                 **v2.5 - Grounding:** Substituição do scraping direto por busca semântica via Google SDK v2, resolvendo a instabilidade na captura de fichas técnicas.  
                 **v2.8 - Calibragem:** Lançamento do módulo de aprendizado autônomo. A IA passou a extrair fonética e estruturas de abertura/fechamento das edições humanas de forma proativa.

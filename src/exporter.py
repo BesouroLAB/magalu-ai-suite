@@ -131,8 +131,8 @@ def _parse_roteiro(roteiro_text: str) -> list[dict]:
     return blocks
 
 
-def generate_filename(code: str, product_name: str, selected_month: str = "MAR", model_id: str = "") -> str:
-    """Gera nome do arquivo no padrão: NW LU {selected_month} {code} {product_name} [{model}].docx"""
+def generate_filename(code: str, product_name: str, selected_month: str = "MAR", model_id: str = "", com_lu: bool = True) -> str:
+    """Gera nome do arquivo no padrão: NW [LU] {selected_month} {code} {product_name} [{model}].docx"""
     # Garante que o código tenha 9 dígitos (preenche com 0 à direita se necessário)
     clean_code = str(code).strip()
     if clean_code and len(clean_code) < 9:
@@ -148,9 +148,15 @@ def generate_filename(code: str, product_name: str, selected_month: str = "MAR",
         model_tag = model_id.split('/')[-1].upper()
         model_tag = f" [{model_tag}]"
 
-    return f"NW LU {selected_month} {clean_code} {clean_name}{model_tag}.docx"
+    # Define o prefixo correto com base no modo (detectado via com_lu que pode ser True, False ou string)
+    if com_lu == "REVIEW" or "REVIEW" in str(product_name).upper():
+        prefixo = f"NW REVIEW"
+    else:
+        prefixo = "NW LU" if com_lu is True else "NW"
+        
+    return f"{prefixo} {selected_month} {clean_code} {clean_name}{model_tag}.docx"
 
-def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "", selected_month: str = "MAR", selected_date: str = None, model_id: str = "") -> tuple[bytes, str]:
+def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "", selected_month: str = "MAR", selected_date: str = None, model_id: str = "", com_lu: bool = True) -> tuple[bytes, str]:
     """
     Gera um documento Word (.docx) com a formatação de referência.
 
@@ -158,6 +164,7 @@ def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "
         roteiro_text: Texto completo do roteiro gerado pela IA
         code: Código do produto Magalu
         product_name: Nome do produto (extraído automaticamente se vazio)
+        com_lu: Se o roteiro tem a Lu ou não (para taxonomia do nome do arquivo)
 
     Returns:
         Tuple de (bytes do docx, nome do arquivo)
@@ -184,7 +191,14 @@ def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "
         header_date = selected_date if selected_date else datetime.now(pytz.timezone('America/Sao_Paulo')).strftime('%d/%m/%y')
         _add_header_line(doc, "Cliente: Magalu")
         _add_header_line(doc, f"Roteirista: Tiago Fernandes - Data: {header_date}")
-        _add_header_line(doc, f"Produto: NW LU {selected_month} {code} {product_name}")
+        
+        # Determina o prefixo para o cabeçalho
+        if com_lu == "REVIEW" or "REVIEW" in str(product_name).upper():
+            prefixo = "NW REVIEW"
+        else:
+            prefixo = "NW LU" if com_lu is True else "NW"
+            
+        _add_header_line(doc, f"Produto: {prefixo} {selected_month} {code} {product_name}")
         _add_separator(doc)
         _add_empty_line(doc)
 
@@ -217,7 +231,7 @@ def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "
     doc.save(buffer)
     buffer.seek(0)
 
-    filename = generate_filename(code, product_name, selected_month, model_id)
+    filename = generate_filename(code, product_name, selected_month, model_id, com_lu=com_lu)
 
     return buffer.getvalue(), filename
 
@@ -283,7 +297,8 @@ def export_all_roteiros_zip(roteiros: list, selected_month: str = "MAR", selecte
                 product_name='', # Será extraído do texto do roteiro
                 selected_month=selected_month,
                 selected_date=selected_date,
-                model_id=item.get('model_id', '')
+                model_id=item.get('model_id', ''),
+                com_lu=item.get('com_lu', True)
             )
             # Garante que o nome do arquivo seja único dentro do ZIP se houver duplicatas
             zip_file.writestr(filename, doc_bytes)
