@@ -71,11 +71,13 @@ def _extract_product_name(roteiro_text: str) -> str:
     match = re.search(r'Produto:\s*(.+)', roteiro_text)
     if match:
         name = match.group(1).strip()
-        # Remove o prefixo "NW ..." se já existir
-        name = re.sub(r'^NW\s+\w+\s+\d+\s+', '', name)
+        # Remove prefixos conhecidos (NW REVIEW, NW 3D, NW LU, NW, SOCIAL) + Mês + SKU
+        name = re.sub(r'^(NW REVIEW|NW 3D|NW LU|NW|SOCIAL)\s+[A-Z]{3}\s+\d+\s+', '', name, flags=re.IGNORECASE)
+        # Remove placeholder [NOME DO PRODUTO] ou "Nome do Produto"
+        name = re.sub(r'\[?NOME DO PRODUTO\]?', '', name, flags=re.IGNORECASE)
         # Remove "TÍTULO DO PRODUTO:" ou similares da IA
         name = re.sub(r'^\**TÍTULO( DO PRODUTO)?:?\**\s*', '', name, flags=re.IGNORECASE)
-        return name
+        return name.strip()
 
     # Fallback: procura no título (primeiras palavras do roteiro que parecem nome de produto)
     lines = roteiro_text.strip().split('\n')
@@ -148,9 +150,14 @@ def generate_filename(code: str, product_name: str, selected_month: str = "MAR",
         model_tag = model_id.split('/')[-1].upper()
         model_tag = f" [{model_tag}]"
 
-    # Define o prefixo correto com base no modo (detectado via com_lu que pode ser True, False ou string)
-    if com_lu == "REVIEW" or "REVIEW" in str(product_name).upper():
-        prefixo = f"NW REVIEW"
+    # Define o prefixo correto com base no modo
+    prefixo_u = str(product_name).upper()
+    if com_lu == "REVIEW" or "REVIEW" in prefixo_u:
+        prefixo = "NW REVIEW"
+    elif "SOCIAL" in prefixo_u:
+        prefixo = "SOCIAL"
+    elif "3D" in prefixo_u:
+        prefixo = "NW 3D"
     else:
         prefixo = "NW LU" if com_lu is True else "NW"
         
