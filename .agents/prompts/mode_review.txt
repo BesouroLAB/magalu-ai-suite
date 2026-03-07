@@ -4,10 +4,9 @@ REGRAS ESPECÍFICAS: MODO REVIEW (Destaque do Cliente)
 
 ESTRUTURA REVIEW:
 - [Falas - texto contínuo]
-Lettering: [Citação curta de um cliente ou benefício]
 Imagem: [Fotos e vídeos reais dos compradores].
 
-🚨 IMPORTANTE: É PROIBIDO incluir numeração nas cenas ou o rótulo "Texto:". O roteiro deve ser limpo, começando com "-" para a locução.
+🚨 IMPORTANTE: É PROIBIDO incluir numeração nas cenas, o rótulo "Texto:" ou "Lettering:" nas cenas do miolo. O roteiro deve ser limpo. O UNÍCO Lettering permitido é o do fechamento final (#TemnoMagalu).
 
 **REGRAS DO MODO REVIEW (Prova Social, Síntese e Citações):**
 - ABERTURA COM PROVA SOCIAL (OBRIGATÓRIA): A primeira cena deve usar EXATAMENTE esta frase:
