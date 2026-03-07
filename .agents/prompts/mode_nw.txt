@@ -24,7 +24,7 @@ Imagem: [Obrigatório: Plano da câmera + O que a Lu faz + O que o produto mostr
   ✅ "O grande destaque desse [Produto da Marca] é [feature de impacto]."
   ✅ "Quem [perfil] vai gostar da potência dessa [Produto da Marca]."
 - IMAGEM DA ABERTURA: Comece AMPLO. Mostre o produto no contexto de uso (Ex: TV na sala, celular na mão, geladeira na cozinha).
-- SE COM LU: Imagem: Lu sorrindo e apresentando o [produto] em uma [ambiente].
+- SE COM LU: Imagem: Descreva a Lu em uma [ambiente] interagindo com o [produto] de forma natural. (Evite o clichê "Lu sorrindo").
 - SE SEM LU: Imagem: Plano geral e convidativo do [produto] no(a) [ambiente]. O produto está em destaque. 
 
 **MIOLO NW:**

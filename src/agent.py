@@ -43,7 +43,7 @@ MODELOS_DESCRICAO = {
     "gemini-3-flash-preview": "[O MOTOR OFICIAL] (Dez/2025) Versão mais recente e calibrada. Altíssimo raciocínio e obediência total às regras de síntese. Custo: ~R$ 0,02.",
     "gemini-2.0-flash": "[LEGADO ESTÁVEL] (2025) Versão anterior mas muito robusta. Custo: ~R$ 0,005.",
     "openrouter/free": "[O CAMALEÃO] (2026) Seleciona automaticamente o melhor modelo gratuito disponível (Llama 3.3, Gemma 3, etc). Ótimo fallback sem custo.",
-    "puter/gpt-4o-mini": "[O DESOBEDIENTE] (2024) Bom nos benefícios, mas costuma quebrar regras de cabeçalho e errar pronúncias. Use como estepe.",
+    "puter/gpt-4o-mini": "[O DESOBEDIENTE] Bom nos benefícios, mas costuma quebrar regras de cabeçalho e errar pronúncias. Use como estepe.",
     "puter/x-ai/grok-4-1-fast": "[O VENCEDOR / O HUMANO] (2025) O meio termo perfeito. Transforma dados frios em textos diretos, dinâmicos e naturais para a Lu. Prioridade gratuita.",
     "zai/glm-4.5-flash": "[LENTO E PRECISO] (2025) Não alucina. Excelente para fichas ultra-técnicas (ferramentas), mas a sua lentidão inviabiliza lotes grandes."
 }
@@ -401,6 +401,7 @@ class RoteiristaAgent:
             f"2. **REGRAS DE FORMATAÇÃO:** SIGA RIGOROSAMENTE as regras de estrutura (como usar o dash '-' para falas) enviadas no início deste prompt (System Prompt).\n"
             f"3. **PERSONA DA LU:** Use 'pra', seja direta e não use muletas como 'O legal é que'.\n"
             f"4. **ZERO REDUNDÂNCIA VISUAL:** Não descreva cores se já estiverem no nome.\n"
+            f"5. **DATA ATUAL:** Use EXATAMENTE a data fornecida no cabeçalho ({data_str}). O ano correto é 2026.\n"
         )
 
 

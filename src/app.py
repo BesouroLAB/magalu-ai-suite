@@ -1182,7 +1182,7 @@ if page == "Criar Roteiros":
                 st.markdown("**Data do Roteiro**")
                 now_sp = get_now_sp()
                 data_roteiro = st.date_input("Data", value=now_sp, format="DD/MM/YYYY", key="data_auto", label_visibility="collapsed")
-                data_roteiro_str = data_roteiro.strftime('%d/%m/%y')
+                data_roteiro_str = data_roteiro.strftime('%d/%m/%Y')
             with col_lu_auto:
                 st.markdown("**Personagem**")
                 com_lu_auto = st.selectbox("Cena 1", ["Com LU", "Sem LU"], key="com_lu_auto_opt", label_visibility="collapsed")
@@ -1406,7 +1406,7 @@ if page == "Criar Roteiros":
                 st.markdown("**Data do Roteiro**")
                 now_sp_man = get_now_sp()
                 data_roteiro_man = st.date_input("Data do Roteiro:", value=now_sp_man, format="DD/MM/YYYY", key="date_man", label_visibility="collapsed")
-                data_roteiro_str_man = data_roteiro_man.strftime('%d/%m/%y')
+                data_roteiro_str_man = data_roteiro_man.strftime('%d/%m/%Y')
             with col_lu_man:
                 st.markdown("**Personagem**")
                 com_lu_man = st.selectbox("Cena 1", ["Com LU", "Sem LU"], key="com_lu_man_opt", label_visibility="collapsed")
