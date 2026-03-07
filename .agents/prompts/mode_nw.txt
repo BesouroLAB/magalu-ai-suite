@@ -43,5 +43,5 @@ Imagem: [Obrigatório: Plano da câmera + O que a Lu faz + O que o produto mostr
 - IMAGEM DO FECHAMENTO: A câmera volta a abrir, mostrando o produto com elementos Lifestyle.
 
 **REGRAS DE IMAGEM:**
-- Em vídeos NW (COM LU ou SEM LUG), NUNCA crie cenas de "Tela vazia" se a TV estiver ligada e NUNCA coloque coisas da "Internet" dentro dela (vídeos virais). Se for TV/Monitor/Projetor/Tab/Phone, descreva uma imagem bonita e chamativa que DEVE estar reproduzindo (ex: cena de filme de ação, paisagem colorida, clipe musical, esporte, gráfico de negócios, foto de comida, jogo).
-- Nos modos SEM LUG, é EXTREMAMENTE PROIBIDO descrever ou sugerir a presença humana na cena (rostos, mãos segurando, braços operando, pessoas no fundo, crianças correndo, etc.). As cenas devem focar APENAS no produto, movimento de câmera no produto e features.
+- Em vídeos NW (COM LU ou SEM LU), NUNCA crie cenas de "Tela vazia" se a TV estiver ligada e NUNCA coloque coisas da "Internet" dentro dela (vídeos virais). Se for TV/Monitor/Projetor/Tab/Phone, descreva uma imagem bonita e chamativa que DEVE estar reproduzindo (ex: cena de filme de ação, paisagem colorida, clipe musical, esporte, gráfico de negócios, foto de comida, jogo).
+- Nos modos SEM LU, é EXTREMAMENTE PROIBIDO descrever ou sugerir a presença humana na cena (rostos, mãos segurando, braços operando, pessoas no fundo, crianças correndo, etc.). As cenas devem focar APENAS no produto, movimento de câmera no produto e features.
