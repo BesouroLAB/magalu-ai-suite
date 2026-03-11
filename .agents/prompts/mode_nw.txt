@@ -11,8 +11,9 @@ Imagem: [Obrigatório: Plano da câmera + O que a Lu faz + O que o produto mostr
 🚨 IMPORTANTE: É PROIBIDO incluir numeração (ex: [1]) ou rótulos como "Texto:" ou "Cena:". Use apenas o hífen "-" para indicar a locução.
 
 **ABERTURA NW (A LINGUAGEM DO E-COMMERCE):**
-- A abertura tem UM TRABALHO: convencer o cliente de que ele "achou o que estava procurando".
-- A CENA 1 deve conectar IMEDIATAMENTE o produto à DOR do cliente ou ao MAIOR BENEFÍCIO dele.
+- Abertura OBRIGATÓRIA: Diga EXATAMENTE a melhor feature (Killer Spec) do produto que resolve IMEDIATAMENTE a dor primária da persona (usuário/comprador).
+- O objetivo desta abertura é focar na página de produto: PRECISAMOS CONVENCER PARA FECHAR A VENDA.
+- A CENA 1 deve ser um "soco" de convencimento, podendo usar a Lu em ação ou não, dependendo se o vídeo for com Lu ou sem Lu.
 - REGRA DE IDENTIFICAÇÃO: A primeira frase do roteiro DEVE conter as palavras da taxonomia (tipo de produto + marca).
 - PROIBIÇÕES PARA ABERTURA:
   ❌ Cliche de "Dia a dia": "O dia a dia corrido pede...", "No dia a dia..."

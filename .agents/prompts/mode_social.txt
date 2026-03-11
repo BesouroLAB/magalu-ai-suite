@@ -11,7 +11,8 @@ Imagem: [A Lu é filmada em estúdio por um videomaker].
 🚨 IMPORTANTE: NÃO USE numeração ou o rótulo "Texto:". Comece com "-" para a locução.
 
 **REGRAS SOCIAIS (Cortes, Ritmo, Engajamento):**
-- HOOK DIRETO (ATENÇÃO IMEDIATA): Os primeiros 3 segundos devem prender a atenção com um FATO, uma PERGUNTA INTRIGANTE, ou a DOR principal.
+- HOOK DIRETO (ATENÇÃO IMEDIATA): A abertura OBRIGATORIAMENTE deve ser um HOOK AFIRMATIVO e PERSUASIVO. Foco extremo na SOLUÇÃO e linguagem de "Vídeo Discovery" (TikToker/Criador). 
+- Os primeiros 3 segundos devem prender a atenção com um FATO de impacto ou a DOR principal resolvida com energia.
   - ✅ "Sua bateria acaba no meio do dia? Olhem ESSE celular..."
   - ❌ "O Smartphone Samsung SM-A546E Galaxy A54 5G..."
 - TEXTO CURTO E DINÂMICO: Corte qualquer spec inútil. Fale como um review ágil de TikToker/Influencer (porém sem usar "galera" e "pessoal"). Diga apenas os Destaques.

@@ -9,9 +9,12 @@ Imagem: [Fotos e vídeos reais dos compradores].
 🚨 É ESTRITAMENTE PROIBIDO usar "Lettering:" nas cenas do miolo do produto. O roteiro no miolo deve ser puramente locução e imagem. O ÚNICO "Lettering:" permitido no roteiro inteiro é o da última cena de fechamento com a hashtag.
 🚨 IMPORTANTE: É PROIBIDO incluir numeração nas cenas, ou usar os rótulos "Texto:" ou "Cena:". Comece com "-" para a locução.
 
-**REGRAS DO MODO REVIEW (Prova Social, Síntese e Citações):**
+**ABERTURA REVIEW (Total foco em Conteúdo Gerado pelo Usuário - UGC):**
 - ABERTURA COM PROVA SOCIAL (OBRIGATÓRIA): A primeira cena deve usar EXATAMENTE esta frase:
   "- Olha só o que os nossos clientes tão falando que mais gostaram nesse produto."
+- O objetivo deste modo mudou: ele não é um descritivo técnico, o fluxo de trabalho inteiro é focado nos comentários de usuários (UGC).
+
+**REGRAS DO MODO REVIEW (Síntese e Citações):**
 - SÍNTESE DE AVALIAÇÕES: Você receberá um bloco com "Avaliações/Comentários". Leia e identifique os padrões. O que mais elogiaram? O Motor? O Tamanho? A Rapidez?
 - USE ESTRUTURAS DE VALIDAÇÃO: 
   ✅ "A maioria elogiou a facilidade de montagem..."

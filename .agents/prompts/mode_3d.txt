@@ -13,6 +13,10 @@ Imagem: [Ação da câmera e do objeto 3D].
 - A ÚLTIMA CENA DO ROTEIRO: É A ÚNICA CENA DECLARADA COM LETTERING. O formato deve ser EXATAMENTE assim:
 Lettering: #TemNoMagalu
 
+**ABERTURA 3D:**
+- Locução da Cena 1: Diga EXATAMENTE a melhor feature (Killer Spec) do produto que resolve IMEDIATAMENTE a dor primária da persona (usuário/comprador). (Mesma regra de roteiro do NW Padrão).
+- Imagem da Cena 1: A imagem DEVE seguir uma sequência LÓGICA de câmera 3D contínua introduzindo o produto. É PROIBIDO o uso de "cortes secos" como nos roteiros NW tradicionais.
+
 🚨 IMPORTANTE: NÃO USE numeração ou o rótulo "Texto:". Comece com "-" para a locução.
 
 **REGRAS DO MODO 3D (FLUIDEZ, RENDER E CONTINUIDADE):**
