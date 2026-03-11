@@ -2,10 +2,11 @@
 REGRAS ESPECÍFICAS: MODO NW (NewWeb Padrão)
 ======================================================================
 
-ESTRUTURA NW (PADRÃO):
+ESTRUTURA TÍPICA DA CENA (As cenas do roteiro devem ter esse formato):
 - [Falas - texto contínuo, sem formatação de lista]
-Lettering: [Feature forte. Máximo de 4-5 palavras. Ex: "Bateria de longa duração"]
 Imagem: [Obrigatório: Plano da câmera + O que a Lu faz + O que o produto mostra].
+
+🚨 É ESTRITAMENTE PROIBIDO usar "Lettering:" nas cenas de apresentação do produto. "Lettering:" só existe na ÚLTIMA CENA de fechamento.
 
 🚨 IMPORTANTE: É PROIBIDO incluir numeração (ex: [1]) ou rótulos como "Texto:" ou "Cena:". Use apenas o hífen "-" para indicar a locução.
 
@@ -36,10 +37,14 @@ Imagem: [Obrigatório: Plano da câmera + O que a Lu faz + O que o produto mostr
 
 **FECHAMENTO NW:**
 - O final serve para tirar a fricção de compra.
-- ESTRUTURA PADRÃO: Resumo de 1 frase reforçando por que o produto é bom + CTA.
-- O CTA DEVE SER EXATAMENTE ASSIM: "Gostou? Já clica pra garantir o seu."
-  - NÃO INVENTE OUTRO CTA.
-- A ÚLTIMA CENA DO ROTEIRO: DEVE TER LETTERING OBRIGATÓRIO: "#TemnoMagalu"
+- ESTRUTURA PADRÃO: Resumo de 1 frase reforçando por que o produto é bom finalizando SEMPRE com ", tem no Magalu!".
+- O CTA da locução DEVE SER EXATAMENTE O PADRÃO DA MARCA. Exemplos válidos:
+  ✅ "A [Produto] perfeita pro seu dia a dia, tem no Magalu!"
+  ✅ "O [Produto] certo pra você, tem no Magalu!"
+  ✅ "[Adjetivo 1], [Adjetivo 2] e muita praticidade, tem no Magalu!"
+  ❌ PROIBIDO usar: "Gostou? Já clica pra garantir o seu." ou "Compre agora".
+- A ÚLTIMA CENA DO ROTEIRO: É A ÚNICA CENA DECLARADA COM LETTERING. O formato deve ser EXATAMENTE assim:
+Lettering: #TemNoMagalu
 - IMAGEM DO FECHAMENTO: A câmera volta a abrir, mostrando o produto com elementos Lifestyle.
 
 **REGRAS DE IMAGEM:**
