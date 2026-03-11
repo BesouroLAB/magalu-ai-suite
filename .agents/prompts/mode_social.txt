@@ -23,8 +23,8 @@ Imagem: [A Lu é filmada em estúdio por um videomaker].
 **FECHAMENTO SOCIAL:**
 - ESTRUTURA PADRÃO: Resumo de 1 frase reforçando o benefício finalizando SEMPRE com ", tem no Magalu!".
 - O CTA da locução DEVE SER EXATAMENTE O PADRÃO DA MARCA:
-  ✅ "O produto que faltava pro seu dia a dia, tem no Magalu!"
-  ✅ "Tudo o que você precisa pra [uso], tem no Magalu!"
+  ✅ "A solução ideal pra [DOR], tem no Magalu!"
+  ✅ "Tudo o que você precisa pra curtir o final de semana, tem no Magalu!"
   ❌ PROIBIDO usar: "Gostou? Já clica na sacolinha" ou qualquer CTA que não termine com "tem no Magalu!".
 - A ÚLTIMA CENA DO ROTEIRO: É A ÚNICA CENA DECLARADA COM LETTERING. O formato deve ser EXATAMENTE assim:
 Lettering: #TemNoMagalu (pode ser junto com o botão/sacola do Instagram).

@@ -40,9 +40,9 @@ Imagem: [Obrigatório: Plano da câmera + O que a Lu faz + O que o produto mostr
 - O final serve para tirar a fricção de compra.
 - ESTRUTURA PADRÃO: Resumo de 1 frase reforçando por que o produto é bom finalizando SEMPRE com ", tem no Magalu!".
 - O CTA da locução DEVE SER EXATAMENTE O PADRÃO DA MARCA. Exemplos válidos:
-  ✅ "A [Produto] perfeita pro seu dia a dia, tem no Magalu!"
-  ✅ "O [Produto] certo pra você, tem no Magalu!"
-  ✅ "[Adjetivo 1], [Adjetivo 2] e muita praticidade, tem no Magalu!"
+  ✅ "A [Produto] pra resolver [DOR principal], tem no Magalu!"
+  ✅ "O [Produto] que faltava pra sua casa, tem no Magalu!"
+  ✅ "[Benefício prático 1], [Benefício prático 2] e a solução pro problema, tem no Magalu!"
   ❌ PROIBIDO usar: "Gostou? Já clica pra garantir o seu." ou "Compre agora".
 - A ÚLTIMA CENA DO ROTEIRO: É A ÚNICA CENA DECLARADA COM LETTERING. O formato deve ser EXATAMENTE assim:
 Lettering: #TemNoMagalu
