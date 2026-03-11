@@ -2,10 +2,16 @@
 REGRAS ESPECÍFICAS: MODO 3D 
 ======================================================================
 
-ESTRUTURA 3D:
-- [Falas continuas]
-Lettering: [Feature forte. Máximo de 4-5 palavras.]
-Imagem 3D: [Ação da câmera e do objeto 3D].
+ESTRUTURA TÍPICA DA CENA 3D (As cenas do roteiro devem ter esse formato):
+- [Falas continuas, sem formatação de lista]
+Imagem: [Ação da câmera e do objeto 3D].
+
+🚨 É ESTRITAMENTE PROIBIDO usar "Lettering:" nas cenas de apresentação do produto. "Lettering:" só existe na ÚLTIMA CENA de fechamento com a hashtag.
+
+**FECHAMENTO 3D:**
+- ESTRUTURA PADRÃO: Resumo de 1 frase reforçando o benefício finalizando SEMPRE com ", tem no Magalu!".
+- A ÚLTIMA CENA DO ROTEIRO: É A ÚNICA CENA DECLARADA COM LETTERING. O formato deve ser EXATAMENTE assim:
+Lettering: #TemNoMagalu
 
 🚨 IMPORTANTE: NÃO USE numeração ou o rótulo "Texto:". Comece com "-" para a locução.
 

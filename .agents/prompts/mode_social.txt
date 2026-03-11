@@ -2,9 +2,11 @@
 REGRAS ESPECÍFICAS: MODO SOCIAL (Reels/TikTok)
 ======================================================================
 
-ESTRUTURA SOCIAL:
+ESTRUTURA TÍPICA DA CENA SOCIAL (As cenas do roteiro devem ter esse formato):
 - [Falas - texto contínuo]
 Imagem: [A Lu é filmada em estúdio por um videomaker].
+
+🚨 É ESTRITAMENTE PROIBIDO usar "Lettering:" nas cenas de apresentação do produto. "Lettering:" só existe na ÚLTIMA CENA de fechamento.
 
 🚨 IMPORTANTE: NÃO USE numeração ou o rótulo "Texto:". Comece com "-" para a locução.
 
@@ -16,7 +18,11 @@ Imagem: [A Lu é filmada em estúdio por um videomaker].
 - VOCABULÁRIO ENERGÉTICO: Use tom animado sem forçar a barra.
 - CORTES RÁPIDOS (Visual): Descreva as imagens transicionando rapidamente (ex: "Câmera pula para um close...").
 - TAMANHO: Máximo absoluto de 4 a 5 cenas.
-- O FECHAMENTO no Social usa:
-  Lettering: #TemnoMagalu (pode ser junto com o botão/sacola do Instagram).
+
+**FECHAMENTO SOCIAL:**
+- O CTA da locução no Social DEVE ser nativo para redes sociais (Exemplo: "Gostou? Já clica na sacolinha", "Clica no link da bio", "Dá uma olhada no site"). 
+  ❌ É PROIBIDO usar o fechamento clássico do NW ("..., tem no Magalu!") na locução do Social.
+- A ÚLTIMA CENA DO ROTEIRO: É A ÚNICA CENA DECLARADA COM LETTERING. O formato deve ser EXATAMENTE assim:
+Lettering: #TemNoMagalu (pode ser junto com o botão/sacola do Instagram).
 - DIRETRIZ VISUAL SOCIAL: Mãos podem (e devem) aparecer interagindo com o produto (unboxing, pegando o objeto, demonstrando funções), pois isso traz humanização e ritmo de "review real". Apenas o ROSTO da pessoa é proibido; o foco deve ser sempre nas mãos e no produto.
 

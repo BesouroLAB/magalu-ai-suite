@@ -2,11 +2,12 @@
 REGRAS ESPECÍFICAS: MODO REVIEW (Destaque do Cliente)
 ======================================================================
 
-ESTRUTURA REVIEW:
+ESTRUTURA TÍPICA DA CENA REVIEW (As cenas do roteiro devem ter esse formato):
 - [Falas - texto contínuo]
 Imagem: [Fotos e vídeos reais dos compradores].
 
-🚨 IMPORTANTE: É PROIBIDO incluir numeração nas cenas, o rótulo "Texto:" ou "Lettering:" nas cenas do miolo. O roteiro deve ser limpo. O UNÍCO Lettering permitido é o do fechamento final (#TemnoMagalu).
+🚨 É ESTRITAMENTE PROIBIDO usar "Lettering:" nas cenas do miolo do produto. O roteiro no miolo deve ser puramente locução e imagem. O ÚNICO "Lettering:" permitido no roteiro inteiro é o da última cena de fechamento com a hashtag.
+🚨 IMPORTANTE: É PROIBIDO incluir numeração nas cenas, ou usar os rótulos "Texto:" ou "Cena:". Comece com "-" para a locução.
 
 **REGRAS DO MODO REVIEW (Prova Social, Síntese e Citações):**
 - ABERTURA COM PROVA SOCIAL (OBRIGATÓRIA): A primeira cena deve usar EXATAMENTE esta frase:
@@ -23,6 +24,7 @@ Imagem: [Fotos e vídeos reais dos compradores].
 - MODO REVIEW SEM LU: NUNCA sugira a presença de humanos nas imagens descritivas. A câmera mostra apenas close no detalhe elogiado, ou tela do celular mostrando as avaliações estreladas.
 - FECHAMENTO FIXO (OBRIGATÓRIO): A última cena do roteiro deve usar EXATAMENTE esta frase e lettering:
   Locução: "- Agora que já sabe mais sobre esse produto, já pode escolher o seu!"
-  Lettering: #TemnoMagalu
+  ❌ É PROIBIDO usar o fechamento clássico do NW ("..., tem no Magalu!") na locução do modo Review. NUNCA misture os CTAs.
+  Lettering: #TemNoMagalu
 
 - AO FINAL DO ROTEIRO (após o fechamento), ADICIONE UMA SEÇÃO: 'COMENTÁRIOS USADOS' listando os textos originais que você utilizou para compor o roteiro.
