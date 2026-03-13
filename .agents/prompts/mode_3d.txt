@@ -7,6 +7,9 @@ REGRAS ESPECÍFICAS: MODO 3D (Complemento ao NW)
 🎬 A DIFERENÇA CENTRAL DO 3D:
 O NW padrão tem cortes secos e dinâmicos entre cenas. No 3D, o vídeo é uma SEQUÊNCIA CONTÍNUA — a câmera desliza, orbita e transiciona suavemente de um ângulo para o outro, sem cortes abruptos. Essa é a ÚNICA diferença estrutural.
 
+👩 LU OBRIGATÓRIA NA CENA 1 (SEMPRE):
+Todo vídeo 3D começa com a Lu. Ela deve estar INTERAGINDO com o produto na primeira cena (abrindo, dividindo, mostrando, usando). A Lu não é enfeite — ela é a protagonista apresentando o produto.
+
 📝 LOCUÇÃO 3D (AJUSTE DE RITMO):
 - A locução segue as mesmas regras do NW (concisa, falada, natural), MAS pode ser levemente mais longa por cena para cobrir o tempo de movimento da câmera. Não corte tanto a ponto de a fala acabar antes da transição visual.
 - O texto precisa "acompanhar" a câmera: enquanto ela se move, o locutor está falando. Se o texto for curto demais, a cena fica muda.

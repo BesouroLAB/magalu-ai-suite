@@ -371,7 +371,7 @@ class RoteiristaAgent:
         elif "SOCIAL" in modo_u:
             prefixo_taxonomia = "SOCIAL"
         elif "3D" in modo_u:
-            prefixo_taxonomia = "NW 3D"
+            prefixo_taxonomia = "NW 3D LU"
         else:
             prefixo_taxonomia = "NW LU" if com_lu else "NW"
 
@@ -501,7 +501,7 @@ class RoteiristaAgent:
                             nome_purificado = re.sub(r'^(NW\s*(3D)?\s*(LU)?\s*(REVIEW)?\s*[A-Z]{3}\s*\d+\s+)', '', prod_str)
                             
                             if "3D" in modo_trabalho.upper():
-                                prefixo_taxonomia = "NW 3D"
+                                prefixo_taxonomia = "NW 3D LU"
                             else:
                                 prefixo_taxonomia = "NW LU" if com_lu else "NW"
                             linhas[i+2] = f"Produto: {prefixo_taxonomia} {mes} {cod_s}{sub_s} {nome_purificado}{vid_s}"

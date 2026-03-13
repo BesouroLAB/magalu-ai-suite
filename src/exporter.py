@@ -72,7 +72,7 @@ def _extract_product_name(roteiro_text: str) -> str:
     if match:
         name = match.group(1).strip()
         # Remove prefixos conhecidos (NW REVIEW, NW 3D, NW LU, NW, SOCIAL) + Mês + SKU
-        name = re.sub(r'^(NW REVIEW|NW 3D|NW LU|NW|SOCIAL)\s+[A-Z]{3}\s+\d+\s+', '', name, flags=re.IGNORECASE)
+        name = re.sub(r'^(NW 3D LU|NW REVIEW|NW 3D|NW LU|NW|SOCIAL)\s+[A-Z]{3}\s+\d+\s+', '', name, flags=re.IGNORECASE)
         # Remove placeholder [NOME DO PRODUTO] ou "Nome do Produto"
         name = re.sub(r'\[?NOME DO PRODUTO\]?', '', name, flags=re.IGNORECASE)
         # Remove "TÍTULO DO PRODUTO:" ou similares da IA
