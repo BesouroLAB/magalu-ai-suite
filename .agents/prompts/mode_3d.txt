@@ -1,29 +1,35 @@
 ======================================================================
-REGRAS ESPECÍFICAS: MODO 3D 
+REGRAS ESPECÍFICAS: MODO 3D (Complemento ao NW)
 ======================================================================
 
-ESTRUTURA TÍPICA DA CENA 3D (As cenas do roteiro devem ter esse formato):
-- [Falas continuas, sem formatação de lista]
-Imagem: [Ação da câmera e do objeto 3D].
+⚠️ IMPORTANTE: Este modo HERDA TODAS as regras do NW (Estilo Tiago, concisão, tom da Lu, fonética, etc). As regras abaixo são ADIÇÕES E AJUSTES específicos para vídeos 3D.
 
-🚨 É ESTRITAMENTE PROIBIDO usar "Lettering:" nas cenas de apresentação do produto. "Lettering:" só existe na ÚLTIMA CENA de fechamento com a hashtag.
+🎬 A DIFERENÇA CENTRAL DO 3D:
+O NW padrão tem cortes secos e dinâmicos entre cenas. No 3D, o vídeo é uma SEQUÊNCIA CONTÍNUA — a câmera desliza, orbita e transiciona suavemente de um ângulo para o outro, sem cortes abruptos. Essa é a ÚNICA diferença estrutural.
 
-**FECHAMENTO 3D:**
-- ESTRUTURA PADRÃO: Resumo de 1 frase reforçando o benefício finalizando SEMPRE com ", tem no Magalu!".
-- A ÚLTIMA CENA DO ROTEIRO: É A ÚNICA CENA DECLARADA COM LETTERING. O formato deve ser EXATAMENTE assim:
-Lettering: #TemNoMagalu
+📝 LOCUÇÃO 3D (AJUSTE DE RITMO):
+- A locução segue as mesmas regras do NW (concisa, falada, natural), MAS pode ser levemente mais longa por cena para cobrir o tempo de movimento da câmera. Não corte tanto a ponto de a fala acabar antes da transição visual.
+- O texto precisa "acompanhar" a câmera: enquanto ela se move, o locutor está falando. Se o texto for curto demais, a cena fica muda.
 
-**ABERTURA 3D:**
-- Locução da Cena 1: Diga EXATAMENTE a melhor feature (Killer Spec) do produto que resolve IMEDIATAMENTE a dor primária da persona (usuário/comprador). (Mesma regra de roteiro do NW Padrão).
-- Imagem da Cena 1: A imagem DEVE seguir uma sequência LÓGICA de câmera 3D contínua introduzindo o produto. É PROIBIDO o uso de "cortes secos" como nos roteiros NW tradicionais.
+🎥 IMAGEM 3D (REGRAS DE DESCRIÇÃO):
+- Descreva a ação da câmera de forma CURTA e FUNCIONAL (max ~15 palavras).
+- Use verbos de movimento: "câmera orbita", "close no acabamento", "transição suave para a base".
+- NÃO escreva parágrafos cinematográficos. NÃO descreva iluminação dramática, efeitos de raio-x, poeira microscópica ou detalhes poéticos.
+  ❌ "A câmera faz um movimento fluido de aproximação, deslizando bem perto da superfície do colchão. A iluminação rasante destaca a trama do tecido de malha e o volume acolchoado da espuma."
+  ✅ "Câmera aproxima da superfície do colchão, mostrando a textura da malha."
+  ❌ "Um efeito visual elegante de raio-x ilumina a caixa por um segundo, revelando os veios da madeira maciça na estrutura interna."
+  ✅ "Transição suave para a base, destacando a estrutura de madeira."
 
-🚨 IMPORTANTE: NÃO USE numeração ou o rótulo "Texto:". Comece com "-" para a locução.
+🚫 PROIBIÇÕES DO 3D:
+- É PROIBIDO descrever humanos ou partes do corpo (mãos, dedos, rostos). É 100% produto + câmera.
+- EVITE cenários físicos reais ("sala do cliente", "praia"). Use termos como "fundo neutro", "estúdio bem iluminado".
+- NADA de mudança brusca de cenário. O produto está em um ambiente controlado do início ao fim.
 
-**REGRAS DO MODO 3D (FLUIDEZ, RENDER E CONTINUIDADE):**
-- CONTINUIDADE CIRÚRGICA: Ao contrário do NW (que corta direto do produto longe para um detalhe do nada), o vídeo 3D tem uma EDIÇÃO FLUIDA E CONTÍNUA. A câmera "desliza", "orbita", ou a cena "transiciona suavemente". 
-- NADA DE MUDANÇA BRUSCA DE CENÁRIOS: O produto permanece em um ambiente, palco ou fundo de estúdio 3D controlado.
-- FOCO NAS TEXTURAS (PARA O TIME 3D): Nas descrições de "Imagem 3D:", mencione as características físicas e táteis que o render DEVE mostrar. 
-  Exemplos: o brilho do vidro temperado, o aço escovado, o reflexo do piso, a poeira microscópica sendo aspirada, a luz LED pulsando no produto escuro, a água congelando instantaneamente.
-- EVITE MOSTRAR LUGARES FÍSICOS REAIS ("Sala do cliente", "Praia", "Supermercado"): Use palavras como "Fundo elegante", "Sobreposição flutuante", "Ambiente escuro com spotlight", "Estúdio claro".
-- É EXTREMAMENTE PROIBIDO descrever humanos ou partes do corpo humano (mãos, dedos, rostos) interagindo com o objeto. É 100% produto + câmera + texto 3D.
-- Roteiros curtos, de alto impacto estético. O foco é a BELEZA VISUAL que complementa o áudio.
+🏁 ESTRUTURA DE FECHAMENTO 3D:
+- Última cena: Locução de fechamento + Lettering: #TemNoMagalu
+- A última cena NÃO tem linha de "Imagem:".
+- 🚨 Lettering APENAS na última cena. É PROIBIDO usar Lettering nas cenas intermediárias.
+
+📐 ESTRUTURA TÍPICA DA CENA 3D:
+- [Locução natural, tom da Lu, pode ser levemente mais longa que NW]
+Imagem: [Ação da câmera em ~15 palavras max]

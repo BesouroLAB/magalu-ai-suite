@@ -251,7 +251,8 @@ class RoteiristaAgent:
         if "SOCIAL" in modo_u:
             parts.append(self.prompts.get("social", ""))
         elif "3D" in modo_u:
-            parts.append(self.prompts.get("3d", ""))
+            parts.append(self.prompts.get("nw", ""))  # NW base (Estilo Tiago) primeiro
+            parts.append(self.prompts.get("3d", ""))  # 3D complementa com regras de câmera
         elif "REVIEW" in modo_u:
             parts.append(self.prompts.get("review", ""))
         else:
@@ -497,9 +498,12 @@ class RoteiristaAgent:
                             # Remove prefixos antigos para evitar duplicação em edições sucessivas
                             prod_str = linhas[i+2].replace('**', '').replace('Produto:', '').strip()
                             # Tenta detectar e remover qualquer prefixo NW / NW LU / NW 3D etc até chegar no nome real
-                            nome_purificado = re.sub(r'^(NW\s*(3D)?\s*(LU)?\s*[A-Z]{3}\s*\d+\s+)', '', prod_str)
+                            nome_purificado = re.sub(r'^(NW\s*(3D)?\s*(LU)?\s*(REVIEW)?\s*[A-Z]{3}\s*\d+\s+)', '', prod_str)
                             
-                            prefixo_taxonomia = "NW LU" if com_lu else "NW"
+                            if "3D" in modo_trabalho.upper():
+                                prefixo_taxonomia = "NW 3D"
+                            else:
+                                prefixo_taxonomia = "NW LU" if com_lu else "NW"
                             linhas[i+2] = f"Produto: {prefixo_taxonomia} {mes} {cod_s}{sub_s} {nome_purificado}{vid_s}"
                         roteiro = "\n".join(linhas)
                         break
