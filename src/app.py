@@ -1318,12 +1318,17 @@ if page == "Criar Roteiros":
                             erros_lote.append(err_msg)
 
                     st.session_state['roteiro_ativo_idx'] = 0
+                    if erros_lote:
+                        st.session_state['last_errors'] = erros_lote
+                    
                     if not erros_lote:
                         st.success(f"🎯 Geração de {total_roteiros} roteiros concluída!")
+                        st.rerun()
                     else:
-                        st.warning(f"⚠️ Concluído com {len(erros_lote)} erro(s).")
-                    
-                    st.rerun()
+                        st.warning(f"⚠️ Concluído com {len(erros_lote)} erro(s). Detalhes no histórico.")
+                        # Não dá rerun imediato para o usuário ver os avisos de erro na tela
+                        if st.button("🔄 Atualizar Visualização"):
+                            st.rerun()
 
         with tab_manual:
             # --- MODO MANUAL (FALLBACK) ---
