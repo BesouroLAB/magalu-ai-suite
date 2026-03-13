@@ -13,7 +13,7 @@ import difflib
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from src.agent import RoteiristaAgent, MODELOS_DISPONIVEIS, MODELOS_DESCRICAO, PROVIDER_KEY_MAP
-from src.scraper import scrape_with_gemini, parse_codes
+from src.scraper import scrape_with_gemini, parse_codes, parse_grouped_input, detect_variants
 from src.exporter import export_roteiro_docx, format_for_display, export_all_roteiros_zip
 from src.jsonld_generator import export_jsonld_string, wrap_in_script_tag
 
@@ -1203,102 +1203,86 @@ if page == "Criar Roteiros":
 
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # --- NOVO FLUXO: PRÉ-GERAÇÃO (TABELA EDITÁVEL) ---
-            if st.button("🔍 Validar Códigos", use_container_width=True):
-                codigos = parse_codes(codigos_raw) if codigos_raw else []
-                if not codigos:
+            # --- NOVO FLUXO CONSOLIDADO: GERAÇÃO DIRETA POR GRUPO ---
+            if st.button("🚀 Iniciar Geração em Lote", use_container_width=True, type="primary", key="btn_auto_direto"):
+                grupos = parse_grouped_input(codigos_raw) if codigos_raw else []
+                
+                if not grupos:
                     st.warning("⚠️ Digite pelo menos um código de produto.")
-                elif len(codigos) > 15:
-                    st.warning("⚠️ Limite excedido: Por favor, insira no máximo 15 códigos por vez (Rate Limit da API).")
+                elif len(grupos) > 15:
+                    st.warning("⚠️ Limite de 15 roteiros por vez atingido.")
                 else:
-                    df_pre = pd.DataFrame({
-                        "SKU Principal": codigos,
-                        "Outros Códigos (Cor/Voltagem)": [""] * len(codigos),
-                        "Vídeo do Fornecedor (Link)": [""] * len(codigos)
-                    })
-                    st.session_state['skus_validados'] = df_pre
-            
-            if 'skus_validados' in st.session_state and not st.session_state['skus_validados'].empty:
-                st.markdown("### 3. Dados Extras (Opcional)")
-                st.info("💡 Preencha SKUs relacionados (se houver variações de cor/voltagem) e o link do vídeo do fornecedor para enriquecer o roteiro.")
-                
-                # Editor Interativo
-                df_edited = st.data_editor(
-                    st.session_state['skus_validados'],
-                    use_container_width=True,
-                    disabled=["SKU Principal"],
-                    hide_index=True,
-                    key="editor_pre_gen",
-                    column_config={
-                        "Outros Códigos (Cor/Voltagem)": st.column_config.TextColumn(
-                            "Outros Códigos (Cor/Voltagem)",
-                            help="Cole SKUs relacionados separados por espaço ou vírgula",
-                            width="large"
-                        ),
-                        "Vídeo do Fornecedor (Link)": st.column_config.LinkColumn(
-                            "Vídeo do Fornecedor (Link)",
-                            help="Insira o link do YouTube ou Drive do fornecedor",
-                            width="large"
-                        )
-                    }
-                )
-                
-                if st.button("🚀 Iniciar Extração e Geração", use_container_width=True, type="primary", key="btn_auto"):
-                    if modo_selecionado not in ["NW (NewWeb)", "3D (NewWeb 3D)", "SOCIAL", "Review (NwReview)"]:
-                        st.warning(f"🚧 O formato {modo_selecionado} ainda está em desenvolvimento.")
-                        st.stop()
-                    
-                    codigos = [str(row['SKU Principal']).strip() for _, row in df_edited.iterrows()]
-                    total = len(codigos)
+                    total_roteiros = len(grupos)
                     progress_text = st.empty()
                     bar = st.progress(0)
                     
                     sp_cli = st.session_state.get('supabase_client')
                     modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
                     table_prefix = st.session_state.get('table_prefix', 'nw_')
-                    
-                     # Instancia Agente (fora do loop para eficiência)
                     agent = RoteiristaAgent(supabase_client=sp_cli, model_id=modelo_id, table_prefix=table_prefix)
                     
                     erros_lote = []
-                    for i, (idx, row) in enumerate(df_edited.iterrows()):
-                        current_code = str(row['SKU Principal']).strip()
-                        percent = int((i + 1) / total * 100)
-                        progress_text.markdown(f"**⏳ Processando {i+1}/{total} ({percent}%):** SKU {current_code}")
-                        bar.progress((i + 1) / total)
+                    gemini_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
+
+                    for i, grupo in enumerate(grupos):
+                        main_code = grupo["codes"][0]
+                        all_codes = grupo["codes"]
+                        video_url = grupo["video"]
+                        
+                        percent = int((i + 1) / total_roteiros * 100)
+                        progress_text.markdown(f"**⏳ Processando Roteiro {i+1}/{total_roteiros} ({percent}%):** SKU {main_code}")
+                        bar.progress((i + 1) / total_roteiros)
                         
                         try:
-                            with st.status(f"🚀 SKU {current_code} ({i+1}/{total})", expanded=True) as status_box:
+                            with st.status(f"🚀 Roteiro {i+1} (SKUs: {', '.join(all_codes)})", expanded=True) as status_box:
+                                # 1. Scrape de todos os códigos do grupo
+                                status_box.write(f"🔍 **Etapa 1:** Extraindo dados de {len(all_codes)} SKUs...")
+                                fichas_grupo = {}
+                                ficha_principal = None
                                 
-                                # 1. Scrape
-                                status_box.write("🔍 **Etapa 1:** Extraindo dados técnicos Magalu (Scraping)...")
-                                gemini_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
-                                ficha_extraida = scrape_with_gemini(current_code, api_key=gemini_key)
-                                
-                                # 2. Geração
-                                status_box.write("🧠 **Etapa 2:** Consultando IA e aplicando aprendizados (Agent)...")
-                                val_sub = row['Outros Códigos (Cor/Voltagem)']; sub_skus = str(val_sub).strip() if pd.notna(val_sub) and str(val_sub).lower() != 'nan' else ''
-                                val_vid = row['Vídeo do Fornecedor (Link)']; video_url = str(val_vid).strip() if pd.notna(val_vid) and str(val_vid).lower() != 'nan' else ''
+                                for c in all_codes:
+                                    status_box.write(f"  • Scraping SKU {c}...")
+                                    f = scrape_with_gemini(c, api_key=gemini_key)
+                                    fichas_grupo[c] = f
+                                    if c == main_code:
+                                        ficha_principal = f
+                                    # Pequeno delay para evitar rate limits excessivos
+                                    import time
+                                    time.sleep(0.5)
+
+                                # 2. Detecção de Variantes
+                                info_variantes = None
+                                if len(all_codes) > 1:
+                                    status_box.write("⚖️ **Etapa 2:** Analisando variantes (cor/tamanho/voltagem)...")
+                                    info_variantes = detect_variants(fichas_grupo)
+                                    if info_variantes["resumo"]:
+                                        status_box.info(f"💡 Variantes detectadas: {info_variantes['resumo']}")
+
+                                # 3. Geração
+                                status_box.write("🧠 **Etapa 3:** Gerando roteiro com IA...")
+                                # Concatena outros códigos para o cabeçalho
+                                outros_codigos = " ".join(all_codes[1:]) if len(all_codes) > 1 else ""
                                 
                                 res_gen = agent.gerar_roteiro(
-                                    scraped_data=ficha_extraida,
+                                    scraped_data=ficha_principal,
                                     modo_trabalho=modo_selecionado,
-                                    codigo=current_code,
-                                    sub_skus=sub_skus,
-                                    video_url=video_url,
+                                    codigo=main_code,
+                                    sub_skus=outros_codigos,
+                                    video_url=video_url or "",
                                     data_roteiro=data_roteiro_str,
                                     mes=mes_selecionado,
-                                    com_lu=(com_lu_auto == "Com LU")
+                                    com_lu=(com_lu_auto == "Com LU"),
+                                    variantes_info=info_variantes
                                 )
                                 
-                                # 3. Resultado e Salvamento
-                                status_box.write("💾 **Etapa 3:** Registrando no histórico e finalizando...")
+                                # 4. Resultado e Salvamento
+                                status_box.write("💾 **Etapa 4:** Registrando no histórico...")
                                 global_num = get_total_script_count(sp_cli) + 1
                                 novo_roteiro = {
                                     "_uid": str(uuid.uuid4()),
-                                    "ficha": ficha_extraida,
+                                    "ficha": ficha_principal,
                                     "roteiro_original": res_gen["roteiro"],
-                                    "codigo": current_code,
+                                    "codigo": main_code,
                                     "model_id": res_gen["model_id"],
                                     "tokens_in": res_gen["tokens_in"],
                                     "tokens_out": res_gen["tokens_out"],
@@ -1308,14 +1292,13 @@ if page == "Criar Roteiros":
                                     "com_lu": "REVIEW" if "Review" in modo_selecionado else (com_lu_auto == "Com LU")
                                 }
                                 
-                                # Log Histórico
                                 if sp_cli:
                                     try:
                                         sp_cli.table(f"{table_prefix}historico_roteiros").insert({
-                                            "codigo_produto": current_code,
+                                            "codigo_produto": main_code,
                                             "modo_trabalho": modo_selecionado,
                                             "roteiro_gerado": res_gen["roteiro"],
-                                            "ficha_extraida": str(ficha_extraida)[:5000],
+                                            "ficha_extraida": str(ficha_principal)[:5000],
                                             "modelo_llm": res_gen["model_id"],
                                             "tokens_entrada": res_gen["tokens_in"],
                                             "tokens_saida": res_gen["tokens_out"],
@@ -1324,24 +1307,21 @@ if page == "Criar Roteiros":
                                             "criado_em": get_now_sp().isoformat()
                                         }).execute()
                                     except Exception as e:
-                                        print(f"❌ Erro ao salvar histórico (Auto): {e}")
+                                        print(f"❌ Erro ao salvar histórico: {e}")
                                 
-                                status_box.update(label=f"✅ SKU {current_code} Finalizado!", state="complete")
-                                
+                                status_box.update(label=f"✅ Roteiro {i+1} Finalizado!", state="complete")
                                 st.session_state['roteiros'].insert(0, novo_roteiro)
+
                         except Exception as e:
-                            err_msg = f"❌ Erro no SKU {current_code}: {str(e)}"
+                            err_msg = f"❌ Erro no Roteiro {i+1} (SKU {main_code}): {str(e)}"
                             st.error(err_msg)
                             erros_lote.append(err_msg)
 
                     st.session_state['roteiro_ativo_idx'] = 0
-                    if erros_lote:
-                        st.session_state['last_errors'] = erros_lote
-                    
                     if not erros_lote:
-                        st.success(f"🎯 Geração de {total} roteiros concluída!")
+                        st.success(f"🎯 Geração de {total_roteiros} roteiros concluída!")
                     else:
-                        st.warning(f"⚠️ Concluído com {len(erros_lote)} erro(s). Veja os detalhes acima.")
+                        st.warning(f"⚠️ Concluído com {len(erros_lote)} erro(s).")
                     
                     st.rerun()
 

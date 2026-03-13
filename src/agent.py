@@ -390,6 +390,22 @@ class RoteiristaAgent:
             if comentarios:
                 diretriz_modo += f"ESTES SÃO OS COMENTÁRIOS REAIS PARA SINTETIZAR NO ROTEIRO:\n{comentarios}\n\n"
 
+        # Informação de variantes (múltiplos SKUs do mesmo produto)
+        variantes_str = ""
+        variantes_info = kwargs.get('variantes_info')
+        if variantes_info and variantes_info.get('resumo'):
+            variantes_str = (
+                f"\n**VARIANTES DO PRODUTO (MÚLTIPLOS SKUs):**\n"
+                f"- {variantes_info['resumo']}\n"
+                f"- Tipo de variação: {variantes_info.get('tipo_variante', 'N/A')}\n"
+            )
+            if variantes_info.get('tipo_variante') == 'voltagem':
+                variantes_str += "- REGRA: Voltagens vão apenas no cabeçalho. NÃO mencione voltagem na locução.\n"
+            elif variantes_info.get('tipo_variante') == 'cor':
+                variantes_str += "- REGRA: Mencione naturalmente no roteiro que está disponível em outras cores (ex: 'E tem em várias cores, viu?').\n"
+            elif variantes_info.get('tipo_variante') == 'tamanho':
+                variantes_str += "- REGRA: Mencione naturalmente que está disponível em outros tamanhos (ex: 'Tem em solteiro e casal').\n"
+
         final_prompt = (
             f"**CONTEXTO ESTRATÉGICO E APRENDIZADOS DINÂMICOS (SUPABASE):**\n"
             f"{context}\n\n"
@@ -397,6 +413,7 @@ class RoteiristaAgent:
             f"{diretriz_modo}\n\n"
             f"**FONTE ÚNICA DE VERDADE (FICHA TÉCNICA):**\n"
             f"{text_data}\n\n"
+            f"{variantes_str}"
             f"**REGRAS CRÍTICAS DE EXECUÇÃO:**\n"
             f"1. **PROIBIÇÃO DE DADOS HIPOTÉTICOS:** Não invente specs.\n"
             f"2. **REGRAS DE FORMATAÇÃO:** SIGA RIGOROSAMENTE as regras de estrutura (como usar o dash '-' para falas) enviadas no início deste prompt (System Prompt).\n"

@@ -157,7 +157,7 @@ def generate_filename(code: str, product_name: str, selected_month: str = "MAR",
     elif "SOCIAL" in prefixo_u:
         prefixo = "SOCIAL"
     elif "3D" in prefixo_u:
-        prefixo = "NW 3D"
+        prefixo = "NW 3D LU"
     else:
         prefixo = "NW LU" if com_lu is True else "NW"
         

@@ -152,5 +152,133 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None) -> dict:
         return {"text": f"❌ Erro Crítico no Scraper: {str(e)}", "images": []}
 
 def parse_codes(raw_input: str) -> list[str]:
-    """Parseia códigos separados por vírgula, espaço ou nova linha."""
+    """Parseia códigos separados por vírgula, espaço ou nova linha (legado)."""
     return [c.strip() for c in re.split(r'[,\s\n]+', raw_input.strip()) if c.strip()]
+
+
+def parse_grouped_input(raw_input: str) -> list[dict]:
+    """
+    Parseia input agrupado onde cada linha = 1 roteiro.
+    Códigos na mesma linha = variantes do mesmo produto.
+    URLs (http...) = link de vídeo do fornecedor.
+    
+    Retorna lista de dicts:
+      [{"codes": ["232878800"], "video": None},
+       {"codes": ["232879000", "232879500"], "video": "https://..."}]
+    """
+    groups = []
+    for line in raw_input.strip().split('\n'):
+        line = line.strip()
+        if not line:
+            continue
+        
+        tokens = re.split(r'[,\s]+', line)
+        codes = []
+        video = None
+        
+        for token in tokens:
+            token = token.strip()
+            if not token:
+                continue
+            if token.startswith('http'):
+                video = token
+            else:
+                clean = re.sub(r'[^0-9a-zA-Z]', '', token)
+                if len(clean) >= 3:
+                    codes.append(clean)
+        
+        if codes:
+            groups.append({"codes": codes, "video": video})
+    
+    return groups
+
+
+def detect_variants(fichas: dict[str, str]) -> dict:
+    """
+    Compara fichas técnicas de múltiplos SKUs do mesmo produto.
+    Detecta o que varia entre eles (cor, tamanho, voltagem).
+    
+    Args:
+        fichas: dict de {codigo: texto_ficha}
+    
+    Returns:
+        {"tipo_variante": "cor|tamanho|voltagem|misto",
+         "variantes": [{"codigo": "...", "diferencial": "..."}],
+         "resumo": "Disponível em 3 cores: Preto, Branco e Cinza"}
+    """
+    if len(fichas) <= 1:
+        return {"tipo_variante": None, "variantes": [], "resumo": ""}
+    
+    variantes = []
+    tipos_detectados = set()
+    
+    # Padrões de detecção
+    cor_pattern = re.compile(r'(?:cor|color|acabamento)[\s:]+([^\n,]+)', re.IGNORECASE)
+    tamanho_patterns = [
+        re.compile(r'(?:tamanho|dimensões?|medidas?)[\s:]+([^\n]+)', re.IGNORECASE),
+        re.compile(r'(\d+)\s*x\s*(\d+)\s*(?:x\s*(\d+))?\s*(?:cm|mm|m)', re.IGNORECASE),
+        re.compile(r'(?:solteiro|casal|queen|king|viúva)', re.IGNORECASE),
+    ]
+    volt_pattern = re.compile(r'(?:voltagem|tensão)[\s:]+([^\n,]+)', re.IGNORECASE)
+    titulo_pattern = re.compile(r'TÍTULO[\s:]+([^\n]+)', re.IGNORECASE)
+    
+    for codigo, ficha in fichas.items():
+        texto = ficha if isinstance(ficha, str) else str(ficha.get("text", ""))
+        diff_info = {"codigo": codigo}
+        
+        # Detecta cor
+        cor_match = cor_pattern.search(texto)
+        if cor_match:
+            diff_info["cor"] = cor_match.group(1).strip()
+            tipos_detectados.add("cor")
+        
+        # Detecta tamanho (via título ou ficha)
+        titulo_match = titulo_pattern.search(texto)
+        titulo = titulo_match.group(1) if titulo_match else ""
+        for tp in tamanho_patterns:
+            tam_match = tp.search(titulo) or tp.search(texto)
+            if tam_match:
+                diff_info["tamanho"] = tam_match.group(0).strip()
+                tipos_detectados.add("tamanho")
+                break
+        
+        # Detecta voltagem
+        volt_match = volt_pattern.search(texto)
+        if volt_match:
+            diff_info["voltagem"] = volt_match.group(1).strip()
+            tipos_detectados.add("voltagem")
+        
+        # Título pra referência
+        if titulo:
+            diff_info["titulo"] = titulo.strip()
+        
+        variantes.append(diff_info)
+    
+    # Determina tipo principal
+    if len(tipos_detectados) == 0:
+        tipo = "desconhecido"
+    elif len(tipos_detectados) == 1:
+        tipo = tipos_detectados.pop()
+    else:
+        tipo = "misto"
+    
+    # Gera resumo humano
+    resumo = ""
+    if "cor" in tipos_detectados:
+        cores = [v.get("cor", "?") for v in variantes if v.get("cor")]
+        if cores:
+            resumo = f"Disponível em {len(cores)} cores: {', '.join(cores)}"
+    elif "tamanho" in tipos_detectados:
+        tamanhos = [v.get("tamanho", "?") for v in variantes if v.get("tamanho")]
+        if tamanhos:
+            resumo = f"Disponível em {len(tamanhos)} tamanhos: {', '.join(tamanhos)}"
+    elif "voltagem" in tipos_detectados:
+        volts = [v.get("voltagem", "?") for v in variantes if v.get("voltagem")]
+        if volts:
+            resumo = f"Variantes de voltagem: {', '.join(volts)}"
+    
+    return {
+        "tipo_variante": tipo,
+        "variantes": variantes,
+        "resumo": resumo
+    }
