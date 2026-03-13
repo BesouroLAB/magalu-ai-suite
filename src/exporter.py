@@ -127,8 +127,8 @@ def _parse_roteiro(roteiro_text: str) -> list[dict]:
             clean = analysis_line
             blocks.append({"type": "locucao", "text": f"- {clean}"})
         else:
-            # Linhas genéricas
-            blocks.append({"type": "text", "text": stripped})
+            # Linhas que não se encaixam nos padrões acima são tratadas como locução por padrão (Bold no DOCX)
+            blocks.append({"type": "locucao", "text": stripped})
 
     return blocks
 
