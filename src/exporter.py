@@ -140,27 +140,36 @@ def generate_filename(code: str, product_name: str, selected_month: str = "MAR",
     if clean_code and len(clean_code) < 9:
         clean_code = clean_code.ljust(9, '0')
 
-    # Limpa caracteres inválidos para nome de arquivo
-    clean_name = re.sub(r'[<>:"/\\|?*]', '', product_name)
-    clean_name = clean_name[:80].strip()  # Limita tamanho
+    # Detecta prefixo do texto original se vier sujo (ex: "NW 3D LU MAR 123... [NOME]")
+    prefixo_u = str(product_name).upper()
+    
+    if "NW 3D LU" in prefixo_u:
+        prefixo = "NW 3D LU"
+    elif "SOCIAL" in prefixo_u:
+        prefixo = "SOCIAL"
+    elif "NW REVIEW" in prefixo_u:
+        prefixo = "NW REVIEW"
+    elif "NW LU" in prefixo_u:
+        prefixo = "NW LU"
+    else:
+        # Fallback para parâmetros
+        if com_lu == "REVIEW":
+            prefixo = "NW REVIEW"
+        elif "3D" in prefixo_u: # Fallback extra se for 3D sem LU no nome mas modo 3D
+            prefixo = "NW 3D LU"
+        else:
+            prefixo = "NW LU" if com_lu is True else "NW"
 
-    # Simplifica o nome do modelo (ex: puter/x-ai/grok-4-1-fast -> grok-4-1-fast)
+    # Agora limpa o nome para o arquivo
+    clean_name = re.sub(r'^(NW 3D LU|NW REVIEW|NW 3D|NW LU|NW|SOCIAL)\s+[A-Z]{3}\s+\d+\s+', '', product_name, flags=re.IGNORECASE)
+    clean_name = re.sub(r'[<>:"/\\|?*]', '', clean_name)
+    clean_name = clean_name[:80].strip()
+
     model_tag = ""
     if model_id:
         model_tag = model_id.split('/')[-1].upper()
         model_tag = f" [{model_tag}]"
 
-    # Define o prefixo correto com base no modo
-    prefixo_u = str(product_name).upper()
-    if com_lu == "REVIEW" or "REVIEW" in prefixo_u:
-        prefixo = "NW REVIEW"
-    elif "SOCIAL" in prefixo_u:
-        prefixo = "SOCIAL"
-    elif "3D" in prefixo_u:
-        prefixo = "NW 3D LU"
-    else:
-        prefixo = "NW LU" if com_lu is True else "NW"
-        
     return f"{prefixo} {selected_month} {clean_code} {clean_name}{model_tag}.docx"
 
 def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "", selected_month: str = "MAR", selected_date: str = None, model_id: str = "", com_lu: bool = True) -> tuple[bytes, str]:
@@ -183,10 +192,13 @@ def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "
     style.font.name = 'Tahoma'
     style.font.size = Pt(12)
 
-    # Extrai nome do produto se não fornecido
+    # Extrai a linha inteira de "Produto:" se não fornecido
     if not product_name:
-        product_name = _extract_product_name(roteiro_text)
-
+        match = re.search(r'Produto:\s*(.*)', roteiro_text)
+        if match:
+            product_name = match.group(1).strip()
+        else:
+            product_name = "[NOME DO PRODUTO]"
     # Parseia o roteiro
     blocks = _parse_roteiro(roteiro_text)
 

@@ -193,92 +193,56 @@ def parse_grouped_input(raw_input: str) -> list[dict]:
     return groups
 
 
-def detect_variants(fichas: dict[str, str]) -> dict:
+def detect_variants(dict_fichas: dict[str, dict]) -> dict:
     """
     Compara fichas técnicas de múltiplos SKUs do mesmo produto.
     Detecta o que varia entre eles (cor, tamanho, voltagem).
-    
-    Args:
-        fichas: dict de {codigo: texto_ficha}
-    
-    Returns:
-        {"tipo_variante": "cor|tamanho|voltagem|misto",
-         "variantes": [{"codigo": "...", "diferencial": "..."}],
-         "resumo": "Disponível em 3 cores: Preto, Branco e Cinza"}
     """
-    if len(fichas) <= 1:
-        return {"tipo_variante": None, "variantes": [], "resumo": ""}
+    if len(dict_fichas) <= 1:
+        return {"tipo_variante": None, "resumo": "", "detalhes": {}}
     
-    variantes = []
-    tipos_detectados = set()
-    
-    # Padrões de detecção
-    cor_pattern = re.compile(r'(?:cor|color|acabamento)[\s:]+([^\n,]+)', re.IGNORECASE)
-    tamanho_patterns = [
-        re.compile(r'(?:tamanho|dimensões?|medidas?)[\s:]+([^\n]+)', re.IGNORECASE),
-        re.compile(r'(\d+)\s*x\s*(\d+)\s*(?:x\s*(\d+))?\s*(?:cm|mm|m)', re.IGNORECASE),
-        re.compile(r'(?:solteiro|casal|queen|king|viúva)', re.IGNORECASE),
-    ]
-    volt_pattern = re.compile(r'(?:voltagem|tensão)[\s:]+([^\n,]+)', re.IGNORECASE)
-    titulo_pattern = re.compile(r'TÍTULO[\s:]+([^\n]+)', re.IGNORECASE)
-    
-    for codigo, ficha in fichas.items():
-        texto = ficha if isinstance(ficha, str) else str(ficha.get("text", ""))
-        diff_info = {"codigo": codigo}
+    sku_data = {}
+    for codigo, data in dict_fichas.items():
+        texto = data.get("text", "") if isinstance(data, dict) else str(data)
+        info = {"codigo": codigo}
         
-        # Detecta cor
-        cor_match = cor_pattern.search(texto)
-        if cor_match:
-            diff_info["cor"] = cor_match.group(1).strip()
-            tipos_detectados.add("cor")
+        # Extração precisa
+        v_match = re.search(r'VOLTAGEM:\s*([^\n]+)', texto, re.IGNORECASE)
+        if v_match: info["voltagem"] = v_match.group(1).strip()
+            
+        c_match = re.search(r'^- (?:Cor|Color)[\s:]+([^\n]+)', texto, re.MULTILINE | re.IGNORECASE)
+        if not c_match: c_match = re.search(r'CORES DISPONÍVEIS:\s*(?:Apenas\s+)?([^\n]+)', texto, re.IGNORECASE)
+        if c_match:
+            cor_val = c_match.group(1).strip()
+            # Filtro: se for muito longo ou contiver 'Pintura', geralmente não é o nome da cor isolado
+            if len(cor_val) < 30:
+                info["cor"] = cor_val
+
+        t_match = re.search(r'^- (?:Tamanho|Dimensões|Medidas|Peso)[\s:]+([^\n]+)', texto, re.MULTILINE | re.IGNORECASE)
+        if t_match: info["tamanho"] = t_match.group(1).strip()
+            
+        sku_data[codigo] = info
+
+    # Só é variante se for DIFERENTE
+    sets = {"cor": set(), "tamanho": set(), "voltagem": set()}
+    for info in sku_data.values():
+        for k in sets:
+            if k in info: sets[k].add(info[k])
         
-        # Detecta tamanho (via título ou ficha)
-        titulo_match = titulo_pattern.search(texto)
-        titulo = titulo_match.group(1) if titulo_match else ""
-        for tp in tamanho_patterns:
-            tam_match = tp.search(titulo) or tp.search(texto)
-            if tam_match:
-                diff_info["tamanho"] = tam_match.group(0).strip()
-                tipos_detectados.add("tamanho")
-                break
-        
-        # Detecta voltagem
-        volt_match = volt_pattern.search(texto)
-        if volt_match:
-            diff_info["voltagem"] = volt_match.group(1).strip()
-            tipos_detectados.add("voltagem")
-        
-        # Título pra referência
-        if titulo:
-            diff_info["titulo"] = titulo.strip()
-        
-        variantes.append(diff_info)
-    
-    # Determina tipo principal
-    if len(tipos_detectados) == 0:
-        tipo = "desconhecido"
-    elif len(tipos_detectados) == 1:
-        tipo = tipos_detectados.pop()
-    else:
-        tipo = "misto"
-    
-    # Gera resumo humano
-    resumo = ""
-    if "cor" in tipos_detectados:
-        cores = [v.get("cor", "?") for v in variantes if v.get("cor")]
-        if cores:
-            resumo = f"Disponível em {len(cores)} cores: {', '.join(cores)}"
-    elif "tamanho" in tipos_detectados:
-        tamanhos = [v.get("tamanho", "?") for v in variantes if v.get("tamanho")]
-        if tamanhos:
-            resumo = f"Disponível em {len(tamanhos)} tamanhos: {', '.join(tamanhos)}"
-    elif "voltagem" in tipos_detectados:
-        volts = [v.get("voltagem", "?") for v in variantes if v.get("voltagem")]
-        if volts:
-            resumo = f"Variantes de voltagem: {', '.join(volts)}"
-    
+    tipos = []
+    resumos = []
+    if len(sets["cor"]) > 1:
+        tipos.append("cor")
+        resumos.append(f"Disponível em {len(sets['cor'])} cores: {', '.join(sorted(list(sets['cor'])))}")
+    if len(sets["tamanho"]) > 1:
+        tipos.append("tamanho")
+        resumos.append(f"Disponível em {len(sets['tamanho'])} variações de tamanho/peso")
+    if len(sets["voltagem"]) > 1:
+        tipos.append("voltagem")
+        resumos.append(f"Disponível em {len(sets['voltagem'])} voltagens")
+
     return {
-        "tipo_variante": tipo,
-        "variantes": variantes,
-        "resumo": resumo
+        "tipo_variante": "|".join(tipos) if tipos else None,
+        "resumo": " / ".join(resumos) if resumos else "",
+        "detalhes": sku_data
     }
