@@ -4,30 +4,36 @@ REGRAS ESPECÍFICAS: MODO REVIEW (Destaque do Cliente)
 
 ESTRUTURA TÍPICA DA CENA REVIEW (As cenas do roteiro devem ter esse formato):
 - [Falas - texto contínuo]
-Imagem: [Fotos e vídeos reais dos compradores].
+Imagem: [Links de imagem/vídeo fornecidos no input que pertencem a este comentário].
 
-🚨 É ESTRITAMENTE PROIBIDO usar "Lettering:" nas cenas do miolo do produto. O roteiro no miolo deve ser puramente locução e imagem. O ÚNICO "Lettering:" permitido no roteiro inteiro é o da última cena de fechamento com a hashtag.
-🚨 IMPORTANTE: É PROIBIDO incluir numeração nas cenas, ou usar os rótulos "Texto:" ou "Cena:". Comece com "-" para a locução.
+🚨 **REGRA DE OURO DAS IMAGENS:** É ESTRITAMENTE PROIBIDO descrever a cena ou sugerir ações da Lu/Produtos (ex: "Lu sorrindo", "Close na TV"). O campo 'Imagem:' deve conter APENAS os links de imagem ou vídeo presentes no bloco de comentários do input que se referem ao assunto da cena. Se não houver link para um comentário específico, use o placeholder [LINK_DA_IMAGEM].
+
+🚨 **PROIBIÇÃO DE LETTERING:** É ESTRITAMENTE PROIBIDO usar "Lettering:" nas cenas do miolo do produto. O ÚNICO "Lettering:" permitido no roteiro inteiro é o da última cena de fechamento com a hashtag.
 
 **ABERTURA REVIEW (Total foco em Conteúdo Gerado pelo Usuário - UGC):**
-- ABERTURA COM PROVA SOCIAL (OBRIGATÓRIA): A primeira cena deve usar EXATAMENTE esta frase:
+- ABERTURA OBRIGATÓRIA: A primeira cena deve usar EXATAMENTE esta frase:
   "- Olha só o que os nossos clientes tão falando que mais gostaram nesse produto."
-- O objetivo deste modo mudou: ele não é um descritivo técnico, o fluxo de trabalho inteiro é focado nos comentários de usuários (UGC).
+- Meta de cenas: Gere entre 4 e 5 cenas no total (incluindo abertura e fechamento). Seja sintético e agrupe elogios semelhantes.
 
 **REGRAS DO MODO REVIEW (Síntese e Citações):**
-- SÍNTESE DE AVALIAÇÕES: Você receberá um bloco com "Avaliações/Comentários". Leia e identifique os padrões. O que mais elogiaram? O Motor? O Tamanho? A Rapidez?
+- SÍNTESE DE AVALIAÇÕES: Você receberá um bloco com "Avaliações/Comentários". Cada um pode conter um Link (URL). Agrupe os comentários que falam do mesmo assunto (ex: Imagem, Som, Facilidade) e use o link correspondente naquela cena.
 - USE ESTRUTURAS DE VALIDAÇÃO: 
   ✅ "A maioria elogiou a facilidade de montagem..."
-  ✅ "Os clientes destacaram que a bateria dura mesmo o dia todo..."
-  ✅ "E pra quem tinha dúvida se fazia barulho, o pessoal garantiu que é super silencioso."
+  ✅ "O pessoal destacou que o som é bem alto..."
+  ✅ "E quem tinha dúvida se fazia barulho, o pessoal garantiu que é super silencioso."
+- REGRAS DE KIT/COMPOSIÇÃO: Se o produto for um conjunto (ex: Aparelho de Jantar), cite a composição exata no miolo (ex: "São 4 Pratos rasos, 4 fundos..."). Isso gera confiança.
 - NÃO CITE NOMES: Não diga "O João elogiou...", diga "Os clientes...", "Quem comprou...", "O pessoal...".
-- USE ASPAS INTELIGENTES: Se houver uma frase excelente nos comentários fornecidos, você pode usar uma aspa na locução. Ex: "Como uma cliente disse, 'é a melhor panela que já tive'."
-- MIOLO PRÁTICO: Diferente do NW Padrão, o Review não lista specs sequenciais, ele foca no USO DIÁRIO relatado.
-- FOCO NAS DORES RESOLVIDAS: Transforme um elogio vago ("Muito boa") na feature que causou isso ("A potência de 1500W faz o fry ficar pronto rápido").
-- MODO REVIEW SEM LU: NUNCA sugira a presença de humanos nas imagens descritivas. A câmera mostra apenas close no detalhe elogiado, ou tela do celular mostrando as avaliações estreladas.
-- FECHAMENTO FIXO (OBRIGATÓRIO): A última cena do roteiro deve usar EXATAMENTE esta frase e lettering:
+- TONS E CONECTIVOS: Use "Já o...", "Ah, e...", "E pra quem...". Pule explicações técnicas longas.
+
+**FONÉTICA E TERMOS (CALIBRADO):**
+- Google TV -> (gúgou tiví)
+- Wi-Fi Dual Band -> (duól bênd)
+- 820ml -> (oitocentos e vinte ême ele)
+- apps -> (éps)
+
+**FECHAMENTO FIXO (OBRIGATÓRIO):**
+- A última cena do roteiro deve usar EXATAMENTE esta frase e lettering:
   Locução: "- Agora que já sabe mais sobre esse produto, já pode escolher o seu!"
-  ❌ É PROIBIDO usar o fechamento clássico do NW ("..., tem no Magalu!") na locução do modo Review. NUNCA misture os CTAs.
   Lettering: #TemNoMagalu
 
 - AO FINAL DO ROTEIRO (após o fechamento), ADICIONE UMA SEÇÃO: 'COMENTÁRIOS USADOS' listando os textos originais que você utilizou para compor o roteiro.
