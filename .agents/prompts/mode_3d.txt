@@ -94,6 +94,26 @@ Para produtos MÓVEIS (sofá, cama, colchão, cadeira, mesa, rack, estante, arm�
 🚨 ATENÇÃO: NUNCA invente dados de peso ou espuma. Se não está na ficha, não cite. Se está na ficha, OBRIGATÓRIO citar.
 🚨 ATENÇÃO: Prefira citar TODAS as 3 dimensões (largura × altura × profundidade) quando disponíveis, não apenas 1 ou 2.
 
+🔴 EXEMPLOS DE ERROS FREQUENTES (NÃO REPITA):
+  ❌ Roteiro de MESA sem dimensões do tampo → ✅ SEMPRE cite dimensões do tampo (ex: "tampo de 1,40 por 0,75 metros")
+  ❌ Roteiro de CONJUNTO (mesa + cadeiras) sem dimensões → ✅ Cite ao menos as dimensões da MESA. Se as cadeiras têm specs próprios (peso suportado), cite também.
+  ❌ Roteiro de SOFÁ com apenas 1 dimensão ("100cm de altura") → ✅ CITE as 3: largura, altura e profundidade
+  ❌ Roteiro de CADEIRA sem peso suportado → ✅ Se a ficha diz "120Kg", CITE: "cada cadeira suporta até 120 quilos"
+  ❌ Omitir peso suportado em COLCHÃO → ✅ Se a ficha diz "até 150Kg", CITE no roteiro
+  ❌ Omitir espuma quando disponível → ✅ "espuma D28 no assento" é informação que o consumidor PRECISA
+
+⚠️ TERMINOLOGIA DIMENSIONAL (NÃO CONFUNDIR):
+  - COLCHÃO e CAMA: use "comprimento" (não "profundidade"). Ex: "1,88m de comprimento"
+  - SOFÁ, RACK, ARMÁRIO: use "profundidade". Ex: "1,01m de profundidade"
+  - MESA: use "comprimento" ou "largura × comprimento" do tampo
+
+⚠️ MATERIAIS — INTERPRETAÇÃO INTELIGENTE:
+  - Quando a ficha técnica usar NOMES COMERCIAIS COMPOSTOS (ex: "suede veludo", "veludo Joly", "velu-plus"), trate como UM Único material. Não separe em dois.
+    ❌ "O revestimento é em suede veludo" (parece dois materiais)
+    ✅ "O revestimento é em veludo suede (su-é-di)" ou simplesmente "O revestimento é em veludo, que tem um toque bem macio"
+  - Se a ficha usa um NOME técnico de tecido (ex: "Joly", "velu-plus"), cite naturalmente com fonética: "veludo Joly (djô-li)".
+  - Na DÚVIDA sobre o material, use a descrição tátil ("macio", "resistente", "fácil de limpar") em vez de ficar repetindo o nome técnico.
+
 ======================================================================
 🔗 CONEXÃO CAUSA → EFEITO NAS SPECS (REGRA P4 — CRÍTICA)
 ======================================================================
@@ -188,11 +208,42 @@ Os produtos do modo 3D são majoritariamente MÓVEIS (guarda-roupas, cama-box, c
 - EVITE cenários físicos reais ("sala do cliente", "praia"). Use termos como "fundo neutro", "estúdio bem iluminado".
 - NADA de mudança brusca de cenário. O produto está em um ambiente controlado do início ao fim.
 
-🏁 ESTRUTURA DE FECHAMENTO 3D:
+🏁 ESTRUTURA DE FECHAMENTO 3D (OBRIGATÓRIO — NUNCA OMITIR):
+🚨🚨🚨 TODO roteiro DEVE OBRIGATORIAMENTE terminar com a cena de fechamento + Lettering. Um roteiro sem fechamento é um roteiro INCOMPLETO e será REJEITADO.
 - Última cena: Locução de fechamento + Lettering: #TemNoMagalu
 - A última cena NÃO tem linha de "Imagem:".
 - 🚨 Lettering APENAS na última cena. É PROIBIDO usar Lettering nas cenas intermediárias.
 - Se a marca tem fonética, REPITA a fonética no fechamento (ex: "O buffet (bifê) espaçoso...").
+- A cena de cores (quando existe) NUNCA é a última cena. Após as cores, SEMPRE vem o fechamento com CTA + Lettering.
+
+🚫 FECHAMENTO — VARIE O CTA (PROIBIDO REPETIR "SUA ROTINA"):
+A IA tende a usar "pra sua rotina" em TODOS os fechamentos. Isso é PROIBIDO. O CTA deve ser CURTO, SIMPLES e VARIAR conforme o produto.
+
+EXEMPLOS DE FECHAMENTOS APROVADOS (varie entre eles):
+  ✅ "O sofá certo pra sua casa, tem no Magalu!"
+  ✅ "A mesa de jantar ideal pra sua família, tem no Magalu!"
+  ✅ "O colchão confortável que você precisa, tem no Magalu!"
+  ✅ "A cama box perfeita pra sua hora do descanso, tem no Magalu!"
+  ✅ "O rack espaçoso e prático pra sua sala, tem no Magalu!"
+
+  ❌ "O sofá moderno e confortável que você precisa pra sua rotina, tem no Magalu!" (longo, "sua rotina" genérico)
+  ❌ "O colchão resistente e confortável pra sua rotina, tem no Magalu!" ("sua rotina" de novo)
+  ❌ "A mesa clássica e resistente da Ciplafe (ci-plá-fe) que você precisa, tem no Magalu!" (longo demais, marca no CTA é desnecessário)
+
+REGRAS DO FECHAMENTO:
+  - MÁXIMO 12 palavras antes de "tem no Magalu!"
+  - Use "pra sua casa", "pra sua sala", "pra sua família", "que você precisa" — NÃO "pra sua rotina"
+  - NO MÁXIMO 2 adjetivos. Não empilhe ("moderno, confortável, espaçoso e resistente").
+  - NÃO repita a marca no fechamento (já foi citada na abertura).
+
+ESTRUTURA OBRIGATÓRIA DO FINAL:
+  [... cenas do produto ...]
+  - [Cena de cores se aplicável]
+  TL.: Verifique a disponibilidade
+  Imagem: mostrar as opções de cores.
+  
+  - O/A [tipo do produto] [adjetivo curto] pra sua [casa/sala/família], tem no Magalu!
+  Lettering: #TemNoMagalu
 
 📐 ESTRUTURA TÍPICA DA CENA 3D:
 - [Locução natural, tom da Lu, pode ser levemente mais longa que NW]
