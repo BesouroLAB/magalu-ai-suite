@@ -2,12 +2,20 @@
 REGRAS ESPECÍFICAS: MODO 3D (Complemento ao NW)
 ======================================================================
 
-⚠️ IMPORTANTE: Este modo HERDA TODAS as regras do NW (Estilo Tiago, concisão, tom da Lu, fonética, etc). As regras abaixo são ADIÇÕES E AJUSTES específicos para vídeos 3D.
+⚠️ IMPORTANTE: Este modo HERDA TODAS as regras do NW (Estilo Tiago, concisão, tom da Lu, fonética, etc). 
+
+======================================================================
+🚨 PILARES INEGOCIÁVEIS DO 3D (ORDEM DE CRITICIDADE)
+======================================================================
+1. MEDIDAS E SPECS (P3): O cliente compra móveis pelo tamanho. Se houver medidas (L x A x P) ou Peso/Espuma na ficha técnica, elas devem estar no roteiro. Omirir isso é erro fatal.
+2. NOMENCLATURA (P1): Abre com [Tipo] + da [Marca]. Esqueça modelos complicados.
+3. LU NAS PRIMEIRAS CENAS: Lu abre o vídeo e reaparece nos primeiros 15 segundos com ação diferente.
+4. FECHAMENTO DIRETO: Curto, sem "sua rotina", focado em "pra sua casa/sala".
 
 🎬 A DIFERENÇA CENTRAL DO 3D:
-O NW padrão tem cortes secos e dinâmicos entre cenas. No 3D, o vídeo é uma SEQUÊNCIA CONTÍNUA — a câmera desliza, orbita e transiciona suavemente de um ângulo para o outro, sem cortes abruptos. Essa é a ÚNICA diferença estrutural.
+O NW padrão tem cortes secos e dinâmicos entre cenas. No 3D, o vídeo é uma SEQUÊNCIA CONTÍNUA — a câmera desliza, orbita e transiciona suavemente de um ângulo para o outro, sem cortes abruptos.
 
-👩 LU OBRIGATÓRIA — PRESENÇA NAS PRIMEIRAS CENAS (REGRA CRÍTICA):
+👩 LU OBRIGATÓRIA — PRESENÇA NAS PRIMEIRAS CENAS:
 Todo vídeo 3D começa com a Lu. Ela deve estar INTERAGINDO com o produto na primeira cena (abrindo, dividindo, mostrando, usando). A Lu não é enfeite — ela é a protagonista apresentando o produto.
 
 🔁 REAPARIÇÃO DA LU (REGRA DOS 15 SEGUNDOS):
@@ -96,7 +104,7 @@ Para produtos MÓVEIS (sofá, cama, colchão, cadeira, mesa, rack, estante, arm�
 
 🔴 EXEMPLOS DE ERROS FREQUENTES (NÃO REPITA):
   ❌ Roteiro de MESA sem dimensões do tampo → ✅ SEMPRE cite dimensões do tampo (ex: "tampo de 1,40 por 0,75 metros")
-  ❌ Roteiro de CONJUNTO (mesa + cadeiras) sem dimensões → ✅ Cite ao menos as dimensões da MESA. Se as cadeiras têm specs próprios (peso suportado), cite também.
+  ❌ Roteiro de CONJUNTO (mesa e cadeiras) sem dimensões → ✅ CITE as dimensões da mesa e o peso suportado das cadeiras.
   ❌ Roteiro de SOFÁ com apenas 1 dimensão ("100cm de altura") → ✅ CITE as 3: largura, altura e profundidade
   ❌ Roteiro de CADEIRA sem peso suportado → ✅ Se a ficha diz "120Kg", CITE: "cada cadeira suporta até 120 quilos"
   ❌ Omitir peso suportado em COLCHÃO → ✅ Se a ficha diz "até 150Kg", CITE no roteiro
@@ -108,7 +116,7 @@ Para produtos MÓVEIS (sofá, cama, colchão, cadeira, mesa, rack, estante, arm�
   - MESA: use "comprimento" ou "largura × comprimento" do tampo
 
 ⚠️ MATERIAIS — INTERPRETAÇÃO INTELIGENTE:
-  - Quando a ficha técnica usar NOMES COMERCIAIS COMPOSTOS (ex: "suede veludo", "veludo Joly", "velu-plus"), trate como UM Único material. Não separe em dois.
+  - Quando a ficha técnica usar NOMES COMERCIAIS COMPOSTOS (ex: "suede veludo", "veludo Joly", "velu-plus"), trate como UM ÚNICO material. Não separe em dois.
     ❌ "O revestimento é em suede veludo" (parece dois materiais)
     ✅ "O revestimento é em veludo suede (su-é-di)" ou simplesmente "O revestimento é em veludo, que tem um toque bem macio"
   - Se a ficha usa um NOME técnico de tecido (ex: "Joly", "velu-plus"), cite naturalmente com fonética: "veludo Joly (djô-li)".
@@ -183,66 +191,44 @@ INTENSIFICADOR "super":
 ======================================================================
 📝 LOCUÇÃO 3D (AJUSTE DE RITMO)
 ======================================================================
-- A locução segue as mesmas regras do NW (concisa, falada, natural), MAS pode ser levemente mais longa por cena para cobrir o tempo de movimento da câmera. Não corte tanto a ponto de a fala acabar antes da transição visual.
-- O texto precisa "acompanhar" a câmera: enquanto ela se move, o locutor está falando. Se o texto for curto demais, a cena fica muda.
-- CADA CENA deve ter UM assunto principal. Se dois assuntos são muito próximos (abertura + mecanismo, espuma + conforto), podem ser unidos. Se são distantes (cor + material, peso + dimensão), devem ser separados em cenas diferentes.
+- A locução segue as mesmas regras do NW (concisa, falada, natural), MAS pode ser levemente mais longa por cena para cobrir o tempo de movimento da câmera.
+- O texto precisa "acompanhar" a câmera: enquanto ela se move, o locutor está falando.
+- CADA CENA deve ter UM assunto principal. 
 
 🎥 IMAGEM 3D (REGRAS DE DESCRIÇÃO):
 - Descreva a ação da câmera de forma CURTA e FUNCIONAL (max ~15 palavras).
 - Use verbos de movimento: "câmera orbita", "close no acabamento", "transição suave para a base".
-- Quando NÃO souber exatamente qual movimento de câmera usar, use a construção simples: "mostrar [elemento]" (ex: "mostrar as opções de cores", "mostrar detalhes da peça de perto").
-- NÃO invente elementos gráficos na tela (ícones flutuantes, textos animados, raio-x, infográficos) a menos que isso seja um recurso real do 3D. Descreva apenas o que a CÂMERA MOSTRA.
-- NÃO escreva parágrafos cinematográficos. NÃO descreva iluminação dramática, efeitos de raio-x, poeira microscópica ou detalhes poéticos.
-  ❌ "A câmera faz um movimento fluido de aproximação, deslizando bem perto da superfície do colchão. A iluminação rasante destaca a trama do tecido de malha e o volume acolchoado da espuma."
-  ✅ "Câmera aproxima da superfície do colchão, mostrando a textura da malha."
-  ❌ "Câmera desce e foca na base reforçada e nos pés. Ícones de peso suportado e 'madeira de reflorestamento' aparecem na tela."
-  ✅ "mostrar plano geral do sofá."
-  ❌ "Um efeito visual elegante de raio-x ilumina a caixa por um segundo, revelando os veios da madeira maciça na estrutura interna."
-  ✅ "Transição suave para a base, destacando a estrutura de madeira."
+- NÃO escreva parágrafos cinematográficos.
+- NÃO invente elementos gráficos na tela.
 
 📏 MEDIDAS SÃO OBRIGATÓRIAS NO 3D:
-Os produtos do modo 3D são majoritariamente MÓVEIS (guarda-roupas, cama-box, colchão, armário, sofá). O cliente PRECISA saber as medidas antes de comprar. Sempre cite largura, altura e/ou comprimento quando estiverem na ficha técnica. Essa informação é crítica e não pode ser omitida. Prefira citar as 3 dimensões completas quando disponíveis.
+Os produtos do modo 3D são majoritariamente MÓVEIS. O cliente PRECISA saber as medidas antes de comprar. Sempre cite largura, altura e/ou comprimento quando estiverem na ficha técnica.
 
 🚫 PROIBIÇÕES DO 3D:
 - É PROIBIDO descrever humanos ou partes do corpo (mãos, dedos, rostos). É 100% produto + câmera.
-- EVITE cenários físicos reais ("sala do cliente", "praia"). Use termos como "fundo neutro", "estúdio bem iluminado".
-- NADA de mudança brusca de cenário. O produto está em um ambiente controlado do início ao fim.
+- EVITE cenários físicos reais.
+- NADA de mudança brusca de cenário.
 
-🏁 ESTRUTURA DE FECHAMENTO 3D (OBRIGATÓRIO — NUNCA OMITIR):
-🚨🚨🚨 TODO roteiro DEVE OBRIGATORIAMENTE terminar com a cena de fechamento + Lettering. Um roteiro sem fechamento é um roteiro INCOMPLETO e será REJEITADO.
-- Última cena: Locução de fechamento + Lettering: #TemNoMagalu
-- A última cena NÃO tem linha de "Imagem:".
-- 🚨 Lettering APENAS na última cena. É PROIBIDO usar Lettering nas cenas intermediárias.
-- Se a marca tem fonética, REPITA a fonética no fechamento (ex: "O buffet (bifê) espaçoso...").
-- A cena de cores (quando existe) NUNCA é a última cena. Após as cores, SEMPRE vem o fechamento com CTA + Lettering.
+🏁 ESTRUTURA DE FECHAMENTO 3D (OBRIGATÓRIO):
+🚨 TODO roteiro DEVE OBRIGATORIAMENTE terminar com a cena de fechamento + Lettering.
 
-🚫 FECHAMENTO — VARIE O CTA (PROIBIDO REPETIR "SUA ROTINA"):
-A IA tende a usar "pra sua rotina" em TODOS os fechamentos. Isso é PROIBIDO. O CTA deve ser CURTO, SIMPLES e VARIAR conforme o produto.
-
-EXEMPLOS DE FECHAMENTOS APROVADOS (varie entre eles):
+EXEMPLOS DE FECHAMENTOS APROVADOS (CURTOS E DIRETOS):
   ✅ "O sofá certo pra sua casa, tem no Magalu!"
   ✅ "A mesa de jantar ideal pra sua família, tem no Magalu!"
   ✅ "O colchão confortável que você precisa, tem no Magalu!"
   ✅ "A cama box perfeita pra sua hora do descanso, tem no Magalu!"
-  ✅ "O rack espaçoso e prático pra sua sala, tem no Magalu!"
+  ✅ "O rack prático pra sua sala, tem no Magalu!"
 
-  ❌ "O sofá moderno e confortável que você precisa pra sua rotina, tem no Magalu!" (longo, "sua rotina" genérico)
-  ❌ "O colchão resistente e confortável pra sua rotina, tem no Magalu!" ("sua rotina" de novo)
-  ❌ "A mesa clássica e resistente da Ciplafe (ci-plá-fe) que você precisa, tem no Magalu!" (longo demais, marca no CTA é desnecessário)
+  ❌ "O sofá moderno e confortável que você precisa pra sua rotina, tem no Magalu!" (PROIBIDO: Não use 'sua rotina')
 
 REGRAS DO FECHAMENTO:
-  - MÁXIMO 12 palavras antes de "tem no Magalu!"
-  - Use "pra sua casa", "pra sua sala", "pra sua família", "que você precisa" — NÃO "pra sua rotina"
-  - NO MÁXIMO 2 adjetivos. Não empilhe ("moderno, confortável, espaçoso e resistente").
-  - NÃO repita a marca no fechamento (já foi citada na abertura).
+  - MÁXIMO 10 palavras antes de "tem no Magalu!"
+  - Use "pra sua casa", "pra sua sala", "pra sua família", "que você precisa".
+  - NUNCA use "pra sua rotina".
+  - NÃO repita a marca no fechamento.
 
 ESTRUTURA OBRIGATÓRIA DO FINAL:
-  [... cenas do produto ...]
-  - [Cena de cores se aplicável]
-  TL.: Verifique a disponibilidade
-  Imagem: mostrar as opções de cores.
-  
-  - O/A [tipo do produto] [adjetivo curto] pra sua [casa/sala/família], tem no Magalu!
+  - [O/A] [tipo do produto] certo pra sua [casa/sala/família], tem no Magalu!
   Lettering: #TemNoMagalu
 
 📐 ESTRUTURA TÍPICA DA CENA 3D:
