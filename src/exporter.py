@@ -134,7 +134,7 @@ def _parse_roteiro(roteiro_text: str) -> list[dict]:
 
 
 def generate_filename(code: str, product_name: str, selected_month: str = "MAR", model_id: str = "", com_lu: bool = True) -> str:
-    """Gera nome do arquivo no padrão: NW [LU] {selected_month} {code} {product_name} [{model}].docx"""
+    """Gera nome do arquivo no padrão: NW LU {selected_month} {code} {product_name} [{model}].docx"""
     # Garante que o código tenha 9 dígitos (preenche com 0 à direita se necessário)
     clean_code = str(code).strip()
     if clean_code and len(clean_code) < 9:
@@ -161,9 +161,7 @@ def generate_filename(code: str, product_name: str, selected_month: str = "MAR",
             prefixo = "NW LU" if com_lu is True else "NW"
 
     # Agora limpa o nome para o arquivo
-    clean_name = re.sub(r'^(NW 3D LU|NW REVIEW|NW 3D|NW LU|NW|SOCIAL)\s+[A-Z]{3}\s+\d+\s+', '', product_name, flags=re.IGNORECASE)
-    clean_name = re.sub(r'[<>:"/\\|?*]', '', clean_name)
-    clean_name = clean_name[:80].strip()
+    clean_name = _clean_product_name(product_name)
 
     model_tag = ""
     if model_id:
@@ -172,9 +170,24 @@ def generate_filename(code: str, product_name: str, selected_month: str = "MAR",
 
     return f"{prefixo} {selected_month} {clean_code} {clean_name}{model_tag}.docx"
 
+
+def _clean_product_name(raw_name: str) -> str:
+    """Limpa o nome do produto removendo prefixos de taxonomia, códigos e caracteres inválidos."""
+    clean_name = re.sub(r'^(NW 3D LU|NW REVIEW|NW 3D|NW LU|NW|SOCIAL)\s+[A-Z]{3}\s+\d+\s+', '', raw_name, flags=re.IGNORECASE)
+    # Remove placeholder [NOME DO PRODUTO]
+    clean_name = re.sub(r'\[?NOME DO PRODUTO\]?', '', clean_name, flags=re.IGNORECASE)
+    # Remove "TÍTULO DO PRODUTO:" ou similares da IA
+    clean_name = re.sub(r'^\**TÍTULO( DO PRODUTO)?:?\**\s*', '', clean_name, flags=re.IGNORECASE)
+    # Remove caracteres inválidos em nomes de arquivo
+    clean_name = re.sub(r'[<>:"/\\|?*]', '', clean_name)
+    clean_name = clean_name[:80].strip()
+    return clean_name
+
+
 def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "", selected_month: str = "MAR", selected_date: str = None, model_id: str = "", com_lu: bool = True) -> tuple[bytes, str]:
     """
     Gera um documento Word (.docx) com a formatação de referência.
+    O cabeçalho interno do DOCX é idêntico ao nome do arquivo.
 
     Args:
         roteiro_text: Texto completo do roteiro gerado pela IA
@@ -192,13 +205,18 @@ def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "
     style.font.name = 'Tahoma'
     style.font.size = Pt(12)
 
-    # Extrai a linha inteira de "Produto:" se não fornecido
+    # Extrai nome do produto se não fornecido
     if not product_name:
-        match = re.search(r'Produto:\s*(.*)', roteiro_text)
-        if match:
-            product_name = match.group(1).strip()
-        else:
-            product_name = "[NOME DO PRODUTO]"
+        product_name = _extract_product_name(roteiro_text)
+
+    # Gera o filename PRIMEIRO — ele é a fonte de verdade para a nomenclatura
+    filename = generate_filename(code, product_name, selected_month, model_id, com_lu=com_lu)
+    
+    # O nome do cabeçalho deve ser EXATAMENTE o mesmo do filename (sem .docx e sem model tag)
+    header_product_line = filename.replace(".docx", "")
+    # Remove model tag do cabeçalho (ex: " [GEMINI-3-FLASH-PREVIEW]")
+    header_product_line = re.sub(r'\s*\[[A-Z0-9._-]+\]\s*$', '', header_product_line).strip()
+
     # Parseia o roteiro
     blocks = _parse_roteiro(roteiro_text)
 
@@ -206,18 +224,11 @@ def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "
     has_header = any(b["type"] == "header" for b in blocks)
 
     if not has_header:
-        # Gera cabeçalho padrão
+        # Gera cabeçalho padrão — linha Produto: usa a mesma string do filename
         header_date = selected_date if selected_date else datetime.now(pytz.timezone('America/Sao_Paulo')).strftime('%d/%m/%y')
         _add_header_line(doc, "Cliente: Magalu")
         _add_header_line(doc, f"Roteirista: Tiago Fernandes - Data: {header_date}")
-        
-        # Determina o prefixo para o cabeçalho
-        if com_lu == "REVIEW" or "REVIEW" in str(product_name).upper():
-            prefixo = "NW REVIEW"
-        else:
-            prefixo = "NW LU" if com_lu is True else "NW"
-            
-        _add_header_line(doc, f"Produto: {prefixo} {selected_month} {code} {product_name}")
+        _add_header_line(doc, f"Produto: {header_product_line}")
         _add_separator(doc)
         _add_empty_line(doc)
 
@@ -231,6 +242,9 @@ def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "
             if "Data:" in text:
                 now = datetime.now(pytz.timezone('America/Sao_Paulo'))
                 text = re.sub(r'Data:\s*[\d/]+', f"Data: {now.strftime('%d/%m/%y')}", text)
+            # Força a linha Produto: a usar a nomenclatura unificada
+            if text.strip().startswith("Produto:"):
+                text = f"Produto: {header_product_line}"
             _add_header_line(doc, text)
         elif btype == "separator":
             _add_separator(doc)
@@ -250,9 +264,8 @@ def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "
     doc.save(buffer)
     buffer.seek(0)
 
-    filename = generate_filename(code, product_name, selected_month, model_id, com_lu=com_lu)
-
     return buffer.getvalue(), filename
+
 
 
 def format_for_display(roteiro_text: str) -> str:

@@ -406,11 +406,24 @@ class RoteiristaAgent:
             elif variantes_info.get('tipo_variante') == 'tamanho':
                 variantes_str += "- REGRA: Mencione naturalmente que está disponível em outros tamanhos (ex: 'Tem em solteiro e casal').\n"
 
+        # Extrai o título do produto da ficha técnica para ancorar o prompt
+        import re as re_local
+        titulo_extraido = ""
+        titulo_match = re_local.search(r'TÍTULO:\s*(.+)', text_data)
+        if titulo_match:
+            titulo_extraido = titulo_match.group(1).strip()
+
         final_prompt = (
             f"**CONTEXTO ESTRATÉGICO E APRENDIZADOS DINÂMICOS (SUPABASE):**\n"
             f"{context}\n\n"
             f"**MODO DE TRABALHO:** {modo_trabalho}\n"
             f"{diretriz_modo}\n\n"
+            f"🚨 **ANCORAGEM DE PRODUTO (ANTI-TROCA — REGRA MÁXIMA):**\n"
+            f"- O código do produto é: **{cod_str}**\n"
+            f"- O título confirmado da ficha técnica é: **{titulo_extraido if titulo_extraido else 'Ver ficha abaixo'}**\n"
+            f"- Você DEVE escrever o roteiro EXCLUSIVAMENTE sobre este produto.\n"
+            f"- É ESTRITAMENTE PROIBIDO gerar roteiro sobre qualquer outro produto.\n"
+            f"- No cabeçalho, substitua [NOME DO PRODUTO] pelo nome REAL extraído da ficha técnica abaixo.\n\n"
             f"**FONTE ÚNICA DE VERDADE (FICHA TÉCNICA):**\n"
             f"{text_data}\n\n"
             f"{variantes_str}"
@@ -517,8 +530,14 @@ class RoteiristaAgent:
                             # Tenta detectar e remover qualquer prefixo NW / NW LU / NW 3D etc até chegar no nome real
                             nome_purificado = re.sub(r'^(NW\s*(3D)?\s*(LU)?\s*(REVIEW)?\s*[A-Z]{3}\s*\d+\s+)', '', prod_str)
                             
+                            # Se nome_purificado está vazio ou é genérico, usa o titulo_extraido da ficha técnica
+                            if not nome_purificado or nome_purificado == "[NOME DO PRODUTO]" or len(nome_purificado) < 3:
+                                nome_purificado = titulo_extraido if titulo_extraido else nome_purificado
+                            
                             if "3D" in modo_trabalho.upper():
                                 prefixo_taxonomia = "NW 3D LU"
+                            elif "REVIEW" in modo_trabalho.upper():
+                                prefixo_taxonomia = "NW REVIEW"
                             else:
                                 prefixo_taxonomia = "NW LU" if com_lu else "NW"
                             linhas[i+2] = f"Produto: {prefixo_taxonomia} {mes} {cod_s}{sub_s} {nome_purificado}{vid_s}"

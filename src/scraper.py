@@ -18,7 +18,14 @@ SUA TAREFA:
 2. Encontre a página oficial no site magazineluiza.com.br.
 3. Extraia os dados técnicos reais desse produto.
 
+🚨 REGRA ANTI-TROCA DE PRODUTO (CRÍTICO):
+- Você DEVE encontrar o produto EXATO que corresponde ao código "{code}".
+- Se o código não aparecer na URL ou na página encontrada, responda: "ERRO: Produto não encontrado ou dados indisponíveis."
+- NÃO substitua por um produto parecido, similar ou da mesma marca. É ESTE código ou ERRO.
+- Se a pesquisa retornar vários resultados, escolha APENAS o que contém exatamente o código "{code}".
+
 **FORMATO DE SAÍDA OBRIGATÓRIO:**
+CÓDIGO CONFIRMADO: {code}
 TÍTULO: [Nome completo do produto]
 MARCA: [Fabricante]
 LINHA/NOME COMERCIAL: [Nome de marketing da linha, ex: "UltraGear", "Galaxy M53", "Soundgear Clips", "Force". Se não houver, escreva "N/A"]
@@ -104,16 +111,21 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None) -> dict:
         
         if not result_text or len(result_text.strip()) < 50 or "ERRO:" in result_text:
             print(f"[SCRAPER] Grounding falhou para {code}. Tentando Prompt Direto...")
-            # Fallback 1: Prompt Direto sem Tools
+            # Fallback 1: Prompt Direto sem Tools — COM ANCORAGEM DE CÓDIGO
+            fallback_prompt = (
+                f"Extraia a ficha técnica do produto do Magazine Luiza com o código EXATO: {code}.\n"
+                f"🚨 NÃO retorne dados de outro produto. Se não souber dados desse código específico, retorne apenas 'FALHA_TOTAL'.\n"
+                f"Comece a resposta com: CÓDIGO CONFIRMADO: {code}"
+            )
             try:
                 response_fallback = client.models.generate_content(
                     model='gemini-2.5-flash',
-                    contents=f"Extraia a ficha técnica do produto Magalu código {code}. Se não souber, retorne apenas 'FALHA_TOTAL'.",
+                    contents=fallback_prompt,
                 )
             except:
                 response_fallback = client.models.generate_content(
                     model='gemini-3.1-pro-preview',
-                    contents=f"Extraia a ficha técnica do produto Magalu código {code}. Se não souber, retorne apenas 'FALHA_TOTAL'.",
+                    contents=fallback_prompt,
                 )
             result_text = get_text_safe(response_fallback)
 
@@ -132,12 +144,12 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None) -> dict:
                     try:
                         res_url = client.models.generate_content(
                             model='gemini-2.5-flash',
-                            contents=f"Resuma os dados técnicos deste produto Magalu a partir do conteúdo bruto abaixo:\n\n{text_content[:15000]}"
+                            contents=f"Resuma os dados técnicos deste produto Magalu (código {code}) a partir do conteúdo bruto abaixo. Comece com CÓDIGO CONFIRMADO: {code}\n\n{text_content[:15000]}"
                         )
                     except:
                         res_url = client.models.generate_content(
                             model='gemini-3.1-pro-preview',
-                            contents=f"Resuma os dados técnicos deste produto Magalu a partir do conteúdo bruto abaixo:\n\n{text_content[:15000]}"
+                            contents=f"Resuma os dados técnicos deste produto Magalu (código {code}) a partir do conteúdo bruto abaixo. Comece com CÓDIGO CONFIRMADO: {code}\n\n{text_content[:15000]}"
                         )
                     result_text = get_text_safe(res_url)
             except Exception as e:
