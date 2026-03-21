@@ -528,7 +528,8 @@ class RoteiristaAgent:
                             # Remove prefixos antigos para evitar duplicação em edições sucessivas
                             prod_str = linhas[i+2].replace('**', '').replace('Produto:', '').strip()
                             # Tenta detectar e remover qualquer prefixo NW / NW LU / NW 3D etc até chegar no nome real
-                            nome_purificado = re.sub(r'^(NW\s*(3D)?\s*(LU)?\s*(REVIEW)?\s*[A-Z]{3}\s*\d+\s+)', '', prod_str)
+                            # Modificado para capturar múltiplos códigos seguidos (ex: 233392800 233392900)
+                            nome_purificado = re.sub(r'^(NW\s*(3D)?\s*(LU)?\s*(REVIEW)?\s*[A-Z]{3}\s*(?:\d{5,}\s*)+)', '', prod_str, flags=re.IGNORECASE).strip()
                             
                             # Se nome_purificado está vazio ou é genérico, usa o titulo_extraido da ficha técnica
                             if not nome_purificado or nome_purificado == "[NOME DO PRODUTO]" or len(nome_purificado) < 3:

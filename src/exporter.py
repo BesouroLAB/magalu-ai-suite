@@ -173,7 +173,7 @@ def generate_filename(code: str, product_name: str, selected_month: str = "MAR",
 
 def _clean_product_name(raw_name: str) -> str:
     """Limpa o nome do produto removendo prefixos de taxonomia, códigos e caracteres inválidos."""
-    clean_name = re.sub(r'^(NW 3D LU|NW REVIEW|NW 3D|NW LU|NW|SOCIAL)\s+[A-Z]{3}\s+\d+\s+', '', raw_name, flags=re.IGNORECASE)
+    clean_name = re.sub(r'^(NW 3D LU|NW REVIEW|NW 3D|NW LU|NW|SOCIAL)\s+[A-Z]{3}\s+(?:\d{5,}\s*)+', '', raw_name, flags=re.IGNORECASE).strip()
     # Remove placeholder [NOME DO PRODUTO]
     clean_name = re.sub(r'\[?NOME DO PRODUTO\]?', '', clean_name, flags=re.IGNORECASE)
     # Remove "TÍTULO DO PRODUTO:" ou similares da IA
