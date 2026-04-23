@@ -6,11 +6,11 @@ ESTRUTURA TÍPICA DA CENA SOCIAL (As cenas do roteiro devem ter esse formato):
 - [Falas - texto contínuo]
 Imagem: [A Lu em ação usando o produto de forma prática e entusiasmada].
 
-🚨 **LU NA PRIMEIRA CENA (PROTAGONISTA):** No modo Social, a Lu deve OBRIGATORIAMENTE estar ativa na Cena 1 interagindo com o produto (usando, segurando, demonstrando). Ela não é um enfeite; ela é a usuária real e entusiasta.
+🚨 **LU NA PRIMEIRA CENA (PROTAGONISTA):** No modo Social, a Lu deve OBRIGATORIAMENTE estar ativa na Cena 1 interagindo com o produto (usando, segurando, demonstrando). Ela não é um enfeite; ela é a usuária real e entusiasta. A imagem deve descrever essa interação física.
 
-🚨 É ESTRITAMENTE PROIBIDO iniciar o roteiro com perguntas (ex: "Sabe quando...?", "Cansado de...?"). Comece SEMPRE com uma afirmação positiva e poderosa.
+🚨 **REGRA DE OURO - ZERO PERGUNTAS:** É terminantemente PROIBIDO iniciar o roteiro com perguntas (ex: "Sabe quando...?", "Cansado de...?"). Comece SEMPRE com uma afirmação positiva e poderosa, com a Lu em ação.
 
-🚨 É ESTRITAMENTE PROIBIDO usar "Lettering:" nas cenas de apresentação do produto. "Lettering:" só existe na ÚLTIMA CENA de fechamento.
+🚨 **PROIBIÇÃO DE LETTERING:** É ESTRITAMENTE PROIBIDO usar "Lettering:" nas cenas de apresentação do produto. "Lettering:" só existe na ÚLTIMA CENA de fechamento.
 
 🚨 IMPORTANTE: NÃO USE numeração ou o rótulo "Texto:". Comece com "-" para a locução.
 

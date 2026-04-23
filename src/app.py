@@ -2649,13 +2649,23 @@ elif page == "Dashboard":
             except Exception:
                 return []
 
-        active_mode = st.session_state.get('active_mode', 'NW Padrão')
-        prefix = st.session_state.get('table_prefix', 'nw_')
+        # --- SELETOR DE FONTE DE DADOS ---
+        # Permite visualizar dados de diferentes prefixos independente do modo atual da sessão
+        col_view1, col_view2 = st.columns([1, 2])
+        with col_view1:
+            data_view = st.radio(
+                "🏢 Ambiente de Dados:", 
+                ["NW Padrão", "SOCIAL", "NW 3D"], 
+                horizontal=True,
+                index=0 if st.session_state.get('table_prefix', 'nw_') == 'nw_' else 1 if st.session_state.get('table_prefix', 'nw_') == 'social_' else 2,
+                help="Escolha qual banco de dados (prefixo) carregar para análise."
+            )
         
-        # MODO SOCIAL: Se for modo Social, usamos as tabelas nw_ mas com filtro de visualização
-        fetch_prefix = prefix
-        if active_mode == "SOCIAL":
-            fetch_prefix = "social_" # Usa tabelas social_ específicas agora que existem 
+        fetch_prefix = "nw_"
+        if data_view == "SOCIAL":
+            fetch_prefix = "social_"
+        elif data_view == "NW 3D":
+            fetch_prefix = "nw3d_"
 
         # Tabelas que variam por prefixo
         ouro_data = safe_fetch(f"{fetch_prefix}roteiros_ouro")
@@ -2690,7 +2700,8 @@ elif page == "Dashboard":
         # Filtro Global para Modo SOCIAL no Histórico
         if active_mode == "SOCIAL":
             if not df_hist_dash.empty:
-                df_hist_dash = df_hist_dash[df_hist_dash['modo_trabalho'] == 'SOCIAL'].copy()
+                # Permite 'SOCIAL', 'SOCIAL (Reels/TikTok)', etc.
+                df_hist_dash = df_hist_dash[df_hist_dash['modo_trabalho'].str.contains('SOCIAL', case=False, na=False)].copy()
 
         # Bloco de processamento de dados (calculados)
         try:

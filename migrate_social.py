@@ -89,7 +89,7 @@ def migrate():
                 "criado_em": datetime.datetime.now().isoformat()
             }
             
-            res = sp.table("nw_historico_roteiros").insert(data).execute()
+            res = sp.table("social_historico_roteiros").insert(data).execute()
             print(f"✅ Salvo com sucesso")
         except Exception as e:
             print(f"❌ Erro ao salvar {f}: {e}")
