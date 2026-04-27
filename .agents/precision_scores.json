@@ -1,0 +1,19 @@
+{
+  "benchmarks": {
+    "NW_3D": [
+      {
+        "date": "2026-04-27",
+        "score": 88,
+        "round": "Aprovação Breno - Móveis e Colchões",
+        "notes": "IA muito próxima do tom. Ajustes principais: Dimensões trazidas para blocos iniciais, adição de nota técnica (TL) para disponibilidade de cores e conectivos mais fluidos.",
+        "status": "completed"
+      }
+    ],
+    "SOCIAL": [],
+    "FONETICA": []
+  },
+  "metadata": {
+    "last_update": "2026-04-27T15:14:00Z",
+    "goal": "Atingir >95% de precisão em todos os modos."
+  }
+}
