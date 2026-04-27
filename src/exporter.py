@@ -144,21 +144,21 @@ def generate_filename(code: str, product_name: str, selected_month: str = "MAR",
     prefixo_u = str(product_name).upper()
     
     if "NW 3D LU" in prefixo_u:
-        prefixo = "NW 3D LU"
+        prefixo = f"NW 3D LU {selected_month}"
     elif "SOCIAL" in prefixo_u:
-        prefixo = "SOCIAL"
+        prefixo = f"SOCIAL {selected_month}"
     elif "NW REVIEW" in prefixo_u:
-        prefixo = "NW REVIEW"
+        prefixo = f"NW REVIEW {selected_month}"
     elif "NW LU" in prefixo_u:
-        prefixo = "NW LU"
+        prefixo = f"NW LU {selected_month}"
     else:
         # Fallback para parâmetros
         if com_lu == "REVIEW":
-            prefixo = "NW REVIEW"
+            prefixo = f"NW REVIEW {selected_month}"
         elif "3D" in prefixo_u: # Fallback extra se for 3D sem LU no nome mas modo 3D
-            prefixo = "NW 3D LU"
+            prefixo = f"NW 3D LU {selected_month}"
         else:
-            prefixo = "NW LU" if com_lu is True else "NW"
+            prefixo = f"NW LU {selected_month}" if com_lu is True else f"NW {selected_month}"
 
     # Agora limpa o nome para o arquivo
     clean_name = _clean_product_name(product_name)
@@ -168,12 +168,14 @@ def generate_filename(code: str, product_name: str, selected_month: str = "MAR",
         model_tag = model_id.split('/')[-1].upper()
         model_tag = f" [{model_tag}]"
 
-    return f"{prefixo} {selected_month} {clean_code} {clean_name}{model_tag}.docx"
+    return f"{prefixo} {clean_code} {clean_name}{model_tag}.docx"
 
 
 def _clean_product_name(raw_name: str) -> str:
     """Limpa o nome do produto removendo prefixos de taxonomia, códigos e caracteres inválidos."""
-    clean_name = re.sub(r'^(NW 3D LU|NW REVIEW|NW 3D|NW LU|NW|SOCIAL)\s+[A-Z]{3}\s+(?:\d{5,}\s*)+', '', raw_name, flags=re.IGNORECASE).strip()
+    clean_name = re.sub(r'^(NW 3D LU|NW REVIEW|NW 3D|NW LU|NW|SOCIAL)\s+[A-Z]{3}\s+', '', raw_name, flags=re.IGNORECASE).strip()
+    # Segunda passada para remover códigos isolados remanescentes
+    clean_name = re.sub(r'^(?:\d{5,}\s*)+', '', clean_name).strip()
     # Remove placeholder [NOME DO PRODUTO]
     clean_name = re.sub(r'\[?NOME DO PRODUTO\]?', '', clean_name, flags=re.IGNORECASE)
     # Remove "TÍTULO DO PRODUTO:" ou similares da IA

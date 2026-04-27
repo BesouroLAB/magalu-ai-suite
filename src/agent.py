@@ -371,7 +371,7 @@ class RoteiristaAgent:
         elif "SOCIAL" in modo_u:
             prefixo_taxonomia = "SOCIAL"
         elif "3D" in modo_u:
-            prefixo_taxonomia = "NW 3D LU"
+            prefixo_taxonomia = f"NW 3D LU {mes}"
         else:
             prefixo_taxonomia = "NW LU" if com_lu else "NW"
 
@@ -379,7 +379,7 @@ class RoteiristaAgent:
         cabecalho = (
             f"Cliente: Magalu\n"
             f"Roteirista: Tiago Fernandes - Data: {data_str}\n"
-            f"Produto: {prefixo_taxonomia} {mes} {cod_str}{sub_skus_str} [NOME DO PRODUTO]{video_ref_str}\n"
+            f"Produto: {prefixo_taxonomia} {cod_str}{sub_skus_str} [NOME DO PRODUTO]{video_ref_str}\n"
             f"______________________________________________________________________"
         )
 
@@ -539,12 +539,19 @@ class RoteiristaAgent:
                                 nome_purificado = titulo_extraido if titulo_extraido else nome_purificado
                             
                             if "3D" in modo_trabalho.upper():
-                                prefixo_taxonomia = "NW 3D LU"
+                                # No 3D o mês já vem no prefixo via _build_context/_gerar_roteiro logic
+                                # Mas garantimos aqui na reconstrução manual
+                                prefixo_taxonomia = f"NW 3D LU {mes}"
+                                linhas[i+2] = f"Produto: {prefixo_taxonomia} {cod_s}{sub_s} {nome_purificado}{vid_s}"
                             elif "REVIEW" in modo_trabalho.upper():
                                 prefixo_taxonomia = "NW REVIEW"
+                                linhas[i+2] = f"Produto: {prefixo_taxonomia} {mes} {cod_s}{sub_s} {nome_purificado}{vid_s}"
+                            elif "SOCIAL" in modo_trabalho.upper():
+                                prefixo_taxonomia = "SOCIAL"
+                                linhas[i+2] = f"Produto: {prefixo_taxonomia} {mes} {cod_s}{sub_s} {nome_purificado}{vid_s}"
                             else:
                                 prefixo_taxonomia = "NW LU" if com_lu else "NW"
-                            linhas[i+2] = f"Produto: {prefixo_taxonomia} {mes} {cod_s}{sub_s} {nome_purificado}{vid_s}"
+                                linhas[i+2] = f"Produto: {prefixo_taxonomia} {mes} {cod_s}{sub_s} {nome_purificado}{vid_s}"
                         roteiro = "\n".join(linhas)
                         break
             except Exception as e:

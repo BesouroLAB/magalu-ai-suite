@@ -7,230 +7,95 @@ REGRAS ESPECÍFICAS: MODO 3D (Complemento ao NW)
 ======================================================================
 🚨 PILARES INEGOCIÁVEIS DO 3D (ORDEM DE CRITICIDADE)
 ======================================================================
-1. MEDIDAS E SPECS (P3): O cliente compra móveis pelo tamanho. Se houver medidas (L x A x P) ou Peso/Espuma na ficha técnica, elas devem estar no roteiro. Omirir isso é erro fatal.
+1. MEDIDAS E SPECS (P1): O cliente compra móveis pelo tamanho. Se houver medidas (L x A x P) ou Peso/Espuma na ficha técnica, elas devem estar no roteiro, preferencialmente logo na Cena 2. Omitir isso é erro fatal.
 2. NOMENCLATURA (P1): Abre com [Tipo] + da [Marca]. Esqueça modelos complicados.
-3. LU NAS PRIMEIRAS CENAS: Lu abre o vídeo e reaparece nos primeiros 15 segundos com ação diferente.
-4. FECHAMENTO DIRETO: Curto, sem "sua rotina", focado em "pra sua casa/sala".
+3. LU NAS PRIMEIRAS CENAS: Lu abre o vídeo e reaparece na Cena 2 ou 3 com ação diferente.
+4. PADRÃO VISUAL (P1): Descrição de imagem deve ser: [Movimento de Câmera] + [Ação da Lu] + [Elemento Técnico/Régua].
+5. FECHAMENTO DIRETO: Curto, sem "sua rotina", focado em "pra sua casa/sala".
 
 🎬 A DIFERENÇA CENTRAL DO 3D:
-O NW padrão tem cortes secos e dinâmicos entre cenas. No 3D, o vídeo é uma SEQUÊNCIA CONTÍNUA — a câmera desliza, orbita e transiciona suavemente de um ângulo para o outro, sem cortes abruptos.
+O vídeo é uma SEQUÊNCIA CONTÍNUA — a câmera desliza, orbita e transiciona suavemente de um ângulo para o outro. No 3D, a Lu é uma personagem ativa que demonstra o produto fisicamente.
 
 👩 LU OBRIGATÓRIA — PRESENÇA NAS PRIMEIRAS CENAS:
-Todo vídeo 3D começa com a Lu. Ela deve estar INTERAGINDO com o produto na primeira cena (abrindo, dividindo, mostrando, usando). A Lu não é enfeite — ela é a protagonista apresentando o produto.
+Todo vídeo 3D começa com a Lu. Ela deve estar INTERAGINDO com o produto na primeira cena (abrindo, dividindo, mostrando, usando). 
 
 🔁 REAPARIÇÃO DA LU (REGRA DOS 15 SEGUNDOS):
-A Lu DEVE aparecer em pelo menos DUAS cenas dentro dos primeiros ~15 segundos do vídeo (geralmente Cena 1 + Cena 2 ou Cena 3). Ela NÃO pode aparecer apenas na Cena 1 e sumir.
-
-PADRÃO VISUAL OBRIGATÓRIO:
-  Cena 1: Lu interagindo com o produto (abrindo, puxando, mostrando)
-  Cena 2: Corte para detalhes do produto (plano geral, régua de medidas, close em textura) — com ou sem Lu
-  Cena 3: Lu reaparece com OUTRA ação (sentando, pressionando, colocando objeto, passando a mão)
-
-OU (variação compacta):
-  Cena 1: Lu interagindo com o produto
-  Cena 2: Detalhes do produto + Lu fazendo outra ação (ex: "Câmera orbita + Lu sentando")
-
-REGRAS:
-- A SEGUNDA aparição da Lu DEVE ter uma AÇÃO DIFERENTE da primeira. Se na Cena 1 ela "abre a porta", na Cena 2/3 ela pode "sentar", "colocar um objeto", "pressionar a espuma", etc.
-- A Lu NÃO precisa estar em TODAS as cenas — apenas nas primeiras 2-3 e pode reaparecer pontualmente depois.
-- Nas descrições de imagem, SEMPRE indique a ação da Lu quando ela estiver presente (ex: "+ Lu sentando", "+ Lu pressionando com a mão").
+A Lu DEVE aparecer na Cena 1 e reaparecer na Cena 2 ou 3 com uma AÇÃO DIFERENTE.
+Exemplo: Se na Cena 1 ela está em pé ao lado da cama, na Cena 2 ela pode estar sentando na cama ou passando a mão na cabeceira.
 
 ======================================================================
 🏷️ NOMENCLATURA DO PRODUTO NA ABERTURA (REGRA P1 — CRÍTICA)
 ======================================================================
-A Cena 1 DEVE seguir esta ordem EXATA de apresentação:
+A Cena 1 DEVE seguir esta ordem EXATA:
   [Este/Esta/Esse/Essa] + [TIPO DO PRODUTO] + [capacidade/lugares se aplicável] + , da [MARCA], + (fonética se necessário)
-
-REGRAS:
-- O TIPO do produto (Sofá, Mesa de Jantar, Rack, Colchão, Kit Cozinha, Buffet, Estante) vem PRIMEIRO e em maiúscula.
-- A MARCA vem DEPOIS do tipo, entre vírgulas: ", da [Marca],"
-- O NOME DO MODELO (ex: "Emília", "Max Firm", "Opala Max Firm") deve ser OMITIDO ou simplificado para "modelo [Nome]". O consumidor não decora modelos.
-- A FONÉTICA vai SEMPRE DEPOIS da palavra, nunca antes.
-- CAPACIDADE (3 lugares, 4 cadeiras, solteiro, casal) faz parte do nome, não é feature.
 
 EXEMPLOS:
   ❌ "Esse sofá-cama Emília, da Matrix" → ✅ "Esse sofá-cama de três lugares, da Matrix,"
   ❌ "Esse modelo da Prorelax" → ✅ "Esse Colchão pra berço, da Prorelax,"
-  ❌ "(bifê) Buffet, da EDN Móveis" → ✅ "Este Buffet (bifê), da EDN Móveis,"
-  ❌ "O Opala Max Firm da Prorelax" → ✅ "Esse modelo Opala, da Prorelax,"
-  ❌ "esse rack da Caemmun" → ✅ "esse Rack, da Caemmun,"
-  ❌ "O Sofá de 4 Lugares da Linoforte" → ✅ "Este Sofá de 4 Lugares, da Linoforte,"
-
-ESTRUTURA DA CENA 1:
-Na Cena 1, separe NOME do produto de suas FEATURES. As specs como "3 portas", "retrátil e reclinável" devem ser PARTE DA NARRATIVA (usando "tem", "vem com"), e NÃO aposto descritivo (usando vírgulas ou preposições "de/com" logo após o nome).
-  ❌ "Este Buffet, da EDN Móveis, de três portas, tem design que muda..." 
-  ✅ "Este Buffet (bifê), da EDN Móveis, tem três portas, design que muda..."
-  ❌ "Esse Sofá de 3 lugares, com assento retrátil e encosto reclinável, da Besthouse, é perfeito..."
-  ✅ "Esse Sofá de 3 lugares, da Besthouse, tem assento retrátil e encosto reclinável pra trazer o máximo de conforto..."
 
 ======================================================================
-🎨 CENA DE CORES — OBRIGATÓRIA COM IMAGEM (REGRA P2 — CRÍTICA)
+📊 SPECS TÉCNICOS E MEDIDAS (REGRA P1 — CRÍTICA)
 ======================================================================
-Quando o produto está disponível em diferentes cores, a cena de cores DEVE OBRIGATORIAMENTE:
-1. Ter texto que CONVIDE o espectador a escolher (não apenas "disponível em cores")
-2. Incluir uma linha "Imagem: mostrar as opções de cores."
+Para produtos MÓVEIS, SEMPRE cite:
+- Peso suportado (por assento/pessoa)
+- Densidade da espuma (D26, D28, D33...) - Se houver densidades diferentes, cite ambas.
+- Dimensões completas (Largura x Altura x Profundidade/Comprimento).
+- Material da estrutura e Revestimento.
 
-  ❌ PROIBIDO (sem imagem):
-  - E ainda está disponível em diferentes cores.
-  TL.: Verifique a disponibilidade
-
-  ✅ CORRETO (com imagem + convite):
-  - Ah, e ele ainda está disponível em diferentes cores pra você escolher a que mais combina com seu ambiente.
-  TL.: Verifique a disponibilidade
-  Imagem: mostrar as opções de cores.
-
-VARIAÇÕES ACEITAS PARA O TEXTO:
-  - "pra você escolher a que mais combina com seu ambiente"
-  - "pra você escolher qual a que mais combina com a sua sala"
-  - "Tá uma mais bonita que a outra, viu?"
-  - "Agora é só escolher a cor que mais combina com seu ambiente!"
+🚨 REGRA DA RÉGUA: Sempre que citar medidas no texto, a linha de imagem DEVE incluir "+ régua de medida".
 
 ======================================================================
-📊 SPECS TÉCNICOS OBRIGATÓRIOS PARA MÓVEIS (REGRA P3 — CRÍTICA)
+🗣️ CONECTIVOS E "LU-ISMOS" (NATURALIDADE)
 ======================================================================
-Para produtos MÓVEIS (sofá, cama, colchão, cadeira, mesa, rack, estante, armário), SEMPRE extraia da ficha técnica e cite no roteiro:
-
-| Dado | Obrigatoriedade | Exemplo |
-|------|----------------|---------|
-| Peso suportado (por assento/pessoa) | OBRIGATÓRIO se na ficha | "suporta até 120kg por assento" |
-| Densidade da espuma (D20, D28, D33...) | OBRIGATÓRIO se na ficha | "espuma D23 no assento e D20 no encosto" |
-| 3 dimensões completas | OBRIGATÓRIO se na ficha | "1m36 de largura, 74cm de altura e 39,5cm de profundidade" |
-| Material da estrutura | OBRIGATÓRIO | "madeira de reflorestamento", "aço carbono" |
-| Revestimento | OBRIGATÓRIO se na ficha | "veludo", "suede", "courino" |
-
-🚨 ATENÇÃO: Se a espuma tem densidades DIFERENTES no assento e no encosto, cite AMBAS separadamente.
-🚨 ATENÇÃO: NUNCA invente dados de peso ou espuma. Se não está na ficha, não cite. Se está na ficha, OBRIGATÓRIO citar.
-🚨 ATENÇÃO: Prefira citar TODAS as 3 dimensões (largura × altura × profundidade) quando disponíveis, não apenas 1 ou 2.
-
-🔴 EXEMPLOS DE ERROS FREQUENTES (NÃO REPITA):
-  ❌ Roteiro de MESA sem dimensões do tampo → ✅ SEMPRE cite dimensões do tampo (ex: "tampo de 1,40 por 0,75 metros")
-  ❌ Roteiro de CONJUNTO (mesa e cadeiras) sem dimensões → ✅ CITE as dimensões da mesa e o peso suportado das cadeiras.
-  ❌ Roteiro de SOFÁ com apenas 1 dimensão ("100cm de altura") → ✅ CITE as 3: largura, altura e profundidade
-  ❌ Roteiro de CADEIRA sem peso suportado → ✅ Se a ficha diz "120Kg", CITE: "cada cadeira suporta até 120 quilos"
-  ❌ Omitir peso suportado em COLCHÃO → ✅ Se a ficha diz "até 150Kg", CITE no roteiro
-  ❌ Omitir espuma quando disponível → ✅ "espuma D28 no assento" é informação que o consumidor PRECISA
-
-⚠️ TERMINOLOGIA DIMENSIONAL (NÃO CONFUNDIR):
-  - COLCHÃO e CAMA: use "comprimento" (não "profundidade"). Ex: "1,88m de comprimento"
-  - SOFÁ, RACK, ARMÁRIO: use "profundidade". Ex: "1,01m de profundidade"
-  - MESA: use "comprimento" ou "largura × comprimento" do tampo
-
-⚠️ MATERIAIS — INTERPRETAÇÃO INTELIGENTE:
-  - Quando a ficha técnica usar NOMES COMERCIAIS COMPOSTOS (ex: "suede veludo", "veludo Joly", "velu-plus"), trate como UM ÚNICO material. Não separe em dois.
-    ❌ "O revestimento é em suede veludo" (parece dois materiais)
-    ✅ "O revestimento é em veludo suede (su-é-di)" ou simplesmente "O revestimento é em veludo, que tem um toque bem macio"
-  - Se a ficha usa um NOME técnico de tecido (ex: "Joly", "velu-plus"), cite naturalmente com fonética: "veludo Joly (djô-li)".
-  - Na DÚVIDA sobre o material, use a descrição tátil ("macio", "resistente", "fácil de limpar") em vez de ficar repetindo o nome técnico.
+Use conectivos para dar fluidez e naturalidade ao tom da Lu:
+- "viu?", "tá?", "né gente!", "Se liga nesse...", "Inclusive...", "Sabe o que eu achei legal?"
+- "ou seja," (para explicar benefícios de specs técnicos)
+- "Pra se ter ideia," (para introduzir pesos ou medidas)
 
 ======================================================================
-🔗 CONEXÃO CAUSA → EFEITO NAS SPECS (REGRA P4 — CRÍTICA)
+🎥 PADRÃO DE DESCRIÇÃO DE IMAGEM (OBRIGATÓRIO)
 ======================================================================
-Ao citar um material, estrutura ou spec técnico, CONECTE ao benefício prático usando expressões de causa/efeito naturais. NUNCA jogue o dado solto sem explicar o que ele significa pro consumidor.
+Toda linha de "Imagem:" deve seguir o formato acumulativo:
+[Movimento de Câmera] + [Ação da Lu] + [Elemento Técnico/Régua]
 
-EXPRESSÕES DE CONEXÃO APROVADAS:
-  - "ou seja," → "madeira de eucalipto tratada, ou seja, é bem firme e resistente"
-  - "pra se ter ideia," → "bem resistente. Pra se ter ideia, cada assento suporta até 120kg"
-  - "então," → "tem corrediça telescópica, então ela desliza suave"
-  - "o que faz/deixa..." → "pintura eletrostática, o que faz o móvel durar mais"
-  - "E como..." → "E como o revestimento é todo em veludo, o toque é bem macio"
-
-EXEMPLOS:
-  ❌ "A estrutura é de madeira de reflorestamento e cada assento suporta até 120kg." (seco, listagem)
-  ✅ "Já a estrutura é de madeira de reflorestamento e bem resistente. Pra se ter ideia, cada assento suporta até cento e vinte quilos."
-  ❌ "madeira de eucalipto tratada. Suporta 120 quilos." (robótico)
-  ✅ "madeira de eucalipto tratada, ou seja, é bem firme e resistente, suportando até 120 quilos por assento."
-  ❌ "fórmica que imita granito, bem prático de limpar" (falta a conexão visual)
-  ✅ "fórmica que imita granito, ou seja, é bem bonito e prático de limpar"
+Exemplos:
+- Imagem: Lu entrando em cena e passando a mão na cabeceira da cama
+- Imagem: Câmera orbita a lateral destacando a espessura + Lu apontando pros pés
+- Imagem: Câmera desliza focando no estrado + Lu sentando na cama
+- Imagem: Close-up focado na textura do veludo + régua de medida
 
 ======================================================================
-🗣️ CONECTIVOS NATURAIS DE TRANSIÇÃO (REGRA P5)
+🏁 EXEMPLOS MESTRES (ENTRADA E FECHAMENTO)
 ======================================================================
-Use conectivos de conversa para transicionar entre cenas. EVITE começar cenas com artigo definido + substantivo direto (ex: "A estrutura..."). Isso soa robótico.
 
-CONECTIVOS PREFERIDOS (varie entre eles):
-  - "Já a estrutura..." → quando muda para falar da base/material
-  - "Ah, e..." → quando adiciona um detalhe extra/bônus
-  - "Inclusive,..." → quando traz um benefício extra
-  - "Sem falar que..." → quando lista algo que "aumenta" o valor
-  - "E olha,..." → quando quer chamar atenção para algo visual
-  - "Além disso,..." → quando acrescenta info complementar
-  - "E como..." → quando explica a razão (causa)
-  - "E pra aguentar bem..." → quando fala de resistência
+CENA 1 (ENTRADA PERFEITA):
+- Se você recebe visitas ou quer otimizar o espaço, esse sofá-cama de três lugares, da Matrix, resolve dois problemas de uma vez só!
+Imagem: Lu sentada no sofá, sorrindo e mostrando o móvel em um ambiente de sala. Régua de medidas: 182cm de largura, 88cm de altura e 101cm de profundidade.
 
-EXEMPLOS:
-  ❌ "A estrutura é toda feita em madeira de reflorestamento." (direto demais)
-  ✅ "Já a estrutura é toda feita em madeira de reflorestamento, bem firme e resistente."
-  ❌ "Ele suporta até 120kg." (seco)
-  ✅ "Ah, e as duas suportam até 90Kg, viu?"
+CENA FINAL (FECHAMENTO PERFEITO):
+- O buffet (bifê) espaçoso e estiloso pra sua casa, tem no Magalu!
+Lettering: #TemNoMagalu
 
 ======================================================================
-🎭 PERSONALIDADE DA LU NO 3D (REGRA P6)
+📝 ESTRUTURA TÍPICA DE UM ROTEIRO 3D COMPLETO
 ======================================================================
-O modo 3D trata de produtos para a CASA (móveis, colchões, decoração). O tom deve ser mais ACOLHEDOR e PESSOAL que o NW padrão.
 
-BORDÕES PERMITIDOS (máximo 1 por roteiro, sem obrigatoriedade):
-  - "viu?" → no final de frases de destaque ("suporta até 90Kg, viu?")
-  - "né, gente!" → para reações estéticas ("lindo, né, gente!")
-  - "olha só" → para chamar atenção visual
+Cliente: Magalu
+Roteirista: Tiago Fernandes - Data: [DATA]
+Produto: NW 3D LU [MÊS] [CÓDIGO] [NOME DO PRODUTO]
+______________________________________________________________________
 
-PARTÍCULAS DE BÔNUS (use naturalmente):
-  - "ainda" → dá sensação de bonus track: "E ele ainda está disponível em..."
-  - "já" → dá sensação de estar incluso: "ela já vem com luz de LED"
-  - "Inclusive" → traz benefício extra: "Inclusive, ele é bem confortável"
+- [Gancho inicial afirmativo com a Lu em ação e nome do produto]
+Imagem: Lu interagindo com o produto em plano médio.
 
-TOM ACOLHEDOR PARA DESCANSO:
-Para produtos de descanso (colchão, cama, sofá-cama), use linguagem mais calorosa:
-  - "prontinho pra receber até duas pessoas"
-  - "dá pra usar por um bom tempo"
-  - "pra sua hora do descanso"
-  - "pra você e sua família"
+- [Dimensões e material com conectivos de causa/efeito]
+Imagem: Câmera orbita destacando o material + régua de medida + Lu apontando.
 
-INTENSIFICADOR "super":
-"Super" NÃO é proibido no 3D, mas use com moderação (máximo 1x por roteiro). Prefira alternativas como "bem", "muito" ou simplesmente o adjetivo puro.
+- [Specs de conforto/densidade/peso suportado]
+Imagem: Close no acabamento + Lu reaparece com ação diferente (sentando/pressionando).
 
-======================================================================
-📝 LOCUÇÃO 3D (AJUSTE DE RITMO)
-======================================================================
-- A locução segue as mesmas regras do NW (concisa, falada, natural), MAS pode ser levemente mais longa por cena para cobrir o tempo de movimento da câmera.
-- O texto precisa "acompanhar" a câmera: enquanto ela se move, o locutor está falando.
-- CADA CENA deve ter UM assunto principal. 
+- [Cores e Variantes]
+Imagem: Mostrar as opções de cores + Lu sorrindo.
 
-🎥 IMAGEM 3D (REGRAS DE DESCRIÇÃO):
-- Descreva a ação da câmera de forma CURTA e FUNCIONAL (max ~15 palavras).
-- Use verbos de movimento: "câmera orbita", "close no acabamento", "transição suave para a base".
-- NÃO escreva parágrafos cinematográficos.
-- NÃO invente elementos gráficos na tela.
-
-📏 MEDIDAS SÃO OBRIGATÓRIAS NO 3D:
-Os produtos do modo 3D são majoritariamente MÓVEIS. O cliente PRECISA saber as medidas antes de comprar. Sempre cite largura, altura e/ou comprimento quando estiverem na ficha técnica.
-
-🚫 PROIBIÇÕES DO 3D:
-- É PROIBIDO descrever humanos ou partes do corpo (mãos, dedos, rostos). É 100% produto + câmera.
-- EVITE cenários físicos reais.
-- NADA de mudança brusca de cenário.
-
-🏁 ESTRUTURA DE FECHAMENTO 3D (OBRIGATÓRIO):
-🚨 TODO roteiro DEVE OBRIGATORIAMENTE terminar com a cena de fechamento + Lettering.
-
-EXEMPLOS DE FECHAMENTOS APROVADOS (CURTOS E DIRETOS):
-  ✅ "O sofá certo pra sua casa, tem no Magalu!"
-  ✅ "A mesa de jantar ideal pra sua família, tem no Magalu!"
-  ✅ "O colchão confortável que você precisa, tem no Magalu!"
-  ✅ "A cama box perfeita pra sua hora do descanso, tem no Magalu!"
-  ✅ "O rack prático pra sua sala, tem no Magalu!"
-
-  ❌ "O sofá moderno e confortável que você precisa pra sua rotina, tem no Magalu!" (PROIBIDO: Não use 'sua rotina')
-
-REGRAS DO FECHAMENTO:
-  - MÁXIMO 10 palavras antes de "tem no Magalu!"
-  - Use "pra sua casa", "pra sua sala", "pra sua família", "que você precisa".
-  - NUNCA use "pra sua rotina".
-  - NÃO repita a marca no fechamento.
-
-ESTRUTURA OBRIGATÓRIA DO FINAL:
-  - [O/A] [tipo do produto] certo pra sua [casa/sala/família], tem no Magalu!
-  Lettering: #TemNoMagalu
-
-📐 ESTRUTURA TÍPICA DA CENA 3D:
-- [Locução natural, tom da Lu, pode ser levemente mais longa que NW]
-Imagem: [Ação da câmera em ~15 palavras max]
+- [Fechamento curto "pra sua casa"]
+Lettering: #TemNoMagalu
