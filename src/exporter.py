@@ -319,12 +319,15 @@ def export_all_roteiros_zip(roteiros: list, selected_month: str = "MAR", selecte
             # Pula roteiros que são avisos de erro de extração
             if roteiro_text.startswith("⚠️"):
                 continue
+            
+            # Prioriza o mês que está no registro do roteiro, caso contrário usa o selecionado no lote
+            mes_roteiro = item.get('mes', selected_month)
                 
             doc_bytes, filename = export_roteiro_docx(
                 roteiro_text,
                 code=item.get('codigo', ''),
                 product_name='', # Será extraído do texto do roteiro
-                selected_month=selected_month,
+                selected_month=mes_roteiro,
                 selected_date=selected_date,
                 model_id=item.get('model_id', ''),
                 com_lu=item.get('com_lu', True)
