@@ -124,9 +124,6 @@ Roteirista: Tiago Fernandes - Data: [DATA]
 Produto: [TAXONOMIA] [CÓDIGO] [NOME]
 ______________________________________________________________________
 
-----------------------------------------------------------------------
-ROTEIRO:
-
 - [Benefício matador do Killer Spec e ação prática agrupados]
 Imagem: [Ação simples e direta ligada ao texto, focada na feature, max 10 palavras]
 
