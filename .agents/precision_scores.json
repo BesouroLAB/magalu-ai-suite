@@ -10,7 +10,16 @@
       }
     ],
     "SOCIAL": [],
-    "FONETICA": []
+    "FONETICA": [],
+    "NW": [
+      {
+        "date": "2026-04-29",
+        "score": 72,
+        "round": "Abertura NW - Calibragem Inicial",
+        "notes": "IA incluindo modelos e cores na abertura (proibido). Falta a cena padrão de cores no final. Fonética de números tech deve ser em inglês (six vs seis).",
+        "status": "in_progress"
+      }
+    ]
   },
   "metadata": {
     "last_update": "2026-04-27T15:14:00Z",
