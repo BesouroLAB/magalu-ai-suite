@@ -16,7 +16,7 @@
         "date": "2026-04-29",
         "score": 72,
         "round": "Abertura NW - Calibragem Inicial",
-        "notes": "IA incluindo modelos e cores na abertura (proibido). Falta a cena padrão de cores no final. Fonética de números tech deve ser em inglês (six vs seis).",
+        "notes": "IA incluindo modelos/cores na abertura. Falha crítica: Ignorou 'Sem LU' (persona Lu vazou) e o 'Mês de Lançamento'. Reforçada blindagem no prompt para anular persona base e fixar extração de inputs.",
         "status": "in_progress"
       }
     ]
