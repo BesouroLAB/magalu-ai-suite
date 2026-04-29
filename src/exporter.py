@@ -71,11 +71,12 @@ def _extract_product_name(roteiro_text: str) -> str:
     match = re.search(r'Produto:\s*(.+)', roteiro_text)
     if match:
         name = match.group(1).strip()
-        # Remove prefixos conhecidos (NW REVIEW, NW 3D, NW LU, NW, SOCIAL) + Mês + SKU
-        name = re.sub(r'^(NW 3D LU|NW REVIEW|NW 3D|NW LU|NW|SOCIAL)\s+[A-Z]{3}\s+\d+\s+', '', name, flags=re.IGNORECASE)
-        # Remove placeholder [NOME DO PRODUTO] ou "Nome do Produto"
+        # Remove prefixos (NW, REVIEW, 3D, LU, SOCIAL), meses (JAN-DEZ) e códigos numéricos longos
+        name = re.sub(r'^(NW|SOCIAL|REVIEW|3D|LU|JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s*', '', name, flags=re.IGNORECASE)
+        name = re.sub(r'^(NW|SOCIAL|REVIEW|3D|LU|JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s*', '', name, flags=re.IGNORECASE) # Segunda passada
+        name = re.sub(r'^(\d{6,}\s*)+', '', name) # Remove códigos numéricos
+        # Remove placeholders e lixo de markdown
         name = re.sub(r'\[?NOME DO PRODUTO\]?', '', name, flags=re.IGNORECASE)
-        # Remove "TÍTULO DO PRODUTO:" ou similares da IA
         name = re.sub(r'^\**TÍTULO( DO PRODUTO)?:?\**\s*', '', name, flags=re.IGNORECASE)
         return name.strip()
 
@@ -140,25 +141,19 @@ def generate_filename(code: str, product_name: str, selected_month: str = "MAR",
     if clean_code and len(clean_code) < 9:
         clean_code = clean_code.ljust(9, '0')
 
-    # Detecta prefixo do texto original se vier sujo (ex: "NW 3D LU MAR 123... [NOME]")
+    # Detecta prefixo correto baseado no modo e presença da Lu
     prefixo_u = str(product_name).upper()
     
-    if "NW 3D LU" in prefixo_u:
+    if "3D" in prefixo_u:
         prefixo = f"NW 3D LU {selected_month}"
     elif "SOCIAL" in prefixo_u:
         prefixo = f"SOCIAL {selected_month}"
-    elif "NW REVIEW" in prefixo_u:
+    elif "NW REVIEW" in prefixo_u or com_lu == "REVIEW":
         prefixo = f"NW REVIEW {selected_month}"
-    elif "NW LU" in prefixo_u:
+    elif com_lu is True:
         prefixo = f"NW LU {selected_month}"
     else:
-        # Fallback para parâmetros
-        if com_lu == "REVIEW":
-            prefixo = f"NW REVIEW {selected_month}"
-        elif "3D" in prefixo_u: # Fallback extra se for 3D sem LU no nome mas modo 3D
-            prefixo = f"NW 3D LU {selected_month}"
-        else:
-            prefixo = f"NW LU {selected_month}" if com_lu is True else f"NW {selected_month}"
+        prefixo = f"NW {selected_month}"
 
     # Agora limpa o nome para o arquivo
     clean_name = _clean_product_name(product_name)
@@ -172,18 +167,18 @@ def generate_filename(code: str, product_name: str, selected_month: str = "MAR",
 
 
 def _clean_product_name(raw_name: str) -> str:
-    """Limpa o nome do produto removendo prefixos de taxonomia, códigos e caracteres inválidos."""
-    clean_name = re.sub(r'^(NW 3D LU|NW REVIEW|NW 3D|NW LU|NW|SOCIAL)\s+[A-Z]{3}\s+', '', raw_name, flags=re.IGNORECASE).strip()
-    # Segunda passada para remover códigos isolados remanescentes
-    clean_name = re.sub(r'^(?:\d{5,}\s*)+', '', clean_name).strip()
-    # Remove placeholder [NOME DO PRODUTO]
-    clean_name = re.sub(r'\[?NOME DO PRODUTO\]?', '', clean_name, flags=re.IGNORECASE)
-    # Remove "TÍTULO DO PRODUTO:" ou similares da IA
-    clean_name = re.sub(r'^\**TÍTULO( DO PRODUTO)?:?\**\s*', '', clean_name, flags=re.IGNORECASE)
-    # Remove caracteres inválidos em nomes de arquivo
-    clean_name = re.sub(r'[<>:"/\\|?*]', '', clean_name)
-    clean_name = clean_name[:80].strip()
-    return clean_name
+    """Limpa o nome do produto de forma agressiva para evitar duplicação."""
+    # Remove prefixos de taxonomia, meses e códigos numéricos em cascata
+    clean = raw_name
+    for _ in range(3): # Múltiplas passadas para limpar prefixos grudados
+        clean = re.sub(r'^(NW|SOCIAL|REVIEW|3D|LU|JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s*', '', clean, flags=re.IGNORECASE).strip()
+        clean = re.sub(r'^(\d{6,}\s*)+', '', clean).strip()
+    
+    # Remove placeholders e caracteres inválidos
+    clean = re.sub(r'\[?NOME DO PRODUTO\]?', '', clean, flags=re.IGNORECASE)
+    clean = re.sub(r'^\**TÍTULO( DO PRODUTO)?:?\**\s*', '', clean, flags=re.IGNORECASE)
+    clean = re.sub(r'[<>:"/\\|?*]', '', clean)
+    return clean[:80].strip()
 
 
 def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "", selected_month: str = "MAR", selected_date: str = None, model_id: str = "", com_lu: bool = True) -> tuple[bytes, str]:

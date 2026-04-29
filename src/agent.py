@@ -364,18 +364,19 @@ class RoteiristaAgent:
         sub_skus_str = f" {sub_skus}" if (sub_skus and str(sub_skus).lower() != 'nan' and str(sub_skus).strip()) else ""
         video_ref_str = f"\n   {video_url}" if (video_url and str(video_url).lower() != 'nan' and str(video_url).strip()) else ""
         
-        # Determinação da Taxonomia
+        # Determinação da Taxonomia - PADRÃO: NW [LU] [MÊS] [CÓDIGO]
         modo_u = str(modo_trabalho).upper()
         if "REVIEW" in modo_u:
-            prefixo_taxonomia = "NW REVIEW"
+            prefixo_taxonomia = f"NW REVIEW {mes}"
         elif "SOCIAL" in modo_u:
-            prefixo_taxonomia = "SOCIAL"
+            prefixo_taxonomia = f"SOCIAL {mes}"
         elif "3D" in modo_u:
             prefixo_taxonomia = f"NW 3D LU {mes}"
         else:
-            prefixo_taxonomia = "NW LU" if com_lu else "NW"
+            # Modo NW padrão (NewWeb)
+            prefixo_taxonomia = f"NW LU {mes}" if com_lu else f"NW {mes}"
 
-        # Montagem do Cabeçalho Obrigatório
+        # Montagem do Cabeçalho Obrigatório - Unificado para evitar duplicidade
         cabecalho = (
             f"Cliente: Magalu\n"
             f"Roteirista: Tiago Fernandes - Data: {data_str}\n"
@@ -383,7 +384,7 @@ class RoteiristaAgent:
             f"______________________________________________________________________"
         )
 
-        diretriz_modo = f"VOCÊ DEVE SEGUIR A ESTRUTURA DO CABEÇALHO ABAIXO:\n{cabecalho}\n\n"
+        diretriz_modo = f"VOCÊ DEVE COPIAR O CABEÇALHO ABAIXO EXATAMENTE NO INÍCIO DO ARQUIVO (Substitua apenas o [NOME DO PRODUTO]):\n{cabecalho}\n\n"
         
         if "REVIEW" in modo_u:
             comentarios = kwargs.get('comentarios', '')
@@ -430,8 +431,8 @@ class RoteiristaAgent:
             f"**REGRAS CRÍTICAS DE EXECUÇÃO:**\n"
             f"1. **PROIBIÇÃO DE DADOS HIPOTÉTICOS:** Não invente specs.\n"
             f"2. **REGRAS DE FORMATAÇÃO:** SIGA RIGOROSAMENTE as regras de estrutura enviadas no início deste prompt (System Prompt).\n"
-            f"3. **LU NA PRIMEIRA CENA (PROTAGONISTA):** No modo Social, a Lu deve OBRIGATORIAMENTE estar ativa na Cena 1 interagindo com o produto (usando, segurando, demonstrando). Ela não é um enfeite; ela é a usuária real e entusiasta. A imagem deve descrever essa interação física.\n"
-            f"4. **REGRA DE OURO - ZERO PERGUNTAS:** É terminantemente PROIBIDO iniciar o roteiro com perguntas (ex: 'Sabe quando...?', 'Cansado de...?'). Comece SEMPRE com uma afirmação positiva e poderosa, com a Lu em ação.\n"
+            f"3. **LU EM AÇÃO (PRESENÇA VISUAL):** {'No modo selecionado, a Lu DEVE aparecer em ação (Cena 1 e outra cena posterior).' if com_lu else 'No modo SEM LU, a Lu NUNCA deve aparecer visualmente (não descreva mãos humanas ou a Lu). Ela é apenas a narradora.'}\n"
+            f"4. **REGRA DE OURO - ZERO PERGUNTAS:** É terminantemente PROIBIDO iniciar o roteiro com perguntas (ex: 'Sabe quando...?', 'Cansado de...?'). Comece SEMPRE com uma afirmação poderosa (Killer Hook), conforme as regras de abertura.\n"
             f"5. **PROIBIÇÃO DE LETTERING:** É ESTRITAMENTE PROIBIDO usar 'Lettering:' nas cenas de apresentação do produto. 'Lettering:' só existe na ÚLTIMA CENA de fechamento.\n"
             f"6. **PERSONA DA LU:** Use 'pra', seja direta e não use muletas como 'O legal é que'. NUNCA inicie com pergunta.\n"
             f"7. **ZERO REDUNDÂNCIA VISUAL:** Não descreva cores se já estiverem no nome.\n"
@@ -511,51 +512,34 @@ class RoteiristaAgent:
             raise Exception("Nenhum cliente LLM configurado válido.")
 
         # --- POST-PROCESSING ENFORCEMENT ---
-        # Força o cabeçalho correto ignorando as alucinações de cópia de exemplos do LLM
-        if "NW" in modo_trabalho:
+        # Garante que o cabeçalho final esteja limpo e sem duplicações
+        if "NW" in modo_trabalho.upper() or "SOCIAL" in modo_trabalho.upper():
             try:
                 import re
                 linhas = roteiro.split('\n')
                 for i, linha in enumerate(linhas):
                     if "Cliente: Magalu" in linha.replace('*', ''):
-                        data_s = data_roteiro if data_roteiro else "[DATA_ATUAL]"
-                        cod_s = str(codigo).strip() if codigo else "[CÓDIGO_AQUI]"
-                        if cod_s.isdigit() and len(cod_s) < 9: cod_s = cod_s.ljust(9, '0')
-                        sub_s = f" {sub_skus}" if (sub_skus and str(sub_skus).lower() != 'nan') else ""
-                        vid_s = f"\n   {video_url}" if (video_url and str(video_url).lower() != 'nan') else ""
-                        
-                        linhas[i] = "Cliente: Magalu"
-                        if i + 1 < len(linhas):
-                            linhas[i+1] = f"Roteirista: Tiago Fernandes - Data: {data_s}"
+                        # Limpa a linha do produto para reconstruí-la sem lixo
                         if i + 2 < len(linhas):
-                            # Remove prefixos antigos para evitar duplicação em edições sucessivas
-                            prod_str = linhas[i+2].replace('**', '').replace('Produto:', '').strip()
-                            # Tenta detectar e remover qualquer prefixo NW / NW LU / NW 3D etc até chegar no nome real
-                            # Modificado para capturar múltiplos códigos seguidos (ex: 233392800 233392900)
-                            nome_purificado = re.sub(r'^(NW\s*(3D)?\s*(LU)?\s*(REVIEW)?\s*[A-Z]{3}\s*(?:\d{5,}\s*)+)', '', prod_str, flags=re.IGNORECASE).strip()
+                            prod_line = linhas[i+2].replace('**', '').replace('Produto:', '').strip()
                             
-                            # Se nome_purificado está vazio ou é genérico, usa o titulo_extraido da ficha técnica
-                            if not nome_purificado or nome_purificado == "[NOME DO PRODUTO]" or len(nome_purificado) < 3:
-                                nome_purificado = titulo_extraido if titulo_extraido else nome_purificado
+                            # Regex aprimorado para extrair apenas o nome do produto, removendo prefixos, meses e códigos
+                            # Remove: NW, NW LU, NW 3D, Meses (JAN-DEZ), e sequências de números (códigos)
+                            nome_purificado = re.sub(r'^(NW|SOCIAL|REVIEW|3D|LU|JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ|\d{6,})\s*', '', prod_line, flags=re.IGNORECASE).strip()
+                            # Segunda passada para garantir que removeu tudo (ex: "LU MAR 2333...")
+                            nome_purificado = re.sub(r'^(NW|SOCIAL|REVIEW|3D|LU|JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ|\d{6,})\s*', '', nome_purificado, flags=re.IGNORECASE).strip()
+
+                            if not nome_purificado or "[NOME DO PRODUTO]" in nome_purificado or len(nome_purificado) < 3:
+                                nome_purificado = titulo_extraido if titulo_extraido else "Produto Magalu"
+
+                            linhas[i] = "Cliente: Magalu"
+                            linhas[i+1] = f"Roteirista: Tiago Fernandes - Data: {data_str}"
+                            linhas[i+2] = f"Produto: {prefixo_taxonomia} {cod_str}{sub_skus_str} {nome_purificado}{video_ref_str}"
                             
-                            if "3D" in modo_trabalho.upper():
-                                # No 3D o mês já vem no prefixo via _build_context/_gerar_roteiro logic
-                                # Mas garantimos aqui na reconstrução manual
-                                prefixo_taxonomia = f"NW 3D LU {mes}"
-                                linhas[i+2] = f"Produto: {prefixo_taxonomia} {cod_s}{sub_s} {nome_purificado}{vid_s}"
-                            elif "REVIEW" in modo_trabalho.upper():
-                                prefixo_taxonomia = "NW REVIEW"
-                                linhas[i+2] = f"Produto: {prefixo_taxonomia} {mes} {cod_s}{sub_s} {nome_purificado}{vid_s}"
-                            elif "SOCIAL" in modo_trabalho.upper():
-                                prefixo_taxonomia = "SOCIAL"
-                                linhas[i+2] = f"Produto: {prefixo_taxonomia} {mes} {cod_s}{sub_s} {nome_purificado}{vid_s}"
-                            else:
-                                prefixo_taxonomia = "NW LU" if com_lu else "NW"
-                                linhas[i+2] = f"Produto: {prefixo_taxonomia} {mes} {cod_s}{sub_s} {nome_purificado}{vid_s}"
                         roteiro = "\n".join(linhas)
                         break
             except Exception as e:
-                print(f"[WARN] Error enforcing header: {e}")
+                print(f"[WARN] Error enforcing header cleanup: {e}")
 
         custo_brl = calcular_custo_brl(self.model_id, tokens_in, tokens_out)
 
