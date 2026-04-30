@@ -513,31 +513,63 @@ class RoteiristaAgent:
 
         # --- POST-PROCESSING ENFORCEMENT ---
         # Garante que o cabeçalho final esteja limpo e sem duplicações
-        if "NW" in modo_trabalho.upper() or "SOCIAL" in modo_trabalho.upper():
+        modo_u = modo_trabalho.upper()
+        if any(m in modo_u for m in ["NW", "SOCIAL", "REVIEW", "3D"]):
             try:
                 import re
                 linhas = roteiro.split('\n')
-                for i, linha in enumerate(linhas):
-                    if "Cliente: Magalu" in linha.replace('*', ''):
-                        # Limpa a linha do produto para reconstruí-la sem lixo
+                header_fixed = False
+                for i, linha in enumerate(linhas[:15]): # Procura apenas no início
+                    clean_line = linha.replace('*', '').strip().upper()
+                    if clean_line.startswith("CLIENTE:"):
+                        # Encontrou o início do cabeçalho
                         if i + 2 < len(linhas):
                             prod_line = linhas[i+2].replace('**', '').replace('Produto:', '').strip()
                             
-                            # Regex aprimorado para extrair apenas o nome do produto, removendo prefixos, meses e códigos
+                            # Regex aprimorado para extrair apenas o nome do produto
                             # Remove: NW, NW LU, NW 3D, Meses (JAN-DEZ), e sequências de números (códigos)
-                            nome_purificado = re.sub(r'^(NW|SOCIAL|REVIEW|3D|LU|JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ|\d{6,})\s*', '', prod_line, flags=re.IGNORECASE).strip()
-                            # Segunda passada para garantir que removeu tudo (ex: "LU MAR 2333...")
-                            nome_purificado = re.sub(r'^(NW|SOCIAL|REVIEW|3D|LU|JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ|\d{6,})\s*', '', nome_purificado, flags=re.IGNORECASE).strip()
+                            nome_purificado = prod_line
+                            for _ in range(5): # Múltiplas passadas
+                                prev = nome_purificado
+                                nome_purificado = re.sub(r'^(NW|SOCIAL|REVIEW|3D|LU|JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ|DE)(\s+|$)', '', nome_purificado, flags=re.IGNORECASE).strip()
+                                nome_purificado = re.sub(r'^\d{6,}\s*', '', nome_purificado).strip()
+                                if nome_purificado == prev: break
+                            
+                            # Remove URLs que a IA possa ter incluído inline no nome
+                            nome_purificado = re.sub(r'https?://\S+', '', nome_purificado).strip()
+                            
+                            # Remove código duplicado que possa ter restado no meio/fim do nome
+                            if cod_str and cod_str != "[CÓDIGO_AQUI]":
+                                nome_purificado = nome_purificado.replace(cod_str, '').strip()
+                                # Limpa espaços duplos residuais
+                                nome_purificado = re.sub(r'\s{2,}', ' ', nome_purificado).strip()
 
-                            if not nome_purificado or "[NOME DO PRODUTO]" in nome_purificado or len(nome_purificado) < 3:
+                            if not nome_purificado or "[NOME DO PRODUTO]" in nome_purificado.upper() or len(nome_purificado) < 3:
                                 nome_purificado = titulo_extraido if titulo_extraido else "Produto Magalu"
 
                             linhas[i] = "Cliente: Magalu"
                             linhas[i+1] = f"Roteirista: Tiago Fernandes - Data: {data_str}"
-                            linhas[i+2] = f"Produto: {prefixo_taxonomia} {cod_str}{sub_skus_str} {nome_purificado}{video_ref_str}"
+                            linhas[i+2] = f"Produto: {prefixo_taxonomia} {cod_str}{sub_skus_str} {nome_purificado}"
                             
-                        roteiro = "\n".join(linhas)
+                            # Limpa linhas de URLs soltas/duplicadas que a IA possa ter gerado logo após o cabeçalho
+                            j = i + 3
+                            while j < min(i + 7, len(linhas)):
+                                stripped = linhas[j].strip()
+                                if stripped.startswith('http://') or stripped.startswith('https://'):
+                                    linhas[j] = ''
+                                j += 1
+                            
+                            # Adiciona link do vídeo UMA ÚNICA VEZ, indentado abaixo da linha Produto
+                            if video_ref_str:
+                                linhas[i+2] += video_ref_str
+                            
+                            header_fixed = True
                         break
+                
+                if header_fixed:
+                    roteiro = "\n".join(linhas)
+                    # Colapsa 3+ quebras de linha consecutivas em no máximo 2 (preserva parágrafos)
+                    roteiro = re.sub(r'\n{3,}', '\n\n', roteiro)
             except Exception as e:
                 print(f"[WARN] Error enforcing header cleanup: {e}")
 
