@@ -17,6 +17,13 @@
         "score": 72,
         "round": "Abertura NW - Calibragem Inicial",
         "notes": "IA incluindo modelos/cores na abertura. Falha crítica: Ignorou 'Sem LU' (persona Lu vazou) e o 'Mês de Lançamento'. Reforçada blindagem no prompt para anular persona base e fixar extração de inputs.",
+        "status": "completed"
+      },
+      {
+        "date": "2026-04-29",
+        "score": 89,
+        "round": "Refino Breno - Agrupamento e Dinamismo",
+        "notes": "Prompt totalmente reescrito para o 'Estilo Breno': Agrupamento da Trindade do Desempenho (Proc+RAM+SSD) logo na abertura, corte severo de 'narizes de cera', remoção do excesso de exclamações e uso de conectivos retos (Inclusive, Além disso).",
         "status": "in_progress"
       }
     ]
