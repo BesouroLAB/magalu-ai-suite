@@ -24,12 +24,19 @@
         "score": 89,
         "round": "Refino Breno - Agrupamento e Dinamismo",
         "notes": "Prompt totalmente reescrito para o 'Estilo Breno': Agrupamento da Trindade do Desempenho (Proc+RAM+SSD) logo na abertura, corte severo de 'narizes de cera', remoção do excesso de exclamações e uso de conectivos retos (Inclusive, Além disso).",
+        "status": "completed"
+      },
+      {
+        "date": "2026-04-30",
+        "score": 92,
+        "round": "Deep Diff - 10 Pares IA vs Breno",
+        "notes": "Análise forense de 10 pares (Dell, Lenovo, Samsung Tab, Gama, Epson, Mondial, IdeaPad, Galaxy S22 x2, Moto E13). Descobertas: 12 falhas sistêmicas. Adicionadas 4 novas proibições (#10-#13), economia de cenas proporcional, spec precision (NUNCA arredondar medidas, NUNCA omitir processador/RAM/storage), fonética expandida (GHz/IP68/MP/8K/EcoFit na lista de NUNCA), ordem consistente pra eletrônicos, e imagens max 10 palavras.",
         "status": "in_progress"
       }
     ]
   },
   "metadata": {
-    "last_update": "2026-04-27T15:14:00Z",
+    "last_update": "2026-04-30T13:00:00Z",
     "goal": "Atingir >95% de precisão em todos os modos."
   }
 }
