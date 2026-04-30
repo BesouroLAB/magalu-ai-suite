@@ -459,7 +459,7 @@ class RoteiristaAgent:
                     model=self.model_id,
                     contents=contents,
                     config=types.GenerateContentConfig(
-                        temperature=0.7,
+                        temperature=0.5,
                         http_options={'timeout': 120000} # 120 segundos em ms
                     )
                 )
