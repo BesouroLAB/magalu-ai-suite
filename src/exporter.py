@@ -66,29 +66,34 @@ def _add_empty_line(doc):
 
 
 def _extract_product_name(roteiro_text: str) -> str:
-    """Tenta extrair o nome do produto do texto do roteiro."""
-    # Procura na linha de Produto:
-    match = re.search(r'Produto:\s*(.+)', roteiro_text)
+    """
+    Extrai o nome do produto do texto do roteiro.
+    Busca primeiro na linha 'Produto:' e depois em fallback.
+    """
+    # 1. Busca direta na linha Produto:
+    match = re.search(r'Produto:\s*(.+)', roteiro_text, re.IGNORECASE)
     if match:
         name = match.group(1).strip()
-        # Remove prefixos (NW, REVIEW, 3D, LU, SOCIAL), meses (JAN-DEZ) e códigos numéricos longos
-        name = re.sub(r'^(NW|SOCIAL|REVIEW|3D|LU|JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s*', '', name, flags=re.IGNORECASE)
-        name = re.sub(r'^(NW|SOCIAL|REVIEW|3D|LU|JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s*', '', name, flags=re.IGNORECASE) # Segunda passada
-        name = re.sub(r'^(\d{6,}\s*)+', '', name) # Remove códigos numéricos
-        # Remove placeholders e lixo de markdown
-        name = re.sub(r'\[?NOME DO PRODUTO\]?', '', name, flags=re.IGNORECASE)
-        name = re.sub(r'^\**TÍTULO( DO PRODUTO)?:?\**\s*', '', name, flags=re.IGNORECASE)
-        return name.strip()
+        # Se a linha contiver o código e prefixos, tentamos extrair apenas o final
+        # O nome do produto geralmente é o que sobra após limpar a taxonomia
+        return _clean_product_name(name)
 
-    # Fallback: procura no título (primeiras palavras do roteiro que parecem nome de produto)
-    lines = roteiro_text.strip().split('\n')
+    # 2. Fallback: Procura nas primeiras 10 linhas por padrões comuns
+    lines = roteiro_text.strip().split('\n')[:15]
     for line in lines:
-        line = line.strip()
-        if line.startswith('- ') and ('da ' in line or 'do ' in line):
-            # Tenta extrair "Este [Produto], da [Marca]"
-            match2 = re.search(r'Est[ea]\s+(.+?),\s+d[ao]', line)
+        line = line.strip().strip("*").strip()
+        
+        # Ignora linhas de cabeçalho conhecidas
+        if any(prefix in line.upper() for prefix in ["CLIENTE:", "ROTEIRISTA:", "DATA:"]):
+            continue
+            
+        # Padrão: "Este [Produto], da [Marca]" ou similar
+        if line.startswith("- "):
+            match2 = re.search(r'Est[ea]\s+(.+?),\s+d[ao]', line, re.IGNORECASE)
             if match2:
-                return match2.group(1).strip()
+                name = match2.group(1).strip()
+                if len(name) > 3 and len(name) < 100:
+                    return name
 
     return "Produto"
 
@@ -106,20 +111,21 @@ def _parse_roteiro(roteiro_text: str) -> list[dict]:
 
         # Limpa markdown bold da linha para análise de tipo
         analysis_line = stripped.strip("*").strip()
+        upper_line = analysis_line.upper()
 
         if not stripped:
             blocks.append({"type": "empty"})
-        elif analysis_line.startswith("Cliente:"):
+        elif upper_line.startswith("CLIENTE:"):
             blocks.append({"type": "header", "text": analysis_line})
-        elif analysis_line.startswith("Roteirista:"):
+        elif upper_line.startswith("ROTEIRISTA:"):
             blocks.append({"type": "header", "text": analysis_line})
-        elif analysis_line.startswith("Produto:"):
+        elif upper_line.startswith("PRODUTO:"):
             blocks.append({"type": "header", "text": analysis_line})
         elif stripped.startswith("____"):
             blocks.append({"type": "separator"})
-        elif analysis_line.startswith("Imagem:"):
+        elif upper_line.startswith("IMAGEM:"):
             blocks.append({"type": "imagem", "text": analysis_line})
-        elif analysis_line.startswith("Lettering:"):
+        elif upper_line.startswith("LETTERING:"):
             blocks.append({"type": "lettering", "text": analysis_line})
         elif analysis_line.startswith("- "):
             blocks.append({"type": "locucao", "text": analysis_line})
@@ -168,15 +174,31 @@ def generate_filename(code: str, product_name: str, selected_month: str = "MAR",
 
 def _clean_product_name(raw_name: str) -> str:
     """Limpa o nome do produto de forma agressiva para evitar duplicação."""
-    # Remove prefixos de taxonomia, meses e códigos numéricos em cascata
+    if not raw_name:
+        return "Produto"
+        
     clean = raw_name
-    for _ in range(3): # Múltiplas passadas para limpar prefixos grudados
-        clean = re.sub(r'^(NW|SOCIAL|REVIEW|3D|LU|JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s*', '', clean, flags=re.IGNORECASE).strip()
-        clean = re.sub(r'^(\d{6,}\s*)+', '', clean).strip()
     
-    # Remove placeholders e caracteres inválidos
-    clean = re.sub(r'\[?NOME DO PRODUTO\]?', '', clean, flags=re.IGNORECASE)
-    clean = re.sub(r'^\**TÍTULO( DO PRODUTO)?:?\**\s*', '', clean, flags=re.IGNORECASE)
+    # Loop de limpeza: continua enquanto houver mudanças (limpa prefixos em qualquer ordem/quantidade)
+    max_iter = 10
+    for _ in range(max_iter):
+        prev = clean
+        # Remove prefixos de taxonomia e meses no início da string (com ou sem espaço depois)
+        clean = re.sub(r'^(NW|SOCIAL|REVIEW|3D|LU|JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ|DE)(\s+|$)', '', clean, flags=re.IGNORECASE).strip()
+        # Remove códigos numéricos (6 ou mais dígitos) no início da string
+        clean = re.sub(r'^(\d{6,})\s*', '', clean).strip()
+        # Remove placeholders e lixo de markdown
+        clean = re.sub(r'\[?NOME DO PRODUTO\]?', '', clean, flags=re.IGNORECASE).strip()
+        clean = re.sub(r'^\**TÍTULO( DO PRODUTO)?:?\**\s*', '', clean, flags=re.IGNORECASE).strip()
+        
+        if clean == prev:
+            break
+            
+    # Se sobrar nada ou apenas lixo, retorna fallback
+    if not clean or len(clean) < 2:
+        return "Produto"
+
+    # Limpeza final de caracteres inválidos para sistema de arquivos
     clean = re.sub(r'[<>:"/\\|?*]', '', clean)
     return clean[:80].strip()
 

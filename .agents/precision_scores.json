@@ -31,12 +31,19 @@
         "score": 92,
         "round": "Deep Diff - 10 Pares IA vs Breno",
         "notes": "Análise forense de 10 pares (Dell, Lenovo, Samsung Tab, Gama, Epson, Mondial, IdeaPad, Galaxy S22 x2, Moto E13). Descobertas: 12 falhas sistêmicas. Adicionadas 4 novas proibições (#10-#13), economia de cenas proporcional, spec precision (NUNCA arredondar medidas, NUNCA omitir processador/RAM/storage), fonética expandida (GHz/IP68/MP/8K/EcoFit na lista de NUNCA), ordem consistente pra eletrônicos, e imagens max 10 palavras.",
+        "status": "completed"
+      },
+      {
+        "date": "2026-05-04",
+        "score": 74,
+        "round": "Deep Diff Round 4 - 11 Pares (Desidrat, Nokia, Epson, Compaq, Edge 30, G23, Watch5, Brastemp, EcoTank, Mondial, Infinix, Huawei, Asus)",
+        "notes": "Queda significativa. 12 falhas sistêmicas: (1) Over-phonetização de números em 73% das amostras, (2) Fonetiza termos da lista NUNCA (Apps, MP, decibéis), (3) Processador irrelevante pra categoria (Helio G85 no G23, Dual-Core no Watch5), (4) Omissão de specs críticos (Asus perdeu RAM/SSD/tela inteira!), (5) Inflação de cenas (Watch5 com 7 cenas), (6) Nomes de modelo vazando (EcoTank L4360, Smart New Plus 150), (7) Fonética invertida (perde Fusion/premium, fonetiza TurboPower), (8) Fillers persistentes (perfeito pra, ideal pra, Olha só), (9) sabe? em excesso (Breno usa viu?), (10) RAM expansion total vs ganho, (11) Tier do processador sem regra, (12) Imagens longas demais. Adicionadas regras 18-19 (Tier Processador e RAM expansion), reforçadas cenas, fonética e proibições.",
         "status": "in_progress"
       }
     ]
   },
   "metadata": {
-    "last_update": "2026-04-30T13:00:00Z",
+    "last_update": "2026-05-04T18:30:00Z",
     "goal": "Atingir >95% de precisão em todos os modos."
   }
 }
