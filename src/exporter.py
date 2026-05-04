@@ -37,14 +37,26 @@ def _add_separator(doc):
 
 
 def _add_locucao(doc, text: str):
-    """Adiciona linha de locução: Tahoma 12pt Bold."""
+    """Adiciona linha de locução: Tahoma 12pt Bold, com fonética entre parênteses em Regular."""
     p = doc.add_paragraph()
     p.paragraph_format.space_after = Pt(0)
     p.paragraph_format.space_before = Pt(0)
-    run = p.add_run(text)
-    run.font.name = "Tahoma"
-    run.font.size = Pt(12)
-    run.bold = True
+
+    # Separa o texto em partes: texto normal (bold) e fonética entre parênteses (regular)
+    # Regex captura tudo entre parênteses: (cór), (rértz), (ismárt sên-sor), etc.
+    parts = re.split(r'(\([^)]+\))', text)
+
+    for part in parts:
+        if not part:
+            continue
+        run = p.add_run(part)
+        run.font.name = "Tahoma"
+        run.font.size = Pt(12)
+        # Se é fonética (entre parênteses), NÃO coloca bold
+        if part.startswith('(') and part.endswith(')'):
+            run.bold = False
+        else:
+            run.bold = True
 
 
 def _add_imagem(doc, text: str):
