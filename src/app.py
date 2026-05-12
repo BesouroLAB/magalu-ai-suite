@@ -1666,205 +1666,89 @@ if page == "Criar Roteiros":
         
         st.markdown("### 📋 Mesa de Trabalho")
         
-        if 'selected_mix' not in st.session_state:
-            st.session_state['selected_mix'] = []
+        total_mesa = len(st.session_state['roteiros'])
+        num_polidos = sum(1 for r in st.session_state['roteiros'] if st.session_state.get(f"polir_count_{r.get('_uid', '')}", 0) > 0)
+        st.caption(f"**{total_mesa}** roteiro{'s' if total_mesa > 1 else ''} na mesa | **{num_polidos}** polido{'s' if num_polidos != 1 else ''}")
             
-        # Lista simplificada por SKU
-        st.info("💡 Selecione um produto para editar abaixo. Marque os checkboxes para combinar roteiros.")
-        
-        for idx, r_item in enumerate(st.session_state["roteiros"]):
-            codigo_card = r_item.get("codigo", "...")
-            num_tag = f"#{r_item.get('global_num', '?')}"
-            modelo_tag = r_item.get("model_id", "").split("/")[-1][:12]
-            
-            # Tenta pegar o nome do produto da ficha
-            ficha_raw = r_item.get('ficha', '')
-            ficha_str = ficha_raw.get('text', str(ficha_raw)) if isinstance(ficha_raw, dict) else str(ficha_raw)
-            linhas_f = ficha_str.split('\n')
-            nome_p_card = linhas_f[0][:40].strip() if linhas_f and len(linhas_f[0]) > 2 else "Produto"
-            
-            custo = r_item.get("custo_brl", 0)
-            tag_custo = "Grátis" if custo == 0 else f"R$ {custo:.4f}"
-            is_active = st.session_state.get("roteiro_ativo_idx", 0) == idx
-            is_best_version = r_item.get("is_best_version", False)
-            
-            # Muda cor da tag se for a Melhor Versão
-            tag_color = "#10b981" if is_best_version else "#0086ff"
-            tag_icon = "🌟" if is_best_version else "🧠"
-            
-            # Título diferenciado se for melhor versão
-            titulo_display = f"**{num_tag} - {codigo_card}** | *{nome_p_card}*"
-            is_nw3d = (st.session_state.get('active_mode') == 'NW 3D')
-            cor_otimizado = "violet" if is_nw3d else "green"
-            
-            if is_best_version:
-                titulo_display = f"**{num_tag} - {codigo_card}** | :{cor_otimizado}[*{nome_p_card} - (MELHOR VERSÃO)*]"
-
-            
-            # Injetamos o estilo do botão fora das colunas para não quebrar o alinhamento vertical
-            if is_best_version and is_active:
-                 btn_colors = ("#7c3aed", "#8b5cf6", "rgba(139, 92, 246, 0.4)", "#a78bfa") if is_nw3d else ("#059669", "#10b981", "rgba(16, 185, 129, 0.4)", "#34d399")
-                 st.markdown(f"""
-                    <style>
-                    div.stButton > button[key="sel_{idx}"] {{
-                        background: linear-gradient(135deg, {btn_colors[0]} 0%, {btn_colors[1]} 100%) !important;
-                        border: 1px solid {btn_colors[3]} !important;
-                        box-shadow: 0 0 15px {btn_colors[2]} !important;
-                        color: white !important;
-                    }}
-                    </style>
+        # Grid de cards (3 por linha)
+        cols_per_row = 3
+        for row_start in range(0, total_mesa, cols_per_row):
+            cols = st.columns(cols_per_row)
+            for col_idx in range(cols_per_row):
+                idx_card = row_start + col_idx
+                if idx_card >= total_mesa:
+                    break
+                    
+                r_item = st.session_state["roteiros"][idx_card]
+                codigo_card = r_item.get("codigo", "...")
+                num_tag = f"#{r_item.get('global_num', '?')}"
+                modelo_tag = r_item.get("model_id", "").split("/")[-1][:15]
+                
+                # Nome do produto
+                ficha_raw = r_item.get('ficha', '')
+                ficha_str_card = ficha_raw.get('text', str(ficha_raw)) if isinstance(ficha_raw, dict) else str(ficha_raw)
+                linhas_f = ficha_str_card.split('\n')
+                nome_p_card = linhas_f[0][:35].strip() if linhas_f and len(linhas_f[0]) > 2 else "Produto"
+                
+                custo = r_item.get("custo_brl", 0)
+                tag_custo = "Grátis" if custo == 0 else f"R$ {custo:.4f}"
+                is_active = st.session_state.get("roteiro_ativo_idx", 0) == idx_card
+                
+                # Status Badge
+                polir_count = st.session_state.get(f"polir_count_{r_item.get('_uid', '')}", 0)
+                if polir_count > 0:
+                    status_badge = f"🔵 Polido v{polir_count}"
+                    status_color = "#3b82f6"
+                else:
+                    status_badge = "🟡 Rascunho"
+                    status_color = "#eab308"
+                
+                # Cores do card
+                if is_active:
+                    border_c = "#3b82f6"
+                    bg_c = "rgba(59, 130, 246, 0.08)"
+                    shadow_c = "0 0 12px rgba(59, 130, 246, 0.3)"
+                else:
+                    border_c = "#2A3241"
+                    bg_c = "#1a1f2e"
+                    shadow_c = "none"
+                
+                with cols[col_idx]:
+                    # Card HTML
+                    st.markdown(f"""
+                    <div style='background: {bg_c}; border: 1.5px solid {border_c}; border-radius: 10px; padding: 12px 14px; margin-bottom: 4px; box-shadow: {shadow_c}; min-height: 100px;'>
+                        <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;'>
+                            <span style='font-weight: 700; font-size: 14px; color: #e2e8f0;'>{num_tag} {codigo_card}</span>
+                            <span style='background: {status_color}22; color: {status_color}; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;'>{status_badge}</span>
+                        </div>
+                        <div style='font-size: 12px; color: #94a3b8; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'>{nome_p_card}</div>
+                        <div style='font-size: 10px; color: #64748b;'>🧠 {modelo_tag.upper()} | {tag_custo}</div>
+                    </div>
                     """, unsafe_allow_html=True)
-
-            btn_col_check, btn_col_sel, btn_col_info, btn_col_del = st.columns([0.5, 1.5, 3.5, 0.5])
-            
-            with btn_col_check:
-                is_selected = idx in st.session_state['selected_mix']
-                st.checkbox("Mix", value=is_selected, key=f"mix_{idx}", label_visibility="collapsed")
-                # Atualiza lista de mix (simplificado para evitar re-runs excessivos)
-                if st.session_state[f"mix_{idx}"] != is_selected:
-                    if st.session_state[f"mix_{idx}"]: st.session_state['selected_mix'].append(idx)
-                    else: st.session_state['selected_mix'].remove(idx)
-                    st.rerun()
-            
-            with btn_col_sel:
-                btn_label_edit = "✏️ Editar"
-                if st.button(btn_label_edit, key=f"sel_{idx}", use_container_width=True, type="primary" if is_active else "secondary"):
-                    st.session_state["roteiro_ativo_idx"] = idx
-                    st.rerun()
-
-            with btn_col_info:
-                st.markdown(titulo_display)
-                st.caption(f"{tag_icon} {modelo_tag.upper()} | {tag_custo}")
-
-            with btn_col_info:
-                pass # Já preenchido acima
-            
-            with btn_col_del:
-                # Botão para fechar/remover da mesa
-                if st.button("❌", key=f"del_{idx}", help="Remover roteiro da mesa"):
-                    st.session_state["roteiros"].pop(idx)
                     
-                    # Ajusta as seleções (selected_mix) que pudessem estar abaixo ou acima
-                    if idx in st.session_state["selected_mix"]:
-                        st.session_state["selected_mix"].remove(idx)
-                    # Rebaixa os índices de quem estava abaixo dele
-                    st.session_state["selected_mix"] = [i - 1 if i > idx else i for i in st.session_state["selected_mix"]]
-                    
-                    # Ajusta o index ativo
-                    ativo = st.session_state.get("roteiro_ativo_idx", 0)
-                    if ativo == idx:
-                        st.session_state["roteiro_ativo_idx"] = max(0, idx - 1)
-                    elif ativo > idx:
-                        st.session_state["roteiro_ativo_idx"] -= 1
-                        
-                    st.rerun()
-                
-        # --- AÇÃO: BOTÃO CRIAR MELHOR VERSÃO ---
-        # Fica aqui na parte de baixo, após o loop de roteiros
-        num_selecionados = len(st.session_state['selected_mix'])
-        if num_selecionados >= 2:
-            st.markdown("<br><hr style='margin: 10px 0; border-color: rgba(16, 185, 129, 0.3);'>", unsafe_allow_html=True)
-            
-            # Usando CSS para deixar o botão explicitamente verde
-            st.markdown("""
-                <style>
-                div[data-testid="stButton"] button[kind="primary"].btn-verde {
-                    background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
-                    border: 1px solid #34d399 !important;
-                    color: white !important;
-                }
-                div[data-testid="stButton"] button[kind="primary"].btn-verde:hover {
-                    box-shadow: 0 0 15px rgba(16, 185, 129, 0.6) !important;
-                }
-                </style>
-            """, unsafe_allow_html=True)
-            
-            # Envolvemos num container pra aplicar classe ou usar placeholder caso bugue no front
-            col_v1, col_v2, col_v3 = st.columns([1, 4, 1])
-            with col_v2:
-                # Dica para usar CSS Injection no Streamlit
-                st.markdown('<div class="btn-verde-container">', unsafe_allow_html=True)
-                if st.button(f"✨ CRIAR MELHOR VERSÃO ({num_selecionados} ROTERIOS) ✨", key="btn_create_best", use_container_width=True, type="primary"):
-                    if num_selecionados > 5:
-                        st.error("🚨 Selecione NO MÁXIMO 5 roteiros para mesclar.")
-                    else:
-                        with st.status("🌟 Iniciando a Criação da Melhor Versão...", expanded=True) as status:
-                            st.write("📥 Reunindo os textos selecionados...")
-                            roteiros_to_mix = [st.session_state['roteiros'][i] for i in st.session_state['selected_mix']]
-                            textos_para_mix = [r['roteiro_original'] for r in roteiros_to_mix]
-                            
-                            st.write("🔍 Extraindo Ficha Técnica como referência...")
-                            ficha_base = roteiros_to_mix[0].get('ficha', '')
-                            ficha_str = ficha_base.get('text', str(ficha_base)) if isinstance(ficha_base, dict) else str(ficha_base)
-                            nome_produto = roteiros_to_mix[0].get('codigo', 'Produto')
-                            
-                            st.write("🧠 Acionando a Inteligência Artificial (Diretor de Criação)...")
-                            try:
-                                ag = RoteiristaAgent(
-                                    supabase_client=st.session_state.get('supabase_client'),
-                                    model_id=st.session_state.get('modelo_llm', 'gemini-3-flash-preview'),
-                                    table_prefix=st.session_state.get('table_prefix', 'nw_')
-                                )
-                                resultado = ag.otimizar_roteiros(
-                                    roteiros_textos=textos_para_mix,
-                                    codigo=roteiros_to_mix[0].get('codigo', ''),
-                                    nome_produto=nome_produto,
-                                    ficha_tecnica=ficha_str
-                                )
-                                
-                                st.write("✅ Roteiro sintetizado com sucesso!")
-                                status.update(label="🚀 Melhor versão concluída!", state="complete", expanded=False)
-                                
-                                novo_roteiro = {
-                                    "ficha": roteiros_to_mix[0].get('ficha', ''),
-                                    "roteiro_original": resultado["roteiro"],
-                                    "categoria_id": roteiros_to_mix[0].get('categoria_id', 1),
-                                    "codigo": roteiros_to_mix[0].get('codigo', ''),
-                                    "model_id": resultado["model_id"],
-                                    "tokens_in": resultado["tokens_in"],
-                                    "tokens_out": resultado["tokens_out"],
-                                    "custo_brl": resultado["custo_brl"],
-                                    "global_num": roteiros_to_mix[0].get('global_num', 0),
-                                    "mes": roteiros_to_mix[0].get('mes', 'MAR'),
-                                    "is_best_version": True,
-                                    "_uid": str(uuid.uuid4())
-                                }
-                                
-                                # --- AUTO-SALVAR NO HISTÓRICO DO BANCO ---
-                                try:
-                                    sp_hist = st.session_state.get('supabase_client')
-                                    if sp_hist:
-                                        sp_hist.table(f"{st.session_state.get('table_prefix', 'nw_')}historico_roteiros").insert({
-                                            "codigo_produto": roteiros_to_mix[0].get('codigo', ''),
-                                            "modo_trabalho": roteiros_to_mix[0].get('modo_trabalho', 'NW (NewWeb)'), # Mantém o original
-                                            "roteiro_gerado": resultado["roteiro"],
-                                            "ficha_extraida": ficha_str[:5000],
-                                            "modelo_llm": f"{resultado['model_id']} (Otimizado)", # Marca no modelo
-                                            "tokens_entrada": resultado["tokens_in"],
-                                            "tokens_saida": resultado["tokens_out"],
-                                            "custo_estimado_brl": resultado["custo_brl"]
-                                        }).execute()
-                                except Exception as e:
-                                    st.error(f"Erro ao salvar no banco: {e}")
-
-                                st.session_state['roteiros'].insert(0, novo_roteiro)
-                                st.session_state['roteiro_ativo_idx'] = 0
-                                st.session_state['selected_mix'] = []
-                                st.rerun()
-                                
-                            except Exception as e:
-                                status.update(label=f"❌ Erro: {e}", state="error")
-                st.markdown('</div>', unsafe_allow_html=True)
-                
-        # Limpar só a mesa de trabalho (movido para ficar debaixo da lista de seleções)
+                    # Botões do card
+                    btn_edit_col, btn_del_col = st.columns([4, 1])
+                    with btn_edit_col:
+                        if st.button("✏️ Editar" if not is_active else "📝 Ativo", key=f"sel_{idx_card}", use_container_width=True, type="primary" if is_active else "secondary"):
+                            st.session_state["roteiro_ativo_idx"] = idx_card
+                            st.rerun()
+                    with btn_del_col:
+                        if st.button("🗑️", key=f"del_{idx_card}", help="Remover da mesa"):
+                            st.session_state["roteiros"].pop(idx_card)
+                            ativo = st.session_state.get("roteiro_ativo_idx", 0)
+                            if ativo == idx_card:
+                                st.session_state["roteiro_ativo_idx"] = max(0, idx_card - 1)
+                            elif ativo > idx_card:
+                                st.session_state["roteiro_ativo_idx"] -= 1
+                            st.rerun()
+        
+        # Limpar mesa de trabalho
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("🗑️ Limpar Mesa de Trabalho", use_container_width=True, type="secondary"):
             if 'roteiros' in st.session_state:
                 del st.session_state['roteiros']
             if 'roteiro_ativo_idx' in st.session_state:
                 del st.session_state['roteiro_ativo_idx']
-            if 'selected_mix' in st.session_state:
-                del st.session_state['selected_mix']
             st.rerun()
 
     # --- HISTÓRICO DO BANCO (Expandível, separado) ---
