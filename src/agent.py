@@ -112,7 +112,8 @@ class RoteiristaAgent:
             openai_key = _get_key("OPEN_AI_KEY") or _get_key("OPENAI_API_KEY")
             if not openai_key:
                 raise ValueError("OPENAI_API_KEY não encontrada!")
-            self.client_openai = OpenAI(api_key=openai_key)
+            # Timeout estendido para 600s (10 min) para permitir o 'reasoning' dos modelos o1/o3
+            self.client_openai = OpenAI(api_key=openai_key, timeout=600.0)
             self.model_id = self.model_id.replace("openai/", "")
         elif self.model_id.startswith("openrouter/"):
             self.provider = "openrouter"
@@ -504,19 +505,43 @@ class RoteiristaAgent:
                 tokens_out = len(roteiro) // 4
         
         elif self.client_openai:
-            messages = [{"role": "user", "content": final_prompt}]
-            # Para modelos OpenAI/Puter, o envio de imagens (vision) tem uma estrutura diferente.
-            # Como a documentação primária do Puter para Grok Fast não deixa claro o suporte a imagens,
-            # passaremos apenas texto por enquanto, a não ser que o modelo suporte e tenhamos url.
+            # Modelos de raciocínio (o1, o3) preferem instruções via 'developer' ou apenas 'user' 
+            # e não suportam parâmetros como temperature/top_p.
+            is_reasoning = any(m in self.model_id.lower() for m in ["o1", "o3"])
             
-            response = self.client_openai.chat.completions.create(
-                model=self.model_id,
-                messages=messages
-            )
-            roteiro = response.choices[0].message.content
-            
-            tokens_in = response.usage.prompt_tokens if hasattr(response, 'usage') else 0
-            tokens_out = response.usage.completion_tokens if hasattr(response, 'usage') else 0
+            messages = []
+            if is_reasoning:
+                # Para o1/o3, enviamos o contexto como parte do prompt do usuário ou developer
+                messages.append({"role": "developer", "content": context})
+                messages.append({"role": "user", "content": f"Ficha Técnica:\n{scraped_data['text']}\n\nCódigo: {codigo}"})
+            else:
+                messages.append({"role": "system", "content": context})
+                messages.append({"role": "user", "content": final_prompt})
+
+            try:
+                print(f"[DEBUG] Chamando OpenAI ({self.model_id}) para SKU {codigo}...")
+                
+                params = {
+                    "model": self.model_id,
+                    "messages": messages
+                }
+                
+                # Só adiciona temperature se não for modelo de raciocínio
+                if not is_reasoning:
+                    params["temperature"] = 0.7
+                
+                response = self.client_openai.chat.completions.create(**params)
+                roteiro = response.choices[0].message.content
+                
+                tokens_in = response.usage.prompt_tokens if hasattr(response, 'usage') else 0
+                tokens_out = response.usage.completion_tokens if hasattr(response, 'usage') else 0
+                print(f"[OK] OpenAI gerou roteiro para {codigo} ({tokens_in + tokens_out} tokens)")
+                
+            except Exception as e:
+                err_msg = f"ERRO OPENAI ({self.model_id}): {str(e)}"
+                print(f"[CRITICAL] {err_msg}")
+                roteiro = f"{err_msg}\n\nPor favor, tente usar o modelo Gemini 3 Flash ou GPT-4o se o erro persistir."
+                tokens_in, tokens_out = 0, 0
         
         else:
             raise Exception("Nenhum cliente LLM configurado válido.")
@@ -703,13 +728,15 @@ class RoteiristaAgent:
                 # Tenta o1 Primeiro (O Pensador)
                 try:
                     print("[TRY] Tentando calibragem via OpenAI (o1)...")
+                    # Timeout maior explícito aqui também
                     response = client.chat.completions.create(
                         model="o1",
                         messages=[
                             {"role": "developer", "content": sys_prompt},
                             {"role": "user", "content": user_prompt}
                         ],
-                        response_format={"type": "json_object"}
+                        # o1-2024-12-17 suporta JSON mas alguns tiers podem ter instabilidade
+                        # Se falhar, o fallback lidará.
                     )
                     res = self._extract_json(response.choices[0].message.content)
                     print("[OK] Calibragem realizada via OpenAI (o1)")
