@@ -1898,126 +1898,26 @@ if page == "Criar Roteiros":
             </div>
             """, unsafe_allow_html=True)
     
-            # O Canva do Roteiro Ativo
-            with st.container(border=True):
-                # Usamos o _uid único do item para garantir que o text_area resete ao trocar de script
-                script_uid = item.get("_uid", f"{idx}_{codigo_produto}")
-                editor_key = f"edit_session_{script_uid}"
-                
-                # Se mudamos de script (ou o script no index mudou), sincronizamos o session state do editor
-                if st.session_state.get("last_script_uid") != script_uid:
-                    st.session_state[editor_key] = item['roteiro_original']
-                    st.session_state["last_script_uid"] = script_uid
-
-                edited_val = st.text_area(
-                    "Editor",
-                    value=st.session_state.get(editor_key, item['roteiro_original']),
-                    height=450,
-                    key=f"text_area_{script_uid}",
-                    label_visibility="collapsed"
-                )
             sp_cli = st.session_state.get('supabase_client', None)
-                
-            # Barra de Ações (4 colunas)
-            st.markdown("<br>", unsafe_allow_html=True)
             
-            col_docx, col_polir, col_calib, col_ouro = st.columns(4)
-            
-            with col_docx:
-                docx_edited_bytes, docx_edited_fn = export_roteiro_docx(
-                    edited_val,
-                    code=codigo_produto,
-                    product_name=titulo_curto,
-                    selected_month=item.get('mes', st.session_state.get('mes_auto', 'MAR')),
-                    selected_date=st.session_state.get('data_auto'),
-                    model_id=item.get('model_id', ''),
-                    com_lu=item.get('com_lu', True),
-                    modo_trabalho=item.get('modo_trabalho', '')
-                )
-                st.download_button(
-                    label="📥 Baixar DOCX",
-                    data=docx_edited_bytes,
-                    file_name=docx_edited_fn,
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    key=f"export_edit_{idx}",
-                    use_container_width=True,
-                    type="secondary"
-                )
-            
-            with col_polir:
-                # Contador de iterações de polimento para este roteiro
-                polir_key = f"polir_count_{item.get('_uid', idx)}"
-                iteracao_atual = st.session_state.get(polir_key, 0)
-                
-                polir_label = "✨ Polir IA" if iteracao_atual == 0 else f"✨ Polir (v{iteracao_atual + 1})"
-                if st.button(polir_label, key=f"polir_{idx}", use_container_width=True, type="primary"):
-                    with st.spinner("🔍 A IA está revisando o roteiro..."):
-                        try:
-                            ag_polir = RoteiristaAgent(
-                                supabase_client=st.session_state.get('supabase_client'),
-                                model_id=st.session_state.get('modelo_llm', 'gemini-3-flash-preview'),
-                                table_prefix=st.session_state.get('table_prefix', 'nw_')
-                            )
-                            res_polir = ag_polir.polir_roteiro(
-                                roteiro_atual=edited_val,
-                                ficha_tecnica=ficha_str,
-                                iteracao=iteracao_atual + 1
-                            )
-                            st.session_state[f"polir_resultado_{item.get('_uid', idx)}"] = res_polir
-                            st.session_state[f"polir_original_{item.get('_uid', idx)}"] = edited_val
-                            st.rerun()
-                        except Exception as e_polir:
-                            st.error(f"❌ Erro ao polir: {e_polir}")
-                
-            with col_calib:
-                if st.button("🚀 Calibrar IA", key=f"fino_{idx}", use_container_width=True, type="primary"):
-                    if sp_cli:
-                        st.toast("🧠 Iniciando calibragem...", icon="⏳")
-                        think_calib = st.empty()
-                        with st.spinner("A IA está analisando suas correções..."):
-                            try:
-                                think_calib.markdown("💭 *IA Pensando: '🧐 Comparando roteiro original com sua edição para detectar padrões...'*")
-                                res_c = sp_cli.table(f"{st.session_state.get('table_prefix', 'nw_')}categorias").select("id, nome").execute()
-                                lista_c = res_c.data if hasattr(res_c, 'data') else []
-                            except:
-                                lista_c = []
-                            
-                            local_agent = RoteiristaAgent(model_id="gemini-3-flash-preview", table_prefix=st.session_state.get('table_prefix', 'nw_'))
-                            calc = local_agent.analisar_calibracao(item['roteiro_original'], edited_val, lista_c, codigo_produto)
-                            think_calib.empty()
-                            st.session_state['pending_calibration'] = {
-                                'calc': calc,
-                                'roteiro_ia': item['roteiro_original'],
-                                'roteiro_humano': edited_val,
-                                'titulo_curto': titulo_curto,
-                                'codigo_p': codigo_produto
-                            }
-                            st.session_state['show_diff'] = False
-                            modal_resultado_calibragem(calc, sp_cli, item['roteiro_original'], edited_val, titulo_curto, codigo_produto)
-                    else:
-                        st.error("Conecte o Supabase primeiro.")
-            
-            with col_ouro:
-                if st.button("🏆 Enviar Ouro", key=f"ouro_{idx}", use_container_width=True, type="secondary"):
-                    salvar_ouro(sp_cli, cat_id_roteiro, titulo_curto, edited_val)
-
-            # --- PAINEL DE POLIMENTO (COMPARAÇÃO LADO A LADO) ---
+            # Verifica se estamos em modo de revisão de polimento
             polir_uid = item.get('_uid', idx)
             polir_resultado = st.session_state.get(f"polir_resultado_{polir_uid}")
             
             if polir_resultado:
+                # --- MODO REVISÃO DE POLIMENTO ---
                 polir_original = st.session_state.get(f"polir_original_{polir_uid}", "")
                 polir_key_count = f"polir_count_{polir_uid}"
                 iteracao_num = st.session_state.get(polir_key_count, 0) + 1
                 
                 st.markdown(f"""
-                <div style='background: linear-gradient(135deg, #1a1f2e 0%, #1e2a3a 100%); padding: 16px 20px; border-radius: 12px; border: 1px solid #3b82f6; margin: 20px 0 10px 0;'>
+                <div style='background: linear-gradient(135deg, #1a1f2e 0%, #1e2a3a 100%); padding: 16px 20px; border-radius: 12px; border: 1px solid #3b82f6; margin-bottom: 20px;'>
                     <div style='display: flex; justify-content: space-between; align-items: center;'>
                         <div>
-                            <span style='font-size: 18px; font-weight: 700; color: #60a5fa;'>✨ Revisão v{iteracao_num}</span>
-                            <span style='font-size: 12px; color: #8b92a5; margin-left: 10px;'>🧠 {polir_resultado.get('model_id', '')} | 💲 R$ {polir_resultado.get('custo_brl', 0):.4f}</span>
+                            <span style='font-size: 18px; font-weight: 700; color: #60a5fa;'>✨ Revisando Polimento (v{iteracao_num})</span>
+                            <span style='font-size: 13px; color: #8b92a5; margin-left: 10px;'>🧠 {polir_resultado.get('model_id', '')} | 💲 Custo: R$ {polir_resultado.get('custo_brl', 0):.4f}</span>
                         </div>
-                        <span style='font-size: 12px; color: #6b7280;'>Compare e decida: Aprovar ou Rejeitar</span>
+                        <span style='font-size: 13px; color: #fbbf24; font-weight: 600;'>Ação Necessária: Compare e decida abaixo 👇</span>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -2025,33 +1925,35 @@ if page == "Criar Roteiros":
                 col_antes, col_depois = st.columns(2)
                 
                 with col_antes:
-                    st.markdown("#### 📄 Versão Atual")
+                    st.markdown("#### 📄 Roteiro Atual (Antes)")
                     st.text_area(
                         "Antes",
                         value=polir_original,
-                        height=400,
+                        height=450,
                         disabled=True,
                         key=f"polir_antes_{polir_uid}",
                         label_visibility="collapsed"
                     )
                 
                 with col_depois:
-                    st.markdown("#### ✨ Versão Polida")
+                    st.markdown("#### ✨ Roteiro Polido (Nova Versão)")
                     st.text_area(
                         "Depois",
                         value=polir_resultado["roteiro"],
-                        height=400,
+                        height=450,
                         disabled=True,
                         key=f"polir_depois_{polir_uid}",
                         label_visibility="collapsed"
                     )
                 
+                st.markdown("<br>", unsafe_allow_html=True)
                 col_aprovar, col_rejeitar, col_polir_again = st.columns(3)
                 
                 with col_aprovar:
-                    if st.button("✅ Aprovar Revisão", key=f"aprovar_polir_{polir_uid}", use_container_width=True, type="primary"):
+                    if st.button("✅ Aprovar e Salvar", key=f"aprovar_polir_{polir_uid}", use_container_width=True, type="primary"):
+                        novo_texto = polir_resultado["roteiro"]
                         # Aplica a versão polida no roteiro
-                        st.session_state['roteiros'][idx]['roteiro_original'] = polir_resultado["roteiro"]
+                        st.session_state['roteiros'][idx]['roteiro_original'] = novo_texto
                         st.session_state['roteiros'][idx]['model_id'] = polir_resultado["model_id"]
                         st.session_state['roteiros'][idx]['tokens_in'] = (
                             item.get('tokens_in', 0) + polir_resultado.get('tokens_in', 0)
@@ -2067,27 +1969,25 @@ if page == "Criar Roteiros":
                         # Limpa o painel de comparação
                         del st.session_state[f"polir_resultado_{polir_uid}"]
                         del st.session_state[f"polir_original_{polir_uid}"]
-                        # Força o editor a recarregar o novo texto
+                        # Força o editor a recarregar: limpa AMBOS os states (session + widget)
                         editor_key_polir = f"edit_session_{polir_uid}"
-                        st.session_state[editor_key_polir] = polir_resultado["roteiro"]
-                        st.session_state["last_script_uid"] = None  # Force reload
-                        st.toast("✅ Versão polida aprovada!", icon="🎉")
+                        widget_key_polir = f"text_area_{polir_uid}"
+                        st.session_state[editor_key_polir] = novo_texto
+                        # Limpa o cache interno do widget para forçar recriação
+                        if widget_key_polir in st.session_state:
+                            del st.session_state[widget_key_polir]
+                        st.session_state["last_script_uid"] = None
+                        st.toast("✅ Versão polida aprovada e salva!", icon="🎉")
                         st.rerun()
                 
                 with col_rejeitar:
-                    if st.button("❌ Rejeitar", key=f"rejeitar_polir_{polir_uid}", use_container_width=True, type="secondary"):
+                    if st.button("❌ Descartar Sugestão", key=f"rejeitar_polir_{polir_uid}", use_container_width=True, type="secondary"):
                         del st.session_state[f"polir_resultado_{polir_uid}"]
                         del st.session_state[f"polir_original_{polir_uid}"]
-                        st.toast("Revisão descartada.", icon="🗑️")
+                        st.toast("Revisão descartada. Mantendo original.", icon="🗑️")
                         st.rerun()
                 
                 with col_polir_again:
-                    if st.button("🔄 Polir Novamente", key=f"repolir_{polir_uid}", use_container_width=True, type="secondary"):
-                        # Usa a versão polida como input para nova iteração
-                        with st.spinner("🔍 Polindo novamente..."):
-                            try:
-                                ag_re = RoteiristaAgent(
-                                    supabase_client=st.session_state.get('supabase_client'),
                                     model_id=st.session_state.get('modelo_llm', 'gemini-3-flash-preview'),
                                     table_prefix=st.session_state.get('table_prefix', 'nw_')
                                 )
