@@ -152,26 +152,37 @@ def _parse_roteiro(roteiro_text: str) -> list[dict]:
     return blocks
 
 
-def generate_filename(code: str, product_name: str, selected_month: str = "MAR", model_id: str = "", com_lu: bool = True) -> str:
-    """Gera nome do arquivo no padrão: NW LU {selected_month} {code} {product_name} [{model}].docx"""
+def generate_filename(code: str, product_name: str, selected_month: str = "MAR", model_id: str = "", com_lu: bool = True, modo_trabalho: str = "") -> str:
+    """Gera nome do arquivo no padrão: NW 3D LU {month} {code} {product}.docx"""
     # Garante que o código tenha 9 dígitos (preenche com 0 à direita se necessário)
     clean_code = str(code).strip()
     if clean_code and len(clean_code) < 9:
         clean_code = clean_code.ljust(9, '0')
 
-    # Detecta prefixo correto baseado no modo e presença da Lu
-    prefixo_u = str(product_name).upper()
+    # Detecta prefixo correto — PRIORIZA modo_trabalho explícito, fallback para heurística
+    modo_u = str(modo_trabalho).upper()
     
-    if "3D" in prefixo_u:
+    if "3D" in modo_u:
         prefixo = f"NW 3D LU {selected_month}"
-    elif "SOCIAL" in prefixo_u:
+    elif "SOCIAL" in modo_u:
         prefixo = f"SOCIAL {selected_month}"
-    elif "NW REVIEW" in prefixo_u or com_lu == "REVIEW":
+    elif "REVIEW" in modo_u or com_lu == "REVIEW":
         prefixo = f"NW REVIEW {selected_month}"
-    elif com_lu is True:
-        prefixo = f"NW LU {selected_month}"
+    elif modo_u:  # Tem modo mas não é 3D/SOCIAL/REVIEW → NW padrão
+        prefixo = f"NW LU {selected_month}" if com_lu is True else f"NW {selected_month}"
     else:
-        prefixo = f"NW {selected_month}"
+        # Fallback: tenta detectar pelo product_name (legado)
+        prefixo_u = str(product_name).upper()
+        if "3D" in prefixo_u:
+            prefixo = f"NW 3D LU {selected_month}"
+        elif "SOCIAL" in prefixo_u:
+            prefixo = f"SOCIAL {selected_month}"
+        elif "NW REVIEW" in prefixo_u or com_lu == "REVIEW":
+            prefixo = f"NW REVIEW {selected_month}"
+        elif com_lu is True:
+            prefixo = f"NW LU {selected_month}"
+        else:
+            prefixo = f"NW {selected_month}"
 
     # Agora limpa o nome para o arquivo
     clean_name = _clean_product_name(product_name)
@@ -215,7 +226,7 @@ def _clean_product_name(raw_name: str) -> str:
     return clean[:80].strip()
 
 
-def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "", selected_month: str = "MAR", selected_date: str = None, model_id: str = "", com_lu: bool = True) -> tuple[bytes, str]:
+def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "", selected_month: str = "MAR", selected_date: str = None, model_id: str = "", com_lu: bool = True, modo_trabalho: str = "") -> tuple[bytes, str]:
     """
     Gera um documento Word (.docx) com a formatação de referência.
     O cabeçalho interno do DOCX é idêntico ao nome do arquivo.
@@ -241,7 +252,7 @@ def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "
         product_name = _extract_product_name(roteiro_text)
 
     # Gera o filename PRIMEIRO — ele é a fonte de verdade para a nomenclatura
-    filename = generate_filename(code, product_name, selected_month, model_id, com_lu=com_lu)
+    filename = generate_filename(code, product_name, selected_month, model_id, com_lu=com_lu, modo_trabalho=modo_trabalho)
     
     # O nome do cabeçalho deve ser EXATAMENTE o mesmo do filename (sem .docx e sem model tag)
     header_product_line = filename.replace(".docx", "")
@@ -364,7 +375,8 @@ def export_all_roteiros_zip(roteiros: list, selected_month: str = "MAR", selecte
                 selected_month=mes_roteiro,
                 selected_date=selected_date,
                 model_id=item.get('model_id', ''),
-                com_lu=item.get('com_lu', True)
+                com_lu=item.get('com_lu', True),
+                modo_trabalho=item.get('modo_trabalho', '')
             )
             # Garante que o nome do arquivo seja único dentro do ZIP se houver duplicatas
             zip_file.writestr(filename, doc_bytes)

@@ -1212,8 +1212,12 @@ if page == "Criar Roteiros":
                 elif len(grupos) > 15:
                     st.warning("⚠️ Limite de 15 roteiros por vez atingido.")
                 else:
+                    import time as _time
                     total_roteiros = len(grupos)
+                    lote_start_time = _time.time()
+                    
                     progress_text = st.empty()
+                    timer_display = st.empty()
                     bar = st.progress(0)
                     
                     sp_cli = st.session_state.get('supabase_client')
@@ -1222,16 +1226,23 @@ if page == "Criar Roteiros":
                     agent = RoteiristaAgent(supabase_client=sp_cli, model_id=modelo_id, table_prefix=table_prefix)
                     
                     erros_lote = []
+                    tempos_por_roteiro = []
                     gemini_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
 
                     for i, grupo in enumerate(grupos):
                         main_code = grupo["codes"][0]
                         all_codes = grupo["codes"]
                         video_url = grupo["video"]
+                        roteiro_start_time = _time.time()
                         
-                        percent = int((i + 1) / total_roteiros * 100)
+                        elapsed_total = _time.time() - lote_start_time
+                        elapsed_min = int(elapsed_total // 60)
+                        elapsed_sec = int(elapsed_total % 60)
+                        
+                        percent = int((i) / total_roteiros * 100)
                         progress_text.markdown(f"**⏳ Processando Roteiro {i+1}/{total_roteiros} ({percent}%):** SKU {main_code}")
-                        bar.progress((i + 1) / total_roteiros)
+                        timer_display.markdown(f"⏱️ Tempo decorrido: **{elapsed_min}min {elapsed_sec}s**")
+                        bar.progress(i / total_roteiros)
                         
                         try:
                             with st.status(f"🚀 Roteiro {i+1} (SKUs: {', '.join(all_codes)})", expanded=True) as status_box:
@@ -1246,9 +1257,31 @@ if page == "Criar Roteiros":
                                     fichas_grupo[c] = f
                                     if c == main_code:
                                         ficha_principal = f
-                                    # Pequeno delay para evitar rate limits excessivos
-                                    import time
-                                    time.sleep(0.5)
+                                    # Delay para evitar rate limits
+                                    _time.sleep(1)
+                                
+                                # --- VALIDAÇÃO DE QUALIDADE DO SCRAPING ---
+                                ficha_text = ficha_principal.get("text", "") if isinstance(ficha_principal, dict) else str(ficha_principal)
+                                
+                                if "ERRO:" in ficha_text or "FALHA_TOTAL" in ficha_text:
+                                    status_box.update(label=f"⚠️ Roteiro {i+1} — Scraping falhou para SKU {main_code}", state="error")
+                                    erros_lote.append(f"SKU {main_code}: Scraping falhou — {ficha_text[:150]}...")
+                                    tempos_por_roteiro.append(_time.time() - roteiro_start_time)
+                                    continue
+                                
+                                if len(ficha_text.strip()) < 100:
+                                    status_box.update(label=f"⚠️ Roteiro {i+1} — Ficha muito curta para SKU {main_code}", state="error")
+                                    erros_lote.append(f"SKU {main_code}: Ficha extraída muito curta ({len(ficha_text.strip())} chars). Dados insuficientes para gerar roteiro de qualidade.")
+                                    tempos_por_roteiro.append(_time.time() - roteiro_start_time)
+                                    continue
+                                
+                                # Verifica se o código foi confirmado na ficha
+                                if "CÓDIGO CONFIRMADO" not in ficha_text.upper():
+                                    status_box.warning(f"⚠️ Atenção: Código não confirmado na ficha do SKU {main_code}. Pode haver troca de produto.")
+                                
+                                # Detecta se é combo e informa
+                                if "TIPO_PRODUTO: COMBO" in ficha_text.upper():
+                                    status_box.info("📦 Produto COMBO detectado — fichas de múltiplos componentes serão consolidadas.")
 
                                 # 2. Detecção de Variantes
                                 info_variantes = None
@@ -1259,7 +1292,7 @@ if page == "Criar Roteiros":
                                         status_box.info(f"💡 Variantes detectadas: {info_variantes['resumo']}")
 
                                 # 3. Geração
-                                status_box.write("🧠 **Etapa 3:** Gerando roteiro com IA...")
+                                status_box.write("🧠 **Etapa 3:** Gerando roteiro com IA... (pode levar alguns minutos)")
                                 # Concatena outros códigos para o cabeçalho
                                 outros_codigos = " ".join(all_codes[1:]) if len(all_codes) > 1 else ""
                                 
@@ -1289,6 +1322,7 @@ if page == "Criar Roteiros":
                                     "custo_brl": res_gen["custo_brl"],
                                     "global_num": global_num,
                                     "mes": mes_selecionado,
+                                    "modo_trabalho": modo_selecionado,
                                     "com_lu": "REVIEW" if "Review" in modo_selecionado else (com_lu_auto == "Com LU")
                                 }
                                 
@@ -1309,7 +1343,11 @@ if page == "Criar Roteiros":
                                     except Exception as e:
                                         print(f"❌ Erro ao salvar histórico: {e}")
                                 
-                                status_box.update(label=f"✅ Roteiro {i+1} Finalizado!", state="complete")
+                                roteiro_elapsed = _time.time() - roteiro_start_time
+                                tempos_por_roteiro.append(roteiro_elapsed)
+                                r_min = int(roteiro_elapsed // 60)
+                                r_sec = int(roteiro_elapsed % 60)
+                                status_box.update(label=f"✅ Roteiro {i+1} Finalizado! ({r_min}min {r_sec}s)", state="complete")
                                 st.session_state['roteiros'].insert(0, novo_roteiro)
 
                                 # Detecção de erro interno (mesmo se a chamada não levantou exceção)
@@ -1320,16 +1358,31 @@ if page == "Criar Roteiros":
                             err_msg = f"❌ Erro no Roteiro {i+1} (SKU {main_code}): {str(e)}"
                             st.error(err_msg)
                             erros_lote.append(err_msg)
-
+                            tempos_por_roteiro.append(_time.time() - roteiro_start_time)
+                    
+                    # --- RESUMO FINAL COM TEMPO ---
+                    total_elapsed = _time.time() - lote_start_time
+                    total_min = int(total_elapsed // 60)
+                    total_sec = int(total_elapsed % 60)
+                    avg_time = total_elapsed / total_roteiros if total_roteiros > 0 else 0
+                    avg_min = int(avg_time // 60)
+                    avg_sec = int(avg_time % 60)
+                    
+                    bar.progress(1.0)
+                    timer_display.markdown(f"⏱️ **Tempo total: {total_min}min {total_sec}s** | Média por roteiro: {avg_min}min {avg_sec}s")
+                    
                     st.session_state['roteiro_ativo_idx'] = 0
                     if erros_lote:
                         st.session_state['last_errors'] = erros_lote
                     
+                    roteiros_ok = total_roteiros - len(erros_lote)
                     if not erros_lote:
-                        st.success(f"🎯 Geração de {total_roteiros} roteiros concluída!")
+                        st.success(f"🎯 {total_roteiros} roteiros gerados em {total_min}min {total_sec}s!")
                         st.rerun()
                     else:
-                        st.warning(f"⚠️ Concluído com {len(erros_lote)} erro(s). Detalhes no histórico.")
+                        st.warning(f"⚠️ {roteiros_ok}/{total_roteiros} roteiros OK, {len(erros_lote)} erro(s) em {total_min}min {total_sec}s. Veja detalhes abaixo:")
+                        for err in erros_lote:
+                            st.error(err)
                         # Não dá rerun imediato para o usuário ver os avisos de erro na tela
                         if st.button("🔄 Atualizar Visualização"):
                             st.rerun()
@@ -1458,6 +1511,7 @@ if page == "Criar Roteiros":
                                     "custo_brl": res_gen["custo_brl"],
                                     "global_num": global_num,
                                     "mes": mes_selecionado_man,
+                                    "modo_trabalho": modo_man_selecionado,
                                     "com_lu": "REVIEW" if "Review" in modo_man_selecionado else (com_lu_man == "Com LU")
                                 }
                                 st.session_state['roteiros'].insert(0, novo_roteiro)
@@ -1881,7 +1935,8 @@ if page == "Criar Roteiros":
                     selected_month=item.get('mes', st.session_state.get('mes_auto', 'MAR')),
                     selected_date=st.session_state.get('data_auto'),
                     model_id=item.get('model_id', ''),
-                    com_lu=item.get('com_lu', True)
+                    com_lu=item.get('com_lu', True),
+                    modo_trabalho=item.get('modo_trabalho', '')
                 )
                 st.download_button(
                     label="📥 Baixar DOCX",
