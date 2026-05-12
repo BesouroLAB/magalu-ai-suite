@@ -15,9 +15,13 @@ PRICING_USD_PER_1M = {
     "gemini-3-flash-preview":   {"input": 0.70, "output": 2.10},
     "gemini-2.0-flash":         {"input": 0.10, "output": 0.40},
     # Modelos gratuitos (via Puter, OpenRouter, Z.ai, Kimi)
-    "gpt-4o-mini": {"input": 0.15, "output": 0.60},     # Preço Puter/Market
-    "x-ai/grok-4-1-fast": {"input": 0.20, "output": 0.50}, # Preço xAI/Puter
-    "moonshot-v1-8k": {"input": 0.00, "output": 0.00},
+    "gpt-5.5":                  {"input": 5.00, "output": 15.00},
+    "gpt-5.5-instant":          {"input": 1.00, "output": 3.00},
+    "o1":                       {"input": 15.00, "output": 60.00},
+    "o1-mini":                  {"input": 3.00, "output": 12.00},
+    "o3-mini":                  {"input": 1.10, "output": 4.40},
+    "gpt-4o":                   {"input": 2.50, "output": 10.00},
+    "gpt-4o-mini":              {"input": 0.15, "output": 0.60},
     "glm-4.5-flash": {"input": 0.00, "output": 0.00},
     "deepseek/deepseek-r1": {"input": 0.00, "output": 0.00},
     "openrouter/free": {"input": 0.00, "output": 0.00},
@@ -30,22 +34,28 @@ USD_TO_BRL = 5.80
 
 MODELOS_DISPONIVEIS = {
     "⚡ Gemini 3 Flash Preview [PADRÃO] — ~R$0,02/roteiro": "gemini-3-flash-preview",
-    "👑 Gemini 3.1 Pro Preview [ALTO NÍVEL] — ~R$0,19/roteiro": "gemini-3.1-pro-preview",
-    "💰 Gemini 2.0 Flash [ESTÁVEL] — ~R$0,005/roteiro": "gemini-2.0-flash",
-    "⚖️ OpenRouter Auto-Free [GRÁTIS] — Múltiplos": "openrouter/free",
-    "🔥 Grok 4.1 Fast [GRÁTIS] — Criativo (Puter)": "puter/x-ai/grok-4-1-fast",
-    "🤖 GPT-4o Mini [GRÁTIS] — Fluído (Puter)": "puter/gpt-4o-mini",
-    "🇨🇳 GLM-4.5 Flash [GRÁTIS] — Ficha Técnica (Z.ai)": "zai/glm-4.5-flash"
+    "🧠 o1 Reasoning [MAXIMUS] — ~R$1,20/roteiro": "openai/o1",
+    "🧠 o1-mini Reasoning — ~R$0,25/roteiro": "openai/o1-mini",
+    "🧪 o3-mini Reasoning — ~R$0,15/roteiro": "openai/o3-mini",
+    "🌌 GPT-5.5 Frontier [ESTADO DA ARTE] — ~R$0,45/roteiro": "openai/gpt-5.5",
+    "🚀 GPT-5.5 Instant — ~R$0,09/roteiro": "openai/gpt-5.5-instant",
+    "👑 Gemini 3.1 Pro Preview — ~R$0,19/roteiro": "gemini-3.1-pro-preview",
+    "🎨 GPT-4o Omni — ~R$0,20/roteiro": "openai/gpt-4o",
+    "💰 Gemini 2.0 Flash — ~R$0,005/roteiro": "gemini-2.0-flash",
+    "🤖 GPT-4o Mini [GRÁTIS] (Puter)": "puter/gpt-4o-mini",
+    "⚖️ OpenRouter Auto-Free [GRÁTIS]": "openrouter/free"
 }
 
 MODELOS_DESCRICAO = {
-    "gemini-3.1-pro-preview": "[O SUPERIOR] (Fev/2026) Inteligência de ponta absoluta. Melhor estruturação, obediência de formatação e raciocínio hiper avançado. Perfeito para 3D. Custo: ~R$ 0,19.",
-    "gemini-3-flash-preview": "[O MOTOR OFICIAL] (Dez/2025) Versão mais recente e calibrada. Altíssimo raciocínio e obediência total às regras de síntese. Custo: ~R$ 0,02.",
-    "gemini-2.0-flash": "[LEGADO ESTÁVEL] (2025) Versão anterior mas muito robusta. Custo: ~R$ 0,005.",
-    "openrouter/free": "[O CAMALEÃO] (2026) Seleciona automaticamente o melhor modelo gratuito disponível (Llama 3.3, Gemma 3, etc). Ótimo fallback sem custo.",
-    "puter/gpt-4o-mini": "[O DESOBEDIENTE] Bom nos benefícios, mas costuma quebrar regras de cabeçalho e errar pronúncias. Use como estepe.",
-    "puter/x-ai/grok-4-1-fast": "[O VENCEDOR / O HUMANO] (2025) O meio termo perfeito. Transforma dados frios em textos diretos, dinâmicos e naturais para a Lu. Prioridade gratuita.",
-    "zai/glm-4.5-flash": "[LENTO E PRECISO] (2025) Não alucina. Excelente para fichas ultra-técnicas (ferramentas), mas a sua lentidão inviabiliza lotes grandes."
+    "o1": "[O PENSADOR] (2025) Modelo de raciocínio avançado da OpenAI. Perfeito para calibragem e lógica complexa.",
+    "o1-mini": "[O PENSADOR MINI] (2025) Raciocínio rápido e eficiente. Ótimo custo-benefício.",
+    "o3-mini": "[RACIOCÍNIO VELOZ] (2025) Versão otimizada de raciocínio, ideal para estruturação técnica.",
+    "gpt-5.5": "[O FRONTEIRA] (Abril/2026) O modelo mais avançado do mundo. Raciocínio agentico puro. Custo: ~R$ 0,45.",
+    "gpt-5.5-instant": "[O RELÂMPAGO] (Maio/2026) Velocidade absurda com inteligência superior. Custo: ~R$ 0,09.",
+    "gemini-3.1-pro-preview": "[O SOBERANO GOOGLE] (Fev/2026) Inteligência de ponta absoluta. Custo: ~R$ 0,19.",
+    "gemini-3-flash-preview": "[EQUILÍBRIO TOTAL] (Dez/2025) Versão calibrada para roteiros curtos. Custo: ~R$ 0,02.",
+    "gpt-4o": "[O OMNI] (2024) Versão clássica de alta performance para visão e texto.",
+    "puter/gpt-4o-mini": "[ESTEPE GRÁTIS] Versão mini da OpenAI via Puter. Útil para fallbacks rápidos."
 }
 PROVIDER_KEY_MAP = {
     "gemini": "GEMINI_API_KEY",
@@ -609,18 +619,31 @@ class RoteiristaAgent:
 
     def analisar_calibracao(self, original, final, categories_list=[], codigo_original=""):
         """
-        Realiza a análise de calibragem de qualidade usando LLMs gratuitos.
-        Cadeia de fallback: Puter (Grok 4.1 Fast) → OpenRouter (DeepSeek V3) → Gemini (2.5 Flash).
+        Realiza a análise de calibragem de qualidade usando LLMs de ponta.
+        Prioridade: OpenAI (o1 Reasoning) -> OpenAI (GPT-5.5 Frontier) -> Gemini (3.1 Pro).
         """
         # Define um ID de fallback seguro (o primeiro da lista ou 0)
         fallback_id = categories_list[0]['id'] if categories_list else 1
         # Formata a lista de categorias para o prompt
         cat_str = "\n".join([f"- ID {c['id']}: {c['nome']}" for c in categories_list]) if categories_list else "Genérico (ID 1)"
 
+        # Injeção de Contexto 3D se necessário
+        contexto_3d = ""
+        if self.table_prefix == "nw3d_":
+            contexto_3d = (
+                "\n🚨 ALERTA 3D: Você está analisando um roteiro do MODO NW 3D.\n"
+                "Verifique com rigor extremo se as regras de móveis foram seguidas:\n"
+                "- NOMENCLATURA CENA 1: Deve ser [Tipo] + da [Marca]. Se o humano mudou 'Sofá Matrix' para 'Sofá de 3 lugares, da Matrix', a IA ERROU.\n"
+                "- SPECS E MEDIDAS: Peso, Densidade (D28, D33) e Dimensões (AxLxP) são obrigatórios. Se a IA omitiu e o humano adicionou, é erro grave.\n"
+                "- REGRA DA RÉGUA: Se há medida no texto, DEVE haver '+ régua de medida' na imagem. Confira se o humano teve que adicionar isso.\n"
+                "- PRESENÇA DA LU: A Lu deve abrir o vídeo (Cena 1) e reaparecer depois com ação diferente. Se a IA esqueceu a reiteração da Lu, aponte como falha.\n"
+            )
+
         sys_prompt = (
             "Você é um Editor Sênior de Redação Publicitária e Especialista em Qualidade Magalu.\n"
             "Sua tarefa é realizar uma ANALISE TÉCNICA E CIRÚRGICA da calibragem baseada em DIFF (Diferença entre versões).\n\n"
-            "🔴 METODOLOGIA OBRIGATÓRIA (DIFF-ORIENTED):\n"
+            f"{contexto_3d}"
+            "\n🔴 METODOLOGIA OBRIGATÓRIA (DIFF-ORIENTED):\n"
             "1. ANALISE LINHA POR LINHA: Compare cada frase do Roteiro IA com a respectiva do Roteiro Humano.\n"
             "2. FOCO NO DELTA: Identifique exatamente o que foi ADICIONADO, REMOVIDO ou ALTERADO.\n"
             "3. RAZÃO DA MUDANÇA: Para cada diferença encontrada no DIFF, pergunte-se: 'Por que o humano mudou isso?'. A resposta a essa pergunta é o que deve compor as lições técnicas e os registros nas tabelas.\n"
@@ -645,43 +668,90 @@ class RoteiristaAgent:
             "5. FONÉTICA (AUTO-EXTRAÇÃO): Mapeie termos com pronúncia. 'termo_errado' = texto IA exato. 'termo_corrigido' = texto Humano exato.\n"
             "6. ESTRUTURAS (HOOKS E CTAs): Extraia o 'texto_ia' (frase original rejeitada) e o 'texto_ouro' (frase exata aprovada pelo humano). Nunca deixe esses campos vazios.\n"
             "7. PERSONA LU (AUTO-EXTRAÇÃO): Identifique no DIFF mudanças de tom/gírias.\n"
-            "   3. Encerramentos genéricos de varejo ou bordões clichês (EX: PROIBIDO usar 'X, Y e Z, tem no Magalu!', 'Praticidade para o seu dia a dia', 'Facilite sua rotina').\n"
-            "   - 🚨 **PROIBIÇÃO DE GANCHOS INTERROGATIVOS (REGRA DE OURO):** É terminantemente PROIBIDO iniciar o roteiro com perguntas (ex: 'Você sabia?', 'Cansado de...?', 'Já imaginou...?'). O 'Estilo Tiago' exige que você comece SEMPRE com uma afirmação positiva, um fato impactante ou a Lu já em ação usando o produto. Transforme qualquer dúvida em afirmação.\n"
-            "     ❌ 'Sabe quando a bateria acaba?' → ✅ 'Ninguém merece ficar sem bateria no meio do dia!'\n"
-            "     ❌ 'Quer um café quentinho?' → ✅ 'O café sai quentinho e super rápido com essa máquina!'\n"
-            "   - 🗣️ **VERBOS DE AÇÃO REAIS (NATURALIDADE BRASILEIRA):** Quando for explicar a função do produto, FALE COMO UMA PESSOA NORMAL em uma conversa casual.\n"
-            "8. RESUMO ESTRATÉGICO: Sintetize a intenção do editor.\n"
-            "9. IMAGENS (VISUAL - ALERTA MÁXIMO): Compare cada linha 'Imagem:'. 'antes' = Texto APÓS 'Imagem:' no Roteiro IA. 'depois' = Texto APÓS 'Imagem:' no Roteiro Humano. O campo 'motivo' deve explicar a RAZÃO TÁTICA da mudança.\n"
-            "LISTA DE CATEGORIAS DISPONÍVEIS:\n"
-            f"{cat_str}\n\n"
-            "🚨 FORMATO DE SAÍDA (JSON PURO):\n"
-            "   IMPORTANTE: Retorne TODAS as chaves abaixo. Se não houver dados para uma lista, retorne um array vazio [].\n"
+            "   - 🚨 **PROIBIÇÃO DE GANCHOS INTERROGATIVOS (REGRA DE OURO):** É terminantemente PROIBIDO iniciar o roteiro com perguntas (ex: 'Você sabia?', 'Cansado de...?', 'Já imaginou...?'). O 'Estilo Tiago' exige que você comece SEMPRE com uma afirmação positiva, um fato impactante ou a Lu já em ação usando o produto.\n"
+            f"LISTA DE CATEGORIAS DISPONÍVEIS:\n{cat_str}\n\n"
+            "RETORNE APENAS JSON NO FORMATO:\n"
             "{\n"
-            "  \"percentual\": <inteiro 0-100>,\n"
-            "  \"aprendizado\": \"<diretrizes táticas em tópicos>\",\n"
-            "  \"resumo_estrategico\": \"...\",\n"
-            "  \"categoria_id\": <id>,\n"
-            "  \"codigo_produto\": \"<sku>\",\n"
+            "  \"percentual\": 0, \n"
+            "  \"aprendizado\": \"...\",\n"
+            "  \"resumo_estrategico\": \"(Frase curta resumindo a principal falha de direção)\",\n"
+            "  \"codigo_produto\": \"...\",\n"
+            "  \"categoria_id\": 0,\n"
             "  \"fonetica_regras\": [{\"termo_errado\": \"...\", \"termo_corrigido\": \"...\", \"exemplo\": \"...\"}],\n"
-            "  \"estrutura_regras\": [{\"tipo\": \"Abertura\", \"texto_ia\": \"...\", \"texto_ouro\": \"...\"}],\n"
+            "  \"estrutura_regras\": [{\"tipo\": \"Abertura|Fechamento|Corpo\", \"texto_ia\": \"...\", \"texto_ouro\": \"...\", \"motivo\": \"...\"}],\n"
             "  \"persona_regras\": [{\"pilar\": \"...\", \"erro\": \"...\", \"correcao\": \"...\", \"lexico\": \"...\"}],\n"
             "  \"imagens_regras\": [{\"antes\": \"...\", \"depois\": \"...\", \"motivo\": \"...\"}]\n"
             "}"
         )
 
-        user_prompt = f"--- CÓDIGO SUGERIDO ---\n{codigo_original}\n\n--- ROTEIRO ORIGINAL (IA) ---\n{original}\n\n--- ROTEIRO FINAL (HUMANO) ---\n{final}"
+        user_prompt = (
+            f"SKU SUGERIDO: {codigo_original}\n\n"
+            "--- ROTEIRO ORIGINAL (IA) ---\n"
+            f"{original}\n\n"
+            "--- ROTEIRO FINAL (HUMANO/BRENO) ---\n"
+            f"{final}\n\n"
+            "Lembre-se: Extração literal. Sem 'null'. Sem 'None'. Analise agora."
+        )
 
-        # --- CADEIA DE FALLBACK MULTI-PROVEDOR PARA CALIBRAGEM ---
-        
-        # 🟡 OPÇÃO 1: GEMINI (Mestre Original, Melhor para JSON)
+        # 🔵 OPÇÃO 1: OPENAI (o1 — Reasoning Model)
+        api_key_openai = os.environ.get("OPENAI_API_KEY") or (st.secrets.get("OPENAI_API_KEY") if 'st' in globals() else None)
+        if api_key_openai:
+            try:
+                from openai import OpenAI as OpenAIClient
+                client = OpenAIClient(api_key=api_key_openai)
+                
+                # Tenta o1 Primeiro (O Pensador)
+                try:
+                    print("[TRY] Tentando calibragem via OpenAI (o1)...")
+                    response = client.chat.completions.create(
+                        model="o1",
+                        messages=[
+                            {"role": "developer", "content": sys_prompt},
+                            {"role": "user", "content": user_prompt}
+                        ],
+                        response_format={"type": "json_object"}
+                    )
+                    res = self._extract_json(response.choices[0].message.content)
+                    print("[OK] Calibragem realizada via OpenAI (o1)")
+                    return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "o1 (OpenAI)")
+                except Exception as e_o1:
+                    print(f"[WARN] o1 falhou ({e_o1}), tentando GPT-5.5...")
+                    response = client.chat.completions.create(
+                        model="gpt-5.5",
+                        messages=[
+                            {"role": "system", "content": sys_prompt},
+                            {"role": "user", "content": user_prompt}
+                        ],
+                        temperature=0,
+                        response_format={"type": "json_object"}
+                    )
+                    res = self._extract_json(response.choices[0].message.content)
+                    print("[OK] Calibragem realizada via OpenAI (gpt-5.5)")
+                    return self._process_calib_res(res, fallback_id, categories_list, codigo_original, "GPT-5.5 (OpenAI)")
+            except Exception as e:
+                print(f"[ERROR] Erro OpenAI Calibragem: {e}")
+
+        # 🟡 OPÇÃO 2: GEMINI (Mestre Original, Melhor para JSON)
         api_key_gemini = os.environ.get("GEMINI_API_KEY") or (st.secrets.get("GEMINI_API_KEY") if 'st' in globals() else None)
         if api_key_gemini:
             try:
-                print("[TRY] Tentando calibragem via Gemini (3-flash-preview)...")
                 client_v2 = genai.Client(api_key=api_key_gemini)
                 
+                # Tenta 3.1 Pro primeiro
                 try:
-                    print("[TRY] Tentando calibragem via Gemini (2.0-flash)...")
+                    print("[TRY] Tentando calibragem via Gemini 3.1 Pro...")
+                    response_gem = client_v2.models.generate_content(
+                        model="gemini-3.1-pro-preview", 
+                        contents=user_prompt,
+                        config=types.GenerateContentConfig(
+                            system_instruction=sys_prompt,
+                            temperature=0.1,
+                            response_mime_type="application/json"
+                        )
+                    )
+                    model_str = "Gemini 3.1 Pro"
+                except Exception as e_pro:
+                    print(f"[WARN] Gemini 3.1 Pro falhou ({e_pro}), tentando 2.0 Flash...")
                     response_gem = client_v2.models.generate_content(
                         model="gemini-2.0-flash", 
                         contents=user_prompt,
@@ -692,37 +762,23 @@ class RoteiristaAgent:
                         )
                     )
                     model_str = "Gemini 2.0 Flash"
-                except Exception as e_gem:
-                    print(f"[WARN] Gemini 2.0 falhou ({e_gem}), tentando 1.5 Flash...")
-                    response_gem = client_v2.models.generate_content(
-                        model="gemini-1.5-flash", 
-                        contents=user_prompt,
-                        config=types.GenerateContentConfig(
-                            system_instruction=sys_prompt,
-                            temperature=0.1,
-                            response_mime_type="application/json"
-                        )
-                    )
-                    model_str = "Gemini 1.5 Flash"
                 
                 try:
                     res_text = response_gem.text
                 except Exception as e:
                     print(f"[RECOVERED ERROR] Gemini Calibracao Blocked or Failed: {e}")
-                    # Tenta fallback via parts
                     res_text = "".join([p.text for p in response_gem.candidates[0].content.parts])
 
                 res = self._extract_json(res_text)
-                if not res:
-                    print("[WARNING] Gemini falhou na extração de JSON. Indo para fallback...")
-                    raise Exception("Falha na extração JSON")
-                    
-                print(f"[OK] Calibragem realizada via {model_str}")
-                return self._process_calib_res(res, fallback_id, categories_list, codigo_original, model_str)
+                if res:
+                    print(f"[OK] Calibragem realizada via {model_str}")
+                    return self._process_calib_res(res, fallback_id, categories_list, codigo_original, model_str)
+                
+                raise Exception("Falha na extração JSON")
             except Exception as e:
                 print(f"[ERROR] Erro Gemini Calibragem: {e}")
 
-        # 🟢 OPÇÃO 2: PUTER (Grok 4.1 Fast — Grátis)
+        # 🟢 OPÇÃO 3: PUTER (Grok 4.1 Fast — Grátis)
         api_key_puter = os.environ.get("PUTER_API_KEY") or (st.secrets.get("PUTER_API_KEY") if 'st' in globals() else None)
         if api_key_puter:
             try:
