@@ -24,6 +24,12 @@ REGRAS ESPECÍFICAS: MODO 3D (Complemento ao NW)
    ✅ CORRETO: Dimensões (cm/m) sempre no C2, integradas ao benefício.
 
 ======================================================================
+🚨 REGRA ANTI-NARIZ DE CERA (P0): 
+Corte toda introdução lenta ou óbvia. Vá direto ao que interessa. Se a frase não traz uma informação técnica ou um benefício prático, DELETE. 
+
+🚨 FOCO EM DÚVIDAS PRÁTICAS: 
+Cada bullet deve responder a uma dúvida real: "Cabe no meu espaço?", "Aguenta meu peso?", "É barulhento?", "Esquenta?", "É fácil de cuidar?".
+======================================================================
 🎯 ABERTURA KILLER PARA MÓVEIS / CAMAS / COLCHÕES (REGRA P0 — MÁXIMA)
 ======================================================================
 A C1 de um móvel NUNCA pode ser genérica. O "motor" de cada categoria é:
@@ -65,6 +71,41 @@ Quando a ficha indicar TIPO_PRODUTO: COMBO (ou tiver componentes separados):
    - ❌ "suporta até 120 quilos" (qual dos dois?)
    - ✅ "a base aguenta até 120 quilos e o colchão suporta 100 por pessoa"
 4. NÃO repita a marca em cada componente — cite UMA vez na abertura.
+
+======================================================================
+🧠 GUIA DE ARGUMENTAÇÃO TÉCNICA (ANTI-BOBO / ANTI-FILLER)
+======================================================================
+O roteiro deve ser ÚTIL para quem compra. Fuja do óbvio e foque na consequência técnica.
+
+❌ LISTA NEGRA DE ARGUMENTOS "BOBOS" (PROIBIDO):
+- "Ideal para casais" (em produtos de casal/queen/king)
+- "Perfeito para sua casa / seu quarto" (vago)
+- "Garante noites de sono tranquilas / revigorantes" (filler)
+- "Traz conforto e qualidade" (clichê)
+- "Ideal pra quem busca espaço" (óbvio em móveis grandes)
+- "Ajuda a descansar / a dormir melhor" (genérico)
+
+✅ COMO TRANSFORMAR SPEC EM BENEFÍCIO REAL:
+- MOLAS ENSACADAS: "Se um se mexer de um lado, o outro não sente o balanço do colchão."
+- ESPUMA D26/D33: "Dá suporte firme pra coluna sem deixar o corpo afundar demais."
+- TECIDO MALHA/POLIÉSTER: "Ajuda na ventilação, o que deixa o colchão mais fresquinho."
+- NO TURN: "Não precisa de esforço pra virar o colchão todo mês, ele não deforma."
+- ESTRUTURA REFORÇADA: "Aguenta o uso pesado do dia a dia sem fazer barulho ou ranger."
+- PÉS COM SAPATAS: "Protege o seu piso de riscos e ajuda a nivelar o móvel."
+
+⚠️ REGRA DE OURO: Se o argumento servir para QUALQUER produto da categoria, ele é FILLER. O argumento deve ser específico daquela ficha técnica.
+
+🚨 REGRA DE COERÊNCIA TÉCNICA (P1 — OBRIGATÓRIO):
+NÃO atribua um benefício a um spec que NÃO o causa. Cada benefício deve ter relação direta de causa-efeito com o spec citado.
+- ❌ ERRO: "28 centímetros de altura, que garante suporte firme pra coluna" (altura ≠ firmeza)
+- ✅ CORRETO: "28 centímetros de altura, que combina com a maioria das bases do mercado" (altura → compatibilidade)
+- ❌ ERRO: "revestimento em malha, que deixa o colchão bem resistente" (malha ≠ resistência estrutural)
+- ✅ CORRETO: "revestimento em malha, que ajuda na ventilação e tem um toque mais suave" (malha → respirabilidade)
+
+🚨 REGRA ANTI-REPETIÇÃO DE VOCABULÁRIO (P1):
+NUNCA repita o mesmo adjetivo ou benefício em mais de 1 bullet. Se usou "firme" na C1, NÃO use "firme" na C2 ou C5. Varie: "sustentado", "estável", "sem afundar", "com suporte".
+- ❌ ERRO: C1 "firme" + C2 "suporte firme" + C5 "firme e prático" (3x "firme")
+- ✅ CORRETO: C1 "firme" + C2 "estável" + C5 "prático e resistente" (vocabulário variado)
 
 🎬 A DIFERENÇA CENTRAL DO 3D:
 O vídeo é uma SEQUÊNCIA CONTÍNUA — a câmera desliza, orbita e transiciona suavemente de um ângulo para o outro. No 3D, a Lu é uma personagem ativa que demonstra o produto fisicamente.
