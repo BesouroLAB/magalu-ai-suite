@@ -89,7 +89,7 @@ class RoteiristaAgent:
                     import streamlit as st
                     val = st.secrets.get(key_name)
                 except: pass
-            return val
+            return val.strip() if val else val
 
         if self.model_id.startswith("gemini"):
             self.provider = "gemini"
