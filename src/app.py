@@ -1230,6 +1230,10 @@ if page == "Criar Roteiros":
                     gemini_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
 
                     for i, grupo in enumerate(grupos):
+                        grupo["original_index"] = i # Preservar índice original para repescagem
+                    
+                    fila_repescagem = []
+                    for i, grupo in enumerate(grupos):
                         main_code = grupo["codes"][0]
                         all_codes = grupo["codes"]
                         video_url = grupo["video"]
@@ -1355,14 +1359,118 @@ if page == "Criar Roteiros":
                                     erros_lote.append(f"SKU {main_code}: {res_gen['roteiro'][:100]}...")
 
                         except Exception as e:
-                            err_msg = f"❌ Erro no Roteiro {i+1} (SKU {main_code}): {str(e)}"
-                            st.error(err_msg)
-                            erros_lote.append(err_msg)
+                            err_msg = str(e)
+                            full_err_msg = f"❌ Erro no Roteiro {i+1} (SKU {main_code}): {err_msg}"
+                            st.error(full_err_msg)
+                            
+                            # Adiciona à fila de repescagem se for erro de sobrecarga ou conexão
+                            retryable_errors = ["503", "429", "overloaded", "rate limit", "deadline exceeded", "connection"]
+                            if any(msg in err_msg.lower() for msg in retryable_errors):
+                                fila_repescagem.append(grupo)
+                                st.warning(f"🔁 SKU {main_code} adicionado à fila de repescagem para tentativa final.")
+                            else:
+                                erros_lote.append(full_err_msg)
+                                
                             tempos_por_roteiro.append(_time.time() - roteiro_start_time)
                         
                         # Cooldown entre roteiros para evitar sobrecarga na API (503)
                         if i < total_roteiros - 1:
                             _time.sleep(3)
+                    
+                    # --- FILA DE REPESCAGEM (SEGUNDA CHANCE) ---
+                    if fila_repescagem:
+                        num_repescagem = len(fila_repescagem)
+                        st.divider()
+                        st.info(f"🔄 **Iniciando Repescagem:** Tentando recuperar {num_repescagem} roteiros que falharam por instabilidade na API...")
+                        _time.sleep(10) # Pausa estratégica para a API respirar
+                        
+                        for i_rep, grupo in enumerate(fila_repescagem):
+                            main_code = grupo["codes"][0]
+                            all_codes = grupo["codes"]
+                            video_url = grupo["video"]
+                            idx_orig = grupo.get("original_index", 0)
+                            roteiro_start_time = _time.time()
+                            
+                            progress_text.markdown(f"**🔄 REPESCAGEM ({i_rep+1}/{num_repescagem}):** Recuperando SKU {main_code}...")
+                            
+                            try:
+                                with st.status(f"♻️ Recuperando Roteiro {idx_orig+1} (SKU: {main_code})", expanded=True) as status_box:
+                                    # Lógica idêntica ao loop principal (Scraping -> Geração -> Exportação)
+                                    status_box.write("🔍 Extraindo dados novamente...")
+                                    fichas_grupo = {}
+                                    ficha_principal = None
+                                    for c in all_codes:
+                                        f = scrape_with_gemini(c, api_key=gemini_key)
+                                        fichas_grupo[c] = f
+                                        if c == main_code: ficha_principal = f
+                                        _time.sleep(2)
+                                    
+                                    if not ficha_principal or not ficha_principal.get('titulo'):
+                                        raise Exception("Falha crítica no scraping durante repescagem")
+
+                                    status_box.write("✍️ Gerando roteiro (Segunda Chance)...")
+                                    outros_codigos = [c for c in all_codes if c != main_code]
+                                    info_variantes = ""
+                                    if outros_codigos:
+                                        v_list = []
+                                        for oc in outros_codigos:
+                                            v_ficha = fichas_grupo.get(oc, {})
+                                            v_dim = v_ficha.get('especificacoes', {}).get('Dimensões do produto', 'N/A')
+                                            v_cor = v_ficha.get('especificacoes', {}).get('Cor', 'N/A')
+                                            v_list.append(f"SKU {oc}: {v_dim} | {v_cor}")
+                                        info_variantes = "\n".join(v_list)
+
+                                    res_gen = agent.gerar_roteiro(
+                                        scraped_data=ficha_principal,
+                                        modo_trabalho=modo_selecionado,
+                                        codigo=main_code,
+                                        sub_skus=outros_codigos,
+                                        video_url=video_url or "",
+                                        data_roteiro=data_roteiro_str,
+                                        mes=mes_selecionado,
+                                        com_lu=(com_lu_auto == "Com LU"),
+                                        variantes_info=info_variantes
+                                    )
+
+                                    status_box.write("💾 Registrando e Exportando...")
+                                    global_num = get_total_script_count(sp_cli) + 1
+                                    novo_roteiro = {
+                                        "_uid": str(uuid.uuid4()),
+                                        "ficha": ficha_principal,
+                                        "roteiro_original": res_gen["roteiro"],
+                                        "codigo": main_code,
+                                        "model_id": res_gen["model_id"],
+                                        "tokens_in": res_gen["tokens_in"],
+                                        "tokens_out": res_gen["tokens_out"],
+                                        "custo_brl": res_gen["custo_brl"],
+                                        "global_num": global_num,
+                                        "mes": mes_selecionado,
+                                        "modo_trabalho": modo_selecionado,
+                                        "com_lu": "REVIEW" if "Review" in modo_selecionado else (com_lu_auto == "Com LU")
+                                    }
+                                    
+                                    if sp_cli:
+                                        sp_cli.table(f"{table_prefix}historico_roteiros").insert({
+                                            "codigo_produto": main_code, "modo_trabalho": modo_selecionado,
+                                            "roteiro_gerado": res_gen["roteiro"], "ficha_extraida": str(ficha_principal)[:5000],
+                                            "modelo_llm": res_gen["model_id"], "tokens_entrada": res_gen["tokens_in"],
+                                            "tokens_saida": res_gen["tokens_out"], "custo_estimado_brl": res_gen["custo_brl"],
+                                            "categoria_id": cat_selecionada_id, "criado_em": get_now_sp().isoformat()
+                                        }).execute()
+
+                                    tempos_por_roteiro.append(_time.time() - roteiro_start_time)
+                                    st.session_state['roteiros'].insert(0, novo_roteiro)
+                                    status_box.update(label=f"✅ SKU {main_code} Recuperado com Sucesso!", state="complete")
+                                    st.success(f"🎉 O SKU {main_code} foi recuperado na repescagem!")
+
+                            except Exception as e2:
+                                fail_msg = f"❌ Falha persistente no SKU {main_code} (Repescagem): {str(e2)}"
+                                st.error(fail_msg)
+                                erros_lote.append(fail_msg)
+                                tempos_por_roteiro.append(_time.time() - roteiro_start_time)
+                            
+                            if i_rep < num_repescagem - 1:
+                                _time.sleep(5)
                     
                     # --- RESUMO FINAL COM TEMPO ---
                     total_elapsed = _time.time() - lote_start_time
