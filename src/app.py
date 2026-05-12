@@ -2007,6 +2007,72 @@ if page == "Criar Roteiros":
                             st.rerun()
                         except Exception as e_re:
                             st.error(f"❌ Erro ao re-polir: {e_re}")
+            else:
+                # --- MODO EDIÇÃO NORMAL ---
+                editor_key = f"edit_session_{polir_uid}"
+                widget_key = f"text_area_{polir_uid}"
+                
+                # Sincroniza estado se mudou o roteiro ativo
+                if st.session_state.get("last_script_uid") != polir_uid:
+                    st.session_state[editor_key] = item.get('roteiro_original', '')
+                    st.session_state["last_script_uid"] = polir_uid
+                
+                # Editor principal (Só aparece se não estiver revisando)
+                novo_conteudo = st.text_area(
+                    "Editar Roteiro",
+                    value=st.session_state.get(editor_key, item.get('roteiro_original', '')),
+                    height=450,
+                    key=widget_key,
+                    label_visibility="collapsed"
+                )
+                
+                # Salva mudanças no estado local ao digitar
+                if novo_conteudo != item.get('roteiro_original', ''):
+                    st.session_state['roteiros'][idx]['roteiro_original'] = novo_conteudo
+                    st.session_state[editor_key] = novo_conteudo
+
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                # Barra de Ações do Roteiro (Inferior)
+                col_actions_1, col_actions_2, col_actions_3 = st.columns([1.5, 1, 1])
+                
+                with col_actions_1:
+                    if st.button("✨ Polir Roteiro com IA", key=f"btn_polir_{polir_uid}", use_container_width=True, type="primary"):
+                        try:
+                            from agents.roteirista_agent import RoteiristaAgent
+                            ag = RoteiristaAgent(
+                                model_id=st.session_state.get('modelo_llm', 'gemini-3-flash-preview'),
+                                table_prefix=st.session_state.get('table_prefix', 'nw_')
+                            )
+                            # Salva o original para comparação
+                            st.session_state[f"polir_original_{polir_uid}"] = item.get('roteiro_original', '')
+                            # Chama a IA para polir
+                            res = ag.polir_roteiro(
+                                roteiro_atual=item.get('roteiro_original', ''),
+                                ficha_tecnica=ficha_str
+                            )
+                            st.session_state[f"polir_resultado_{polir_uid}"] = res
+                            st.session_state[f"polir_count_{polir_uid}"] = 0
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Erro ao polir roteiro: {e}")
+
+                with col_actions_2:
+                    # Botão de Download (TXT)
+                    st.download_button(
+                        label="📥 Baixar Roteiro",
+                        data=item.get('roteiro_original', ''),
+                        file_name=f"roteiro_{codigo_produto}.txt",
+                        mime="text/plain",
+                        use_container_width=True
+                    )
+                
+                with col_actions_3:
+                    if st.button("🗑️ Remover da Mesa", key=f"btn_del_{polir_uid}", use_container_width=True):
+                        st.session_state['roteiros'].pop(idx)
+                        if st.session_state.get('roteiro_ativo_idx', 0) >= len(st.session_state['roteiros']):
+                            st.session_state['roteiro_ativo_idx'] = max(0, len(st.session_state['roteiros']) - 1)
+                        st.rerun()
 
         if st.session_state.get('roteiro_ativo_idx', 0) >= len(st.session_state['roteiros']):
              st.session_state['roteiro_ativo_idx'] = 0
