@@ -1359,6 +1359,10 @@ if page == "Criar Roteiros":
                             st.error(err_msg)
                             erros_lote.append(err_msg)
                             tempos_por_roteiro.append(_time.time() - roteiro_start_time)
+                        
+                        # Cooldown entre roteiros para evitar sobrecarga na API (503)
+                        if i < total_roteiros - 1:
+                            _time.sleep(3)
                     
                     # --- RESUMO FINAL COM TEMPO ---
                     total_elapsed = _time.time() - lote_start_time

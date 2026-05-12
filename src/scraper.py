@@ -115,26 +115,40 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None) -> dict:
             temperature=0.0
         )
         
-        # Tenta primeiro com o Gemini 2.5 Flash (Estável com Google Search Grounding)
-        # Se falhar, faz fallback automático para o 3.1 Pro (Menos rápido mas bem equipado)
+        # Tenta primeiro com Gemini 2.5 Flash, com retry para erros 503/429
+        import time as _time
         response = None
+        scraper_max_retries = 3
+        scraper_base_wait = 10  # segundos
+        
+        def _call_with_retry(model_name, prompt_text, cfg, retries=scraper_max_retries):
+            """Chamada com retry e backoff exponencial para erros transitórios."""
+            for attempt in range(retries + 1):
+                try:
+                    print(f"[SCRAPER] Tentando {model_name} (tentativa {attempt + 1}/{retries + 1})...")
+                    return client.models.generate_content(
+                        model=model_name, 
+                        contents=prompt_text,
+                        config=cfg
+                    )
+                except Exception as e:
+                    err_str = str(e)
+                    is_retryable = any(code in err_str for code in ["503", "429", "UNAVAILABLE", "RESOURCE_EXHAUSTED", "high demand", "overloaded"])
+                    if is_retryable and attempt < retries:
+                        wait_time = scraper_base_wait * (2 ** attempt)  # 10s, 20s, 40s
+                        print(f"[SCRAPER RETRY] {model_name} retornando erro transitório. Aguardando {wait_time}s...")
+                        _time.sleep(wait_time)
+                    else:
+                        raise e
+        
         try:
-            print(f"[SCRAPER] Tentando Grounding via Gemini 2.5 Flash...")
-            response = client.models.generate_content(
-                model='gemini-2.5-flash', 
-                contents=prompt,
-                config=config
-            )
+            response = _call_with_retry('gemini-2.5-flash', prompt, config)
         except Exception as e_1:
-            print(f"[SCRAPER] Gemini 2.5 instável ({e_1}). Acionando FALLBACK 3.1 Pro...")
+            print(f"[SCRAPER] Gemini 2.5 Flash esgotou retries ({e_1}). Acionando FALLBACK 3.1 Pro...")
             try:
-                response = client.models.generate_content(
-                    model='gemini-3.1-pro-preview', 
-                    contents=prompt,
-                    config=config
-                )
+                response = _call_with_retry('gemini-3.1-pro-preview', prompt, config)
             except Exception as e_2:
-                print(f"[SCRAPER] Gemini 3.1 também falhou no Grounding ({e_2}).")
+                print(f"[SCRAPER] Gemini 3.1 Pro também falhou ({e_2}).")
                 response = None
         
         def get_text_safe(resp):
@@ -155,16 +169,14 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None) -> dict:
                 f"🚨 NÃO retorne dados de outro produto. Se não souber dados desse código específico, retorne apenas 'FALHA_TOTAL'.\n"
                 f"Comece a resposta com: CÓDIGO CONFIRMADO: {code}"
             )
+            fallback_config = GenerateContentConfig(temperature=0.0)
             try:
-                response_fallback = client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=fallback_prompt,
-                )
+                response_fallback = _call_with_retry('gemini-2.5-flash', fallback_prompt, fallback_config, retries=2)
             except:
-                response_fallback = client.models.generate_content(
-                    model='gemini-3.1-pro-preview',
-                    contents=fallback_prompt,
-                )
+                try:
+                    response_fallback = _call_with_retry('gemini-3.1-pro-preview', fallback_prompt, fallback_config, retries=2)
+                except:
+                    response_fallback = None
             result_text = get_text_safe(response_fallback)
 
         if (not result_text or "FALHA_TOTAL" in result_text) and input_val.startswith("http"):

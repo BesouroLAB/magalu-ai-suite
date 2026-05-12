@@ -463,26 +463,47 @@ class RoteiristaAgent:
                             "data": img_bytes
                         })
 
-            # Chamada via SDK v2 com timeout estendido através do GenerateConfig
-            try:
-                print(f"[DEBUG] Chamando Models.generate_content para SKU {codigo} com modelo {self.model_id}")
-                response = self.client_gemini.models.generate_content(
-                    model=self.model_id,
-                    contents=contents,
-                    config=types.GenerateContentConfig(
-                        temperature=0.5,
-                        http_options={'timeout': 600000} # 600 segundos (10 minutos)
-                    )
-                )
-                print(f"[DEBUG] Resposta recebida do Gemini para SKU {codigo}")
-            except TypeError as te:
-                if 'request_options' in str(te):
-                    print(f"[CRITICAL ERR] Erro detectado no SDK v2 (request_options): {te}. Tentando fallback sem config.")
+            # Chamada via SDK v2 com retry e backoff exponencial para erros 503/429
+            import time as _time
+            max_retries = 4
+            base_wait = 15  # segundos
+            response = None
+            
+            for attempt in range(max_retries + 1):
+                try:
+                    print(f"[DEBUG] Chamando Models.generate_content para SKU {codigo} com modelo {self.model_id} (tentativa {attempt + 1}/{max_retries + 1})")
                     response = self.client_gemini.models.generate_content(
                         model=self.model_id,
-                        contents=contents
+                        contents=contents,
+                        config=types.GenerateContentConfig(
+                            temperature=0.5,
+                            http_options={'timeout': 600000}  # 600 segundos (10 minutos)
+                        )
                     )
-                else: raise te
+                    print(f"[DEBUG] Resposta recebida do Gemini para SKU {codigo}")
+                    break  # Sucesso — sai do loop
+                except TypeError as te:
+                    if 'request_options' in str(te):
+                        print(f"[CRITICAL ERR] Erro detectado no SDK v2 (request_options): {te}. Tentando fallback sem config.")
+                        response = self.client_gemini.models.generate_content(
+                            model=self.model_id,
+                            contents=contents
+                        )
+                        break
+                    else:
+                        raise te
+                except Exception as api_err:
+                    err_str = str(api_err)
+                    is_retryable = any(code in err_str for code in ["503", "429", "UNAVAILABLE", "RESOURCE_EXHAUSTED", "high demand", "overloaded"])
+                    
+                    if is_retryable and attempt < max_retries:
+                        wait_time = base_wait * (2 ** attempt)  # 15s, 30s, 60s, 120s
+                        print(f"[RETRY] Erro retentável ({err_str[:80]}...). Aguardando {wait_time}s antes da tentativa {attempt + 2}...")
+                        _time.sleep(wait_time)
+                    else:
+                        # Erro não-retentável ou esgotou tentativas
+                        print(f"[FATAL] Erro definitivo após {attempt + 1} tentativa(s): {err_str[:200]}")
+                        raise api_err
             
             # Resiliência na obtenção do texto (evita exceções se a resposta for bloqueada ou vazia)
             try:
