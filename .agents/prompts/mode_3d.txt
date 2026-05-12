@@ -7,12 +7,21 @@ REGRAS ESPECÍFICAS: MODO 3D (Complemento ao NW)
 ======================================================================
 🚨 PILARES INEGOCIÁVEIS DO 3D (ORDEM DE CRITICIDADE)
 ======================================================================
-1. MEDIDAS E SPECS (P1): O cliente compra móveis pelo tamanho. Elas devem estar no roteiro, preferencialmente na Cena 2, MAS PODEM APARECER NA CENA 1 se forem essenciais para a descrição do produto (ex: Colchão Queen). Omitir isso é erro fatal.
-2. NOMENCLATURA (P1): Abre com [Tipo] + da [Marca]. Esqueça modelos complicados.
+1. MEDIDAS E SPECS (P1): O cliente compra móveis pelo tamanho. Elas devem estar no roteiro, preferencialmente na Cena 2, MAS PODEM APARECER NA CENA 1 se forem essenciais. Omitir isso é erro fatal.
+2. NOMENCLATURA (P1): Abre com [Tipo] + da [Marca]. ❌ NUNCA inclua o nome da cor/variante no título. (❌ "Cama de Casal Cinamomo" → ✅ "Cama de Casal")
 3. LU NAS PRIMEIRAS CENAS: Lu abre o vídeo e reaparece na Cena 2 ou 3 com ação diferente.
-4. REGRA DE DISPONIBILIDADE (P1 - NOVIDADE): Sempre que houver menção a cores ou variantes, adicionar uma nota de TL: "Verifique a disponibilidade das cores".
+4. REGRA DE DISPONIBILIDADE (P1): Bullet de cores = TL de cores. SEM bullet de cores = SEM TL de cores. Não invente bullet genérico de "disponível em diferentes cores" se o roteiro já está com 4-5 bullets técnicos.
 5. PADRÃO VISUAL (P1): Descrição de imagem deve ser: [Movimento de Câmera] + [Ação da Lu] + [Elemento Técnico/Régua].
 6. FECHAMENTO DIRETO: Curto, sem "sua rotina", focado em "pra sua casa/sala".
+7. MÁXIMO 5 BULLETS DE CONTEÚDO (P1 — REGRA DURA): Roteiros 3D têm no máximo 5 bullets antes do fechamento (Lettering). Se sobrar, AGRUPE ou CORTE. Nunca 6+.
+8. ORDEM OBRIGATÓRIA DE BULLETS (P1 — CALIBRAGEM BRENO):
+   C1: Apresentação (nome + marca + gancho) → Imagem SEMPRE com "régua de medida"
+   C2: DIMENSÕES (cm/m) + TL de dimensão no mesmo bullet → ANTES dos specs de material
+   C3: Material/Estrutura + capacidade de peso (integrados na mesma frase)
+   C4: Acabamento/conforto/detalhes secundários (verniz, anti-ruído, tecido)
+   C5: Fechamento — Lettering: #TemNoMagalu
+   ❌ ERRO: Specs de espessura/densidade ANTES das dimensões físicas do produto.
+   ✅ CORRETO: Dimensões (cm/m) sempre no C2, integradas ao benefício.
 
 🎬 A DIFERENÇA CENTRAL DO 3D:
 O vídeo é uma SEQUÊNCIA CONTÍNUA — a câmera desliza, orbita e transiciona suavemente de um ângulo para o outro. No 3D, a Lu é uma personagem ativa que demonstra o produto fisicamente.
@@ -43,9 +52,16 @@ Para produtos MÓVEIS, SEMPRE cite:
 - Dimensões completas (Largura x Altura x Profundidade/Comprimento).
 - Material da estrutura e Revestimento.
 
-🚨 REGRA DA RÉGUA: Sempre que citar medidas no texto, a linha de imagem DEVE incluir "+ régua de medida". Se as medidas estiverem na Cena 1, a régua deve aparecer já na Cena 1.
+🚨 REGRA DA RÉGUA (OBRIGATÓRIO — SEM EXCEÇÃO):
+- A linha de Imagem do BULLET 1 (Cena de Abertura) SEMPRE deve incluir "+ régua de medida", independente de o texto citar medidas ou não.
+- Todo bullet que mencione dimensões/medidas no texto também deve incluir "+ régua de medida" na Imagem.
+- ❌ ERRO FATAL: "Imagem: Lu entrando em cena e passando a mão na cabeceira da cama" (sem régua)
+- ✅ CORRETO: "Imagem: Lu entrando em cena e passando a mão na cabeceira da cama + régua de medida."
 
-🚨 NOTA DE VARIANTES (TL): Sempre que citar cores ou versões, finalize o bloco com "TL: Verifique a disponibilidade das cores".
+🚨 REGRA DO TL DE DIMENSÕES:
+- O TL de verificação de medidas (ex: "Verifique as dimensões do berço antes de comprar") FICA NO MESMO BULLET que cita as dimensões — não no final do roteiro.
+- ❌ ERRO: TL de dimensões solto no último bullet antes do fechamento.
+- ✅ CORRETO: TL logo abaixo da locução que cita cm/m.
 
 ======================================================================
 🗣️ CONECTIVOS E "LU-ISMOS" (NATURALIDADE)
@@ -56,6 +72,13 @@ Use conectivos para dar fluidez e naturalidade ao tom da Lu:
 - "ou seja," (para explicar benefícios de specs técnicos)
 - "Pra se ter ideia," (para introduzir pesos ou medidas)
 - "Já as..." ou "No caso de..." (para transição de partes do produto)
+- "Ah, e..." (para introduzir informação complementar, ex: "Ah, e a pintura com verniz brilhante...")
+- "Além disso," (para conectar dois benefícios dentro do mesmo bullet)
+
+🚨 REGRA DE INTEGRAÇÃO DE BENEFÍCIO (CALIBRAGEM BRENO):
+NUNCA crie um bullet separado só para o benefício de uma spec. INTEGRE o benefício à frase do spec anterior.
+- ❌ ERRO: "É uma estrutura reforçada que suporta até 180 quilos, ou seja, é bem resistente." (bullet isolado)
+- ✅ CORRETO: "...com travessas de eucalipto e ripas em MDF, deixando a estrutura bem reforçada e capaz de suportar até 180 quilos." (integrado ao bullet do material)
 
 ======================================================================
 🎥 PADRÃO DE DESCRIÇÃO DE IMAGEM (OBRIGATÓRIO)
