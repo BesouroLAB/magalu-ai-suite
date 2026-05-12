@@ -1988,21 +1988,25 @@ if page == "Criar Roteiros":
                         st.rerun()
                 
                 with col_polir_again:
-                                    model_id=st.session_state.get('modelo_llm', 'gemini-3-flash-preview'),
-                                    table_prefix=st.session_state.get('table_prefix', 'nw_')
-                                )
-                                res_re = ag_re.polir_roteiro(
-                                    roteiro_atual=polir_resultado["roteiro"],
-                                    ficha_tecnica=ficha_str,
-                                    iteracao=iteracao_num + 1
-                                )
-                                # Atualiza: o "original" agora é a versão polida anterior
-                                st.session_state[f"polir_original_{polir_uid}"] = polir_resultado["roteiro"]
-                                st.session_state[f"polir_resultado_{polir_uid}"] = res_re
-                                st.session_state[polir_key_count] = iteracao_num
-                                st.rerun()
-                            except Exception as e_re:
-                                st.error(f"❌ Erro ao re-polir: {e_re}")
+                    if st.button("🔄 Polir Mais uma vez", key=f"re_polir_{polir_uid}", use_container_width=True):
+                        try:
+                            from agents.roteirista_agent import RoteiristaAgent
+                            ag_re = RoteiristaAgent(
+                                model_id=st.session_state.get('modelo_llm', 'gemini-3-flash-preview'),
+                                table_prefix=st.session_state.get('table_prefix', 'nw_')
+                            )
+                            res_re = ag_re.polir_roteiro(
+                                roteiro_atual=polir_resultado["roteiro"],
+                                ficha_tecnica=ficha_str,
+                                iteracao=iteracao_num + 1
+                            )
+                            # Atualiza: o "original" agora é a versão polida anterior
+                            st.session_state[f"polir_original_{polir_uid}"] = polir_resultado["roteiro"]
+                            st.session_state[f"polir_resultado_{polir_uid}"] = res_re
+                            st.session_state[polir_key_count] = iteracao_num + 1
+                            st.rerun()
+                        except Exception as e_re:
+                            st.error(f"❌ Erro ao re-polir: {e_re}")
 
         if st.session_state.get('roteiro_ativo_idx', 0) >= len(st.session_state['roteiros']):
              st.session_state['roteiro_ativo_idx'] = 0
