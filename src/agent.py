@@ -153,7 +153,8 @@ class RoteiristaAgent:
             "nw": self._load_file(os.path.join(PROJECT_ROOT, ".agents", "prompts", "mode_nw.txt"), ""),
             "social": self._load_file(os.path.join(PROJECT_ROOT, ".agents", "prompts", "mode_social.txt"), ""),
             "3d": self._load_file(os.path.join(PROJECT_ROOT, ".agents", "prompts", "mode_3d.txt"), ""),
-            "review": self._load_file(os.path.join(PROJECT_ROOT, ".agents", "prompts", "mode_review.txt"), "")
+            "review": self._load_file(os.path.join(PROJECT_ROOT, ".agents", "prompts", "mode_review.txt"), ""),
+            "polir": self._load_file(os.path.join(PROJECT_ROOT, ".agents", "prompts", "mode_polir.txt"), "")
         }
         self.phonetics = {}
         # Ouro e Calibragem agora são 100% dinâmicos via Supabase
@@ -1030,6 +1031,100 @@ class RoteiristaAgent:
         return {
             "roteiro": roteiro,
             "model_id": f"{self.model_id} (Otimizado)",
+            "tokens_in": tokens_in,
+            "tokens_out": tokens_out,
+            "custo_brl": custo_brl
+        }
+
+    def polir_roteiro(self, roteiro_atual: str, ficha_tecnica: str, iteracao: int = 1) -> dict:
+        """
+        Polir/Revisar um roteiro já gerado. Aplica revisão de coerência técnica,
+        melhoria de fluxo e corte de redundâncias.
+        
+        Args:
+            roteiro_atual: Texto do roteiro a ser polido
+            ficha_tecnica: Ficha técnica do produto (fonte de verdade)
+            iteracao: Número da iteração de polimento (1, 2, 3...)
+        """
+        # Carrega o prompt de polimento dedicado
+        sys_prompt = self.prompts.get("polir", "")
+        if not sys_prompt:
+            raise Exception("Prompt de polimento (mode_polir.txt) não encontrado.")
+
+        # Adiciona nota sobre iteração para evitar polimento circular
+        iter_note = ""
+        if iteracao > 1:
+            iter_note = (
+                f"\n⚠️ ATENÇÃO: Esta é a ITERAÇÃO {iteracao} de polimento. "
+                f"O texto já foi revisado {iteracao - 1} vez(es). "
+                f"Foque APENAS em problemas que ainda restam. "
+                f"Se o texto já estiver bom, faça ajustes MÍNIMOS. "
+                f"NÃO reescreva por reescrever.\n"
+            )
+
+        user_prompt = (
+            f"{iter_note}"
+            f"--- ROTEIRO ATUAL (PARA POLIR) ---\n"
+            f"{roteiro_atual}\n\n"
+            f"--- FICHA TÉCNICA DO PRODUTO (FONTE DE VERDADE) ---\n"
+            f"{ficha_tecnica}\n\n"
+            f"Retorne APENAS o roteiro polido. Sem preâmbulos."
+        )
+
+        import time as _time
+        max_retries = 3
+        base_wait = 15
+        response = None
+
+        if self.client_gemini:
+            for attempt in range(max_retries + 1):
+                try:
+                    response = self.client_gemini.models.generate_content(
+                        model=self.model_id,
+                        contents=[sys_prompt, user_prompt],
+                        config=types.GenerateContentConfig(
+                            temperature=0.4,
+                            http_options={'timeout': 600000}
+                        )
+                    )
+                    break
+                except Exception as api_err:
+                    err_str = str(api_err).lower()
+                    if attempt < max_retries and any(k in err_str for k in ["503", "429", "overloaded", "rate"]):
+                        wait_time = base_wait * (2 ** attempt)
+                        print(f"[POLIR] Retry {attempt+1}/{max_retries} — aguardando {wait_time}s...")
+                        _time.sleep(wait_time)
+                    else:
+                        raise
+
+            roteiro = response.text
+            if hasattr(response, 'usage_metadata'):
+                tokens_in = response.usage_metadata.prompt_token_count
+                tokens_out = response.usage_metadata.candidates_token_count
+            else:
+                tokens_in = len(sys_prompt + user_prompt) // 4
+                tokens_out = len(roteiro) // 4
+
+        elif self.client_openai:
+            messages = [
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": user_prompt}
+            ]
+            response = self.client_openai.chat.completions.create(
+                model=self.model_id,
+                messages=messages
+            )
+            roteiro = response.choices[0].message.content
+            tokens_in = response.usage.prompt_tokens if hasattr(response, 'usage') else 0
+            tokens_out = response.usage.completion_tokens if hasattr(response, 'usage') else 0
+        else:
+            raise Exception("Nenhum cliente LLM configurado válido.")
+
+        custo_brl = calcular_custo_brl(self.model_id, tokens_in, tokens_out)
+
+        return {
+            "roteiro": roteiro,
+            "model_id": f"{self.model_id} (Polido v{iteracao})",
             "tokens_in": tokens_in,
             "tokens_out": tokens_out,
             "custo_brl": custo_brl
