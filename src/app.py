@@ -1312,6 +1312,10 @@ if page == "Criar Roteiros":
                                 status_box.update(label=f"✅ Roteiro {i+1} Finalizado!", state="complete")
                                 st.session_state['roteiros'].insert(0, novo_roteiro)
 
+                                # Detecção de erro interno (mesmo se a chamada não levantou exceção)
+                                if "ERRO" in res_gen["roteiro"][:100].upper():
+                                    erros_lote.append(f"SKU {main_code}: {res_gen['roteiro'][:100]}...")
+
                         except Exception as e:
                             err_msg = f"❌ Erro no Roteiro {i+1} (SKU {main_code}): {str(e)}"
                             st.error(err_msg)
@@ -1415,6 +1419,7 @@ if page == "Criar Roteiros":
                     agent = RoteiristaAgent(supabase_client=sp_cli, model_id=modelo_id, table_prefix=table_prefix)
                     
                     progress_text_man = st.empty()
+                    any_error = False
                     for i, itm in enumerate(fichas_validas):
                         percent = int((i + 1) / total * 100)
                         progress_text_man.markdown(f"**⏳ Processando {i+1}/{total} ({percent}%):** SKU {itm['sku']}")
@@ -1457,6 +1462,11 @@ if page == "Criar Roteiros":
                                 }
                                 st.session_state['roteiros'].insert(0, novo_roteiro)
                                 
+                                # Detecção de erro interno para evitar st.rerun silencioso
+                                if "ERRO" in res_gen["roteiro"][:100].upper():
+                                    any_error = True
+                                    st.error(f"❌ Falha interna detectada no SKU {itm['sku']}: {res_gen['roteiro'][:100]}...")
+                                
                                 # Log Histórico
                                 if sp_cli:
                                     try:
@@ -1477,10 +1487,12 @@ if page == "Criar Roteiros":
                                 status_box_man.update(label=f"✅ SKU {itm['sku']} Finalizado!", state="complete")
                                 
                         except Exception as e:
-                            st.error(f"Erro no SKU {itm['sku']}: {e}")
+                            any_error = True
+                            st.error(f"❌ Erro no SKU {itm['sku']}: {e}")
 
-                    st.session_state['roteiro_ativo_idx'] = 0
-                    st.rerun()
+                    if not any_error:
+                        st.session_state['roteiro_ativo_idx'] = 0
+                        st.rerun()
 
     # --- SCRIPTS DA SESSÃO (CARDS VISÍVEIS — SEM EXPANDER) ---
     if 'roteiros' in st.session_state and st.session_state['roteiros']:

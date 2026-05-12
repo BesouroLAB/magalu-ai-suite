@@ -471,9 +471,10 @@ class RoteiristaAgent:
                     contents=contents,
                     config=types.GenerateContentConfig(
                         temperature=0.5,
-                        http_options={'timeout': 120000} # 120 segundos em ms
+                        http_options={'timeout': 600000} # 600 segundos (10 minutos)
                     )
                 )
+                print(f"[DEBUG] Resposta recebida do Gemini para SKU {codigo}")
             except TypeError as te:
                 if 'request_options' in str(te):
                     print(f"[CRITICAL ERR] Erro detectado no SDK v2 (request_options): {te}. Tentando fallback sem config.")
@@ -490,11 +491,20 @@ class RoteiristaAgent:
                     # Tenta extrair manualmente se .text estiver vazio mas houver parte
                     if response.candidates and response.candidates[0].content.parts:
                         roteiro = "".join([p.text for p in response.candidates[0].content.parts])
+                
+                if not roteiro or len(roteiro.strip()) < 20:
+                    print(f"[WARN] Gemini retornou resposta vazia ou muito curta para SKU {codigo}")
+                    roteiro = f"ERRO: O modelo {self.model_id} retornou uma resposta vazia. Isso pode ser um problema temporário na API do Google ou filtro de segurança restritivo."
             except Exception as e:
                 # Se der erro (ex: blocked by safety), tenta pegar o feedback de segurança
-                block_reason = getattr(response, 'blocked', 'Filtro de segurança do Gemini bloqueou a resposta.')
-                roteiro = f"ERRO NA GERAÇÃO: {block_reason}. Tente outro modelo ou ajuste o texto de entrada."
-                print(f"[RECOVERED ERROR] Gemini Blocked: {e}")
+                block_reason = "Filtro de segurança do Gemini bloqueou a resposta."
+                if hasattr(response, 'candidates') and response.candidates:
+                    c = response.candidates[0]
+                    if hasattr(c, 'finish_reason'):
+                        block_reason = f"Bloqueado por: {c.finish_reason}"
+                
+                roteiro = f"ERRO NA GERAÇÃO ({self.model_id}): {block_reason}. Tente outro modelo ou ajuste o texto de entrada."
+                print(f"[RECOVERED ERROR] Gemini Blocked/Error: {e} | Reason: {block_reason}")
             
             # Métricas via v2 metadata
             if hasattr(response, 'usage_metadata'):
