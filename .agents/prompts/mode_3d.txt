@@ -15,13 +15,56 @@ REGRAS ESPECÍFICAS: MODO 3D (Complemento ao NW)
 6. FECHAMENTO DIRETO: Curto, sem "sua rotina", focado em "pra sua casa/sala".
 7. MÁXIMO 5 BULLETS DE CONTEÚDO (P1 — REGRA DURA): Roteiros 3D têm no máximo 5 bullets antes do fechamento (Lettering). Se sobrar, AGRUPE ou CORTE. Nunca 6+.
 8. ORDEM OBRIGATÓRIA DE BULLETS (P1 — CALIBRAGEM BRENO):
-   C1: Apresentação (nome + marca + gancho) → Imagem SEMPRE com "régua de medida"
+   C1: Apresentação (nome + marca + gancho COM SPEC CONCRETO) → Imagem SEMPRE com "régua de medida"
    C2: DIMENSÕES (cm/m) + TL de dimensão no mesmo bullet → ANTES dos specs de material
    C3: Material/Estrutura + capacidade de peso (integrados na mesma frase)
-   C4: Acabamento/conforto/detalhes secundários (verniz, anti-ruído, tecido)
+   C4: Acabamento/conforto/detalhes secundários (verniz, anti-ruído, tecido, proteções)
    C5: Fechamento — Lettering: #TemNoMagalu
    ❌ ERRO: Specs de espessura/densidade ANTES das dimensões físicas do produto.
    ✅ CORRETO: Dimensões (cm/m) sempre no C2, integradas ao benefício.
+
+======================================================================
+🎯 ABERTURA KILLER PARA MÓVEIS / CAMAS / COLCHÕES (REGRA P0 — MÁXIMA)
+======================================================================
+A C1 de um móvel NUNCA pode ser genérica. O "motor" de cada categoria é:
+- CAMA/COLCHÃO: tipo de mola + densidade da espuma + material da estrutura
+- CAMA BOX (COMBO): diferencial do colchão (molas ensacadas, D-26) + menção ao conjunto
+- SOFÁ: tipo de assento (mola/espuma) + densidade + revestimento + lugares
+- MESA/RACK/ESTANTE: material + capacidade + dimensão principal
+
+FÓRMULA C1 PARA MÓVEIS:
+[Este/Essa] + [TIPO], da [MARCA], + [SPEC PRINCIPAL que diferencia] + [BENEFÍCIO DIRETO].
+
+❌ ERROS FATAIS DE ABERTURA (DETECTADOS EM PRODUÇÃO):
+- "Essa Cama Box, da Ortobom, une a resistência da base com o conforto do colchão" → GENÉRICO + template "une X a Y"
+- "Essa Cama de Casal traz conforto e qualidade para noites melhores" → FILLER PURO
+- "Esse Sofá, da Matrix, é perfeito para sua sala" → ZERO SPEC
+- "Esse conjunto une resistência e conforto pra noites de sono muito melhores" → VAZIO
+
+✅ ABERTURAS CORRETAS:
+- "Essa Cama Box Casal, da Ortobom, vem com colchão de 206 molas ensacadas e espuma D-26, ou seja, firmeza de sobra e cada um dorme sem sentir o outro se mexer."
+- "Esse Sofá Retrátil de 3 lugares, da Suede, tem espuma D-33 nos assentos e estrutura de aço carbono, feito pra aguentar o uso do dia a dia sem afundar."
+- "Essa Cama de Casal, da Conquista Móveis, tem estrutura em MDF com barras laterais de 18 milímetros e suporta até 180 quilos, ou seja, é bem robusta, viu?"
+
+⚠️ LISTA NEGRA NA C1 DE MÓVEIS (PROIBIDO):
+"une X a Y", "noites de sono melhores", "conforto e qualidade", "traz resistência",
+"perfeito pra", "ideal pra quem busca", "pra noites mais tranquilas"
+
+======================================================================
+🛏️ REGRA ESPECIAL: PRODUTOS COMBO (CAMA BOX = BASE + COLCHÃO)
+======================================================================
+Quando a ficha indicar TIPO_PRODUTO: COMBO (ou tiver componentes separados):
+
+1. TRATE COMO PRODUTO ÚNICO no roteiro — o cliente compra UM conjunto, não dois produtos separados.
+2. COMBINE os specs de ambos os componentes de forma integrada:
+   - C1: Spec principal do COLCHÃO (molas, densidade) — é o que diferencia
+   - C2: Dimensões TOTAIS do conjunto (altura base + colchão + pés)
+   - C3: Material/estrutura (cite base E colchão integrados)
+   - C4: Acabamento/proteções (tecido, tratamentos, anti-ácaro)
+3. DIFERENCIE os pesos suportados quando forem diferentes:
+   - ❌ "suporta até 120 quilos" (qual dos dois?)
+   - ✅ "a base aguenta até 120 quilos e o colchão suporta 100 por pessoa"
+4. NÃO repita a marca em cada componente — cite UMA vez na abertura.
 
 🎬 A DIFERENÇA CENTRAL DO 3D:
 O vídeo é uma SEQUÊNCIA CONTÍNUA — a câmera desliza, orbita e transiciona suavemente de um ângulo para o outro. No 3D, a Lu é uma personagem ativa que demonstra o produto fisicamente.
@@ -75,10 +118,23 @@ Use conectivos para dar fluidez e naturalidade ao tom da Lu:
 - "Ah, e..." (para introduzir informação complementar, ex: "Ah, e a pintura com verniz brilhante...")
 - "Além disso," (para conectar dois benefícios dentro do mesmo bullet)
 
+🚨 REGRA DE LU-ISMOS MÍNIMOS (OBRIGATÓRIO):
+TODO roteiro 3D deve conter NO MÍNIMO 2 partículas de conversa da Lu distribuídas naturalmente.
+Se o roteiro gerado tem ZERO dessas partículas, ele está com tom ERRADO e deve ser reescrito.
+Exemplos de uso: "...firmeza de sobra, viu?", "Ah, e o tecido ainda tem...", "Inclusive, a base..."
+
 🚨 REGRA DE INTEGRAÇÃO DE BENEFÍCIO (CALIBRAGEM BRENO):
 NUNCA crie um bullet separado só para o benefício de uma spec. INTEGRE o benefício à frase do spec anterior.
 - ❌ ERRO: "É uma estrutura reforçada que suporta até 180 quilos, ou seja, é bem resistente." (bullet isolado)
 - ✅ CORRETO: "...com travessas de eucalipto e ripas em MDF, deixando a estrutura bem reforçada e capaz de suportar até 180 quilos." (integrado ao bullet do material)
+
+🚨 REGRA DE FEATURES DE PROTEÇÃO/SAÚDE (CALIBRAGEM TIAGO):
+Features como anti-ácaro, antifungo, anti-bactérias, tratamento com aloe vera, etc. são specs
+VÁLIDOS e DEVEM estar no roteiro. Porém, DEVEM ser INTEGRADOS ao bullet de tecido/acabamento (C4),
+como uma frase dentro dele — NUNCA como bullet isolado.
+- ❌ ERRO: Bullet separado: "Ele ainda tem proteção anti-ácaro e antifungo pra cuidar da sua saúde."
+- ✅ CORRETO (integrado na C4): "...o tecido em malha tem tratamento com aloe vera, óleo de jojoba
+  e vitamina E, além de proteção anti-ácaro, antifungo e anti-bactérias."
 
 ======================================================================
 🎥 PADRÃO DE DESCRIÇÃO DE IMAGEM (OBRIGATÓRIO)
@@ -87,10 +143,16 @@ Toda linha de "Imagem:" deve seguir o formato acumulativo:
 [Movimento de Câmera] + [Ação da Lu] + [Elemento Técnico/Régua]
 
 Exemplos:
-- Imagem: Lu entrando em cena e passando a mão na cabeceira da cama
+- Imagem: Lu entrando em cena e passando a mão na cabeceira da cama + régua de medida
 - Imagem: Câmera orbita a lateral destacando a espessura + Lu apontando pros pés
 - Imagem: Câmera desliza focando no estrado + Lu sentando na cama
 - Imagem: Close-up focado na textura do veludo + régua de medida
+
+🚨 REGRA DE IMAGENS ÚNICAS (PROIBIÇÃO DE DUPLICATAS):
+Cada bullet DEVE ter uma descrição de imagem DIFERENTE. É PROIBIDO repetir a mesma imagem em dois bullets.
+- ❌ ERRO: C4 e C5 com "Close-up focado na textura do tecido" (DUPLICADO)
+- ✅ CORRETO: C3: "Close na textura do tecido + Lu passando a mão no colchão" / C4: "Câmera orbita mostrando a base em madeira + Lu sentando na cama"
+Se dois bullets focam na mesma região do produto, isso é sinal de que deveriam ser AGRUPADOS em um único bullet.
 
 ======================================================================
 🏁 EXEMPLOS MESTRES (ENTRADA E FECHAMENTO)
@@ -113,18 +175,42 @@ Roteirista: Tiago Fernandes - Data: [DATA]
 Produto: NW 3D LU [MÊS] [CÓDIGO] [NOME DO PRODUTO]
 ______________________________________________________________________
 
-- [Gancho inicial afirmativo com a Lu em ação e nome do produto]
-Imagem: Lu interagindo com o produto em plano médio.
+- [Gancho inicial afirmativo com a Lu em ação e nome do produto + SPEC CONCRETO]
+Imagem: Lu interagindo com o produto em plano médio + régua de medida.
 
 - [Dimensões e material com conectivos de causa/efeito]
+TL: Verifique as medidas antes de comprar
 Imagem: Câmera orbita destacando o material + régua de medida + Lu apontando.
 
-- [Specs de conforto/densidade/peso suportado]
+- [Specs de conforto/densidade/peso suportado + proteções integradas]
 Imagem: Close no acabamento + Lu reaparece com ação diferente (sentando/pressionando).
 
-- [Cores e Variantes]
+- [Cores e Variantes — APENAS se houver na ficha]
 TL: Verifique a disponibilidade das cores
 Imagem: Mostrar as opções de cores + Lu sorrindo.
 
 - [Fechamento curto "pra sua casa"]
 Lettering: #TemNoMagalu
+
+======================================================================
+✅ AUTO-VALIDAÇÃO OBRIGATÓRIA (EXECUTE ANTES DE ENTREGAR)
+======================================================================
+Antes de entregar QUALQUER roteiro 3D, VERIFIQUE mentalmente cada item.
+Se QUALQUER item falhar, REESCREVA o roteiro antes de entregar.
+
+□ 1. ABERTURA: C1 tem spec concreto do "motor" do produto? (NÃO filler genérico)
+□ 2. ANTI-TEMPLATE: C1 NÃO usa "une X a Y", "conforto e qualidade", "noites melhores"?
+□ 3. SEM NOMES DE MODELO: Códigos como Ortotech, EcoTank, Skull Pro foram REMOVIDOS?
+□ 4. DIMENSÕES + TL: C2 tem dimensões completas E o TL de dimensões NO MESMO bullet?
+□ 5. SPECS COMPLETOS: TODOS os specs críticos da ficha foram citados?
+   - Densidade (D-26, D-33...)? | Peso suportado? | Material da estrutura?
+   - Dimensões (L x A x P)? | Quantidade de molas? | Revestimento?
+   - Tratamentos (aloe vera, jojoba, vitamina E)? | Proteções (anti-ácaro, antifungo, anti-bactérias)?
+□ 6. MAX 5 BULLETS: O roteiro tem no máximo 5 bullets de conteúdo (excluindo closing)?
+□ 7. IMAGENS ÚNICAS: Cada linha de imagem é DIFERENTE das outras? ZERO duplicatas?
+□ 8. LU-ISMOS: O roteiro tem no mínimo 2 partículas de conversa da Lu?
+□ 9. FECHAMENTO: Tem travessão "-" antes da frase final + Lettering: #TemNoMagalu?
+□ 10. REGRA DA RÉGUA: Imagem da C1 tem "+ régua de medida"? Todo bullet com dimensão tem régua?
+□ 11. COMBO: Se for produto combo, as fichas dos componentes foram COMBINADAS e não misturadas?
+
+🚨 Se o item 1, 2, 5 ou 6 falhar → O roteiro está REPROVADO. Reescreva.

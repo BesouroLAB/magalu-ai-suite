@@ -24,15 +24,53 @@ SUA TAREFA:
 - NÃO substitua por um produto parecido, similar ou da mesma marca. É ESTE código ou ERRO.
 - Se a pesquisa retornar vários resultados, escolha APENAS o que contém exatamente o código "{code}".
 
+======================================================================
+🚨 REGRA DE PRODUTO COMBO / KIT (CRÍTICO — CAMA BOX, SALA COMPLETA, ETC)
+======================================================================
+Muitos produtos Magalu são COMBOS que agrupam itens diferentes em um único código.
+Exemplos: "Cama Box Casal (Box + Colchão)", "Sala de Estar (Sofá + Mesa + Rack)".
+
+COMO IDENTIFICAR UM COMBO:
+- O título contém "(Box + Colchão)", "Conjunto", "Kit", "Sala Completa" ou termos similares.
+- A página do produto tem uma seção "Selecione um item do produto:" com MÚLTIPLOS itens clicáveis
+  (ex: "Base Cama Box Casal Ortobom" e "Colchão Casal Ortobom de Molas Ensacadas").
+- Cada item tem sua PRÓPRIA descrição e ficha técnica separada.
+
+O QUE FAZER QUANDO FOR COMBO:
+1. Extraia a ficha técnica de CADA componente separadamente.
+2. Na seção FICHA TÉCNICA, organize assim:
+
+--- COMPONENTE 1: [Nome do componente, ex: "Base Cama Box Casal"] ---
+DESCRIÇÃO COMPONENTE 1: [Descrição específica deste componente]
+- [Item]: [Valor]
+...
+
+--- COMPONENTE 2: [Nome do componente, ex: "Colchão Casal de Molas Ensacadas"] ---
+DESCRIÇÃO COMPONENTE 2: [Descrição específica deste componente]
+- [Item]: [Valor]
+...
+
+3. NÃO misture as fichas. Se a Base tem "Peso Suportado: 120kg" e o Colchão tem
+   "Peso Suportado por Pessoa: 100kg", são dados DIFERENTES de componentes DIFERENTES.
+4. Na DESCRIÇÃO principal (fora dos componentes), faça um resumo geral do combo.
+5. Marque o campo TIPO_PRODUTO como "COMBO" para que o sistema saiba que é um kit.
+
+⚠️ Se você NÃO conseguir acessar as fichas separadas dos componentes, pelo menos
+   indique no campo TIPO_PRODUTO: "COMBO_PARCIAL" e liste os nomes dos componentes
+   que você identificou na seção "Selecione um item do produto:".
+======================================================================
+
 **FORMATO DE SAÍDA OBRIGATÓRIO:**
 CÓDIGO CONFIRMADO: {code}
+TIPO_PRODUTO: [SIMPLES | COMBO | COMBO_PARCIAL]
 TÍTULO: [Nome completo do produto]
 MARCA: [Fabricante]
 LINHA/NOME COMERCIAL: [Nome de marketing da linha, ex: "UltraGear", "Galaxy M53", "Soundgear Clips", "Force". Se não houver, escreva "N/A"]
-DESCRIÇÃO: [Resumo das funcionalidades principais]
+DESCRIÇÃO: [Resumo das funcionalidades principais — para COMBOs, descreva o conjunto]
 FICHA TÉCNICA:
 - [Item]: [Valor]
 ...
+(Para COMBOs, use o formato com --- COMPONENTE N --- descrito acima)
 
 VOLTAGEM: [110V / 220V / Bivolt / Não se aplica]
 CORES DISPONÍVEIS: [Liste TODAS as cores/variantes visíveis na página do produto ou em SKUs relacionados. Se houver apenas uma cor, informe "Apenas [cor]". Se não encontrar, escreva "Não informado"]
