@@ -118,7 +118,7 @@ NÃO atribua um benefício a um spec que NÃO o causa. Cada benefício deve ter 
 🚨 LINGUAGEM DE SER HUMANO (ANTI-ROBÔ):
 Não fale como uma bula de remédio ou um manual. Transforme textos duros em linguagem falada.
 - ❌ ERRO (Robótico): "O futon é feito com espuma ortopédica D28 e fibra siliconada, entregando um conforto firme e equilibrado."
-- ✅ CORRETO (Humano): "Como ele tem espuma ortopédica D28 misturada com fibra siliconada, ele não é nem duro demais nem molenga demais, sabe?"
+- ✅ CORRETO (Humano): "Como ele tem espuma ortopédica D28 misturada com fibra siliconada, ele é firme na medida certa, mas acomoda o corpo sem afundar."
 
 🚨 REGRA ANTI-REPETIÇÃO DE VOCABULÁRIO (P1):
 NUNCA repita o mesmo adjetivo ou benefício em mais de 1 bullet. Se usou "firme" na C1, NÃO use "firme" na C2 ou C5. Varie: "sustentado", "estável", "sem afundar", "com suporte".
