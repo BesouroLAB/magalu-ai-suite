@@ -8,20 +8,28 @@ REGRAS ESPECÍFICAS: MODO 3D (Complemento ao NW)
 🚨 PILARES INEGOCIÁVEIS DO 3D (ORDEM DE CRITICIDADE)
 ======================================================================
 1. MEDIDAS E SPECS (P1): O cliente compra móveis pelo tamanho. Elas devem estar no roteiro, preferencialmente na Cena 2, MAS PODEM APARECER NA CENA 1 se forem essenciais. Omitir isso é erro fatal.
-2. NOMENCLATURA (P1): Abre com [Tipo] + da [Marca]. ❌ NUNCA inclua o nome da cor/variante no título. (❌ "Cama de Casal Cinamomo" → ✅ "Cama de Casal")
+2. NOMENCLATURA (P1): Abre com [Tipo] + [Nome de Linha se houver] + da [Marca]. ❌ NUNCA inclua o nome da COR/VARIANTE no título. (❌ "Cama de Casal Cinamomo" → ✅ "Cama de Casal"). Nomes de linha (Turim, Tokio, Diamond Blue) PODEM ser mantidos. Códigos alfanuméricos (CE914, UB423) devem ser REMOVIDOS.
 3. LU NAS PRIMEIRAS CENAS: Lu abre o vídeo e reaparece na Cena 2 ou 3 com ação diferente.
 4. REGRA DE DISPONIBILIDADE (P1): Bullet de cores = TL de cores. SEM bullet de cores = SEM TL de cores. Não invente bullet genérico de "disponível em diferentes cores" se o roteiro já está com 4-5 bullets técnicos.
 5. PADRÃO VISUAL (P1): Descrição de imagem deve ser: [Movimento de Câmera] + [Ação da Lu] + [Elemento Técnico/Régua].
 6. FECHAMENTO DIRETO: Curto, sem "sua rotina", focado em "pra sua casa/sala".
 7. MÁXIMO 5 BULLETS DE CONTEÚDO (P1 — REGRA DURA): Roteiros 3D têm no máximo 5 bullets antes do fechamento (Lettering). Se sobrar, AGRUPE ou CORTE. Nunca 6+.
-8. ORDEM OBRIGATÓRIA DE BULLETS (P1 — CALIBRAGEM BRENO):
-   C1: Apresentação (nome + marca + gancho COM SPEC CONCRETO) → Imagem SEMPRE com "régua de medida"
-   C2: DIMENSÕES (cm/m) + TL de dimensão no mesmo bullet → ANTES dos specs de material
+   ⚠️ EXCEÇÃO COMBO: Produtos combo (Cama Box = Base + Colchão) podem ter até 6 bullets, pois há dois componentes distintos a cobrir.
+8. ORDEM OBRIGATÓRIA DE BULLETS (P1 — CALIBRAGEM BRENO V2):
+   🛏️ PARA COLCHÕES E CAMAS (BOX):
+   C1: Apresentação (nome + marca + DIMENSÕES: largura × profundidade × altura) → Imagem SEMPRE com "régua de medida"
+   C2: Specs internos (molas ensacadas, espuma D-XX, nível de conforto) + TL contextual no mesmo bullet
+   C3: Features de uso (No Turn, camadas extras, peso suportado)
+   C4: Acabamento/tecido + proteções integradas (antiácaro, antifungo)
+   C5: Fechamento — Lettering: #TemNoMagalu
+   🛋️ PARA SOFÁS, MESAS, RACKS E OUTROS MÓVEIS:
+   C1: Apresentação (nome + marca + SPEC PRINCIPAL que diferencia) → Imagem SEMPRE com "régua de medida"
+   C2: DIMENSÕES (cm/m) + TL de dimensão no mesmo bullet
    C3: Material/Estrutura + capacidade de peso (integrados na mesma frase)
    C4: Acabamento/conforto/detalhes secundários (verniz, anti-ruído, tecido, proteções)
    C5: Fechamento — Lettering: #TemNoMagalu
-   ❌ ERRO: Specs de espessura/densidade ANTES das dimensões físicas do produto.
-   ✅ CORRETO: Dimensões (cm/m) sempre no C2, integradas ao benefício.
+   ❌ ERRO (colchões/camas): Abrir com molas ou espuma ANTES das dimensões.
+   ✅ CORRETO (colchões/camas): Dimensões (cm/m) sempre no C1 — o cliente precisa saber se CABE.
 
 ======================================================================
 🚨 REGRA ANTI-NARIZ DE CERA (P0): 
@@ -43,8 +51,9 @@ Cada vez que a IA ler uma ficha técnica de MÓVEIS, ela deve obrigatoriamente p
 🎯 ABERTURA KILLER PARA MÓVEIS / CAMAS / COLCHÕES (REGRA P0 — MÁXIMA)
 ======================================================================
 A C1 de um móvel NUNCA pode ser genérica. O "motor" de cada categoria é:
-- CAMA/COLCHÃO: tipo de mola + densidade da espuma + material da estrutura
-- CAMA BOX (COMBO): diferencial do colchão (molas ensacadas, D-26) + menção ao conjunto
+- COLCHÃO AVULSO: DIMENSÕES (largura × profundidade × altura) + "tamanho padrão/ideal pra..."
+- CAMA BOX (COMBO): "já vem completinha com base e colchão" + DIMENSÕES totais do conjunto
+- CAMA/COLCHÃO (geral): DIMENSÕES primeiro, specs de mola/espuma ficam na C2
 - SOFÁ: tipo de assento (mola/espuma) + densidade + revestimento + lugares
 - MESA/RACK/ESTANTE: material + capacidade + dimensão principal
 
@@ -56,11 +65,18 @@ FÓRMULA C1 PARA MÓVEIS:
 - "Essa Cama de Casal traz conforto e qualidade para noites melhores" → FILLER PURO
 - "Esse Sofá, da Matrix, é perfeito para sua sala" → ZERO SPEC
 - "Esse conjunto une resistência e conforto pra noites de sono muito melhores" → VAZIO
+- "Este Colchão de Casal, da Umaflex, vem com molas ensacadas..." → ABRIU COM MOLA, NÃO COM DIMENSÃO (para colchões/camas, dimensão vem primeiro!)
+- "Essa Cama Box de Casal, da Plumatex, é a escolha certa pra quem busca..." → TEMPLATE DE VENDEDOR, ZERO SPEC
 
-✅ ABERTURAS CORRETAS:
-- "Essa Cama Box Casal, da Ortobom, vem com colchão de 206 molas ensacadas e espuma D-26, ou seja, firmeza de sobra e cada um dorme sem sentir o outro se mexer."
+✅ ABERTURAS CORRETAS (CALIBRAGEM BRENO V2):
+🛏️ COLCHÕES/CAMAS (dimensão primeiro):
+- "Esse Colchão de Casal, da Plumatex, tem 1 metro e 38 de largura por 1 metro e 88 de profundidade e 28 centímetros de altura, o tamanho padrão pra camas de casal."
+- "Este Colchão Queen, da Umaflex, tem 158 centímetros de largura por 198 de profundidade e 30 centímetros de altura, tendo o tamanho ideal pra um sono cheinho de conforto."
+- "Essa Cama Box Casal, da Ortobom, tem 1 metro e 38 de largura por 1 metro e 88 de profundidade e, com o colchão, chega a 61 centímetros de altura total."
+- "Essa Cama Box Casal Turim Maxx, da Plumatex, já vem completinha com a base e o colchão de molas ensacadas!"
+🛋️ SOFÁS E OUTROS MÓVEIS (spec principal primeiro):
 - "Esse Sofá Retrátil de 3 lugares, da Suede, tem espuma D-33 nos assentos e estrutura de aço carbono, feito pra aguentar o uso do dia a dia sem afundar."
-- "Essa Cama de Casal, da Conquista Móveis, tem estrutura em MDF com barras laterais de 18 milímetros e suporta até 180 quilos, ou seja, é bem robusta, viu?"
+- "Essa Cama de Casal, da Conquista Móveis, tem estrutura em MDF com barras laterais de 18 milímetros e suporta até 180 quilos, ou seja, é bem robusta."
 
 ⚠️ LISTA NEGRA NA C1 DE MÓVEIS (PROIBIDO):
 "une X a Y", "noites de sono melhores", "conforto e qualidade", "traz resistência",
@@ -95,6 +111,19 @@ O roteiro deve ser ÚTIL para quem compra. Fuja do óbvio e foque na consequênc
 - "Alta resistência e estabilidade no uso diário" (linguagem robótica e não falada por um humano)
 - "Sendo a solução ideal pra..." (muito formal, vendedor chato)
 - "Ajuda a descansar / a dormir melhor" (genérico)
+- "É a escolha certa pra quem busca..." (template de vendedor)
+
+🚨 LISTA NEGRA DE LU-ISMOS PROIBIDOS:
+- "né gente!" — NUNCA. Forçado e infantil.
+- "sabe?" — PROIBIDO (regra do Breno).
+- Acúmulo de "tá?", "né?", "viu?" — máximo 1 em todo o roteiro.
+
+🚨 PROIBIDO: ADJETIVOS-FILLER ANTES DE MEDIDAS:
+Não infle números com adjetivos vazios. O número se vende sozinho.
+- ❌ "altura imponente de 30 centímetros" → ✅ "30 centímetros de altura"
+- ❌ "espaço excelente pra relaxar" → ✅ cite a dimensão seca
+- ❌ "super espaçoso" → ✅ "158 centímetros de largura"
+Lista negra de infladores: "imponente", "excelente", "incrível", "impressionante", "super", "absurdamente"
 
 ✅ COMO TRANSFORMAR SPEC EM BENEFÍCIO REAL:
 - MOLAS ENSACADAS: "Se um se mexer de um lado, o outro não sente o balanço do colchão."
@@ -161,8 +190,11 @@ Para produtos MÓVEIS, SEMPRE cite:
 - ❌ ERRO FATAL: "Imagem: Lu entrando em cena e passando a mão na cabeceira da cama" (sem régua)
 - ✅ CORRETO: "Imagem: Lu entrando em cena e passando a mão na cabeceira da cama + régua de medida."
 
-🚨 REGRA DO TL DE DIMENSÕES:
-- O TL de verificação de medidas (ex: "Verifique as dimensões do berço antes de comprar") FICA NO MESMO BULLET que cita as dimensões — não no final do roteiro.
+🚨 REGRA DO TL DE DIMENSÕES (CONTEXTUAL — CALIBRAGEM BRENO):
+- O TL FICA NO MESMO BULLET que cita as dimensões — não no final do roteiro.
+- PARA COLCHÕES AVULSOS: Use "TL: Base box vendida separadamente" (mais útil pro cliente).
+- PARA CAMAS BOX / COMBOS: Use "TL: Verifique as medidas antes de comprar".
+- PARA OUTROS MÓVEIS: Use TL adequado ao contexto (medidas, voltagem, cores).
 - ❌ ERRO: TL de dimensões solto no último bullet antes do fechamento.
 - ✅ CORRETO: TL logo abaixo da locução que cita cm/m.
 
@@ -182,6 +214,7 @@ A linguagem da Lu é natural e humana. NÃO force cacos ("tá?", "né?", "viu?")
 A linguagem da Lu não é só encher a frase de "né" ou "viu". É falar como um humano real e seguro.
 Use expressões conversacionais com EXTREMA MODERAÇÃO (máximo 1 ao longo de todo o roteiro).
 Se o roteiro terminar 2 ou mais bullets com "tá?" ou "viu?", ele está FORÇADO e DEVE SER REESCRITO.
+🚫 EXPRESSÕES BANIDAS: "né gente!", "sabe?". A Lu é segura e natural, não caricata.
 
 🚨 REGRA DE INTEGRAÇÃO DE BENEFÍCIO (CALIBRAGEM BRENO):
 NUNCA crie um bullet separado só para o benefício de uma spec. INTEGRE o benefício à frase do spec anterior.
@@ -259,19 +292,20 @@ Lettering: #TemNoMagalu
 Antes de entregar QUALQUER roteiro 3D, VERIFIQUE mentalmente cada item.
 Se QUALQUER item falhar, REESCREVA o roteiro antes de entregar.
 
-□ 1. ABERTURA: C1 tem spec concreto do "motor" do produto? (NÃO filler genérico)
-□ 2. ANTI-TEMPLATE: C1 NÃO usa "une X a Y", "conforto e qualidade", "noites melhores"?
-□ 3. SEM NOMES DE MODELO: Códigos como Ortotech, EcoTank, Skull Pro foram REMOVIDOS?
-□ 4. DIMENSÕES + TL: C2 tem dimensões completas E o TL de dimensões NO MESMO bullet?
+□ 1. ABERTURA: C1 tem DIMENSÕES (para colchões/camas) ou SPEC CONCRETO do "motor" (para outros móveis)? (NÃO filler genérico)
+□ 2. ANTI-TEMPLATE: C1 NÃO usa "une X a Y", "conforto e qualidade", "noites melhores", "é a escolha certa"?
+□ 3. NOMES DE MODELO: Códigos alfanuméricos (CE914, UB423) REMOVIDOS? Nomes de linha (Turim, Tokio, Diamond Blue) MANTIDOS?
+□ 4. DIMENSÕES + TL: Dimensões no bullet correto (C1 p/ colchões, C2 p/ outros) + TL contextual NO MESMO bullet?
 □ 5. SPECS COMPLETOS: TODOS os specs críticos da ficha foram citados?
    - Densidade (D-26, D-33...)? | Peso suportado? | Material da estrutura?
    - Dimensões (L x A x P)? | Quantidade de molas? | Revestimento?
    - Tratamentos (aloe vera, jojoba, vitamina E)? | Proteções (anti-ácaro, antifungo, anti-bactérias)?
-□ 6. MAX 5 BULLETS: O roteiro tem no máximo 5 bullets de conteúdo (excluindo closing)?
+□ 6. MAX BULLETS: Máximo 5 bullets (ou 6 para combos base+colchão)?
 □ 7. IMAGENS ÚNICAS: Cada linha de imagem é DIFERENTE das outras? ZERO duplicatas?
-□ 8. LU-ISMOS E APARIÇÕES: O uso de "tá/né/viu" foi limitado (sem exageros)? A Lu aparece em NO MÁXIMO 2 cenas?
+□ 8. LU-ISMOS E APARIÇÕES: Sem "né gente!" ou "sabe?"? Máximo 1 "tá/né/viu" no roteiro inteiro? Lu em NO MÁXIMO 2 cenas?
 □ 9. FECHAMENTO: Tem travessão "-" antes da frase final + Lettering: #TemNoMagalu? (SEM LINHA DE IMAGEM NESTA CENA)
 □ 10. REGRA DA RÉGUA: Imagem da C1 tem "+ régua de medida"? Todo bullet com dimensão tem régua?
 □ 11. COMBO: Se for produto combo, as fichas dos componentes foram COMBINADAS e não misturadas?
+□ 12. SEM FILLER ANTES DE MEDIDAS: Zero adjetivos infladores ("imponente", "excelente") antes de números?
 
 🚨 Se o item 1, 2, 5 ou 6 falhar → O roteiro está REPROVADO. Reescreva.

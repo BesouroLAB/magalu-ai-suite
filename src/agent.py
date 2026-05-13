@@ -1037,7 +1037,7 @@ class RoteiristaAgent:
             "custo_brl": custo_brl
         }
 
-    def polir_roteiro(self, roteiro_atual: str, ficha_tecnica: str, iteracao: int = 1) -> dict:
+    def polir_roteiro(self, roteiro_atual: str, ficha_tecnica: str, iteracao: int = 1, instrucoes: str = "") -> dict:
         """
         Polir/Revisar um roteiro já gerado. Aplica revisão de coerência técnica,
         melhoria de fluxo e corte de redundâncias.
@@ -1046,6 +1046,7 @@ class RoteiristaAgent:
             roteiro_atual: Texto do roteiro a ser polido
             ficha_tecnica: Ficha técnica do produto (fonte de verdade)
             iteracao: Número da iteração de polimento (1, 2, 3...)
+            instrucoes: Instruções personalizadas do usuário para o polimento
         """
         # Carrega o prompt de polimento dedicado
         sys_prompt = self.prompts.get("polir", "")
@@ -1063,8 +1064,14 @@ class RoteiristaAgent:
                 f"NÃO reescreva por reescrever.\n"
             )
 
+        # Adiciona instruções customizadas se existirem
+        user_inst = ""
+        if instrucoes and instrucoes.strip():
+            user_inst = f"\n🎯 INSTRUÇÃO ESPECÍFICA DO USUÁRIO:\n{instrucoes}\n"
+
         user_prompt = (
             f"{iter_note}"
+            f"{user_inst}"
             f"--- ROTEIRO ATUAL (PARA POLIR) ---\n"
             f"{roteiro_atual}\n\n"
             f"--- FICHA TÉCNICA DO PRODUTO (FONTE DE VERDADE) ---\n"

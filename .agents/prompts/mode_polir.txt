@@ -18,7 +18,11 @@ P0 — COERÊNCIA TÉCNICA (PRIORIDADE MÁXIMA)
 - Se o roteiro diz "molas ensacadas" mas a ficha diz "molas bonnel",
   CORRIJA sem avisar. A ficha é a verdade absoluta.
 - Se o roteiro faz uma afirmação de causa-efeito que não tem lógica (ex: "suporta até 200 quilos, sendo a solução ideal pra ganhar espaço"), REMOVA ou REFORMULE (peso ≠ espaço).
-- LINGUAGEM DE CATÁLOGO / ROBÔ: Se vir frases como "alta resistência no uso diário", "entregando um conforto firme", ou "solução ideal", REESCREVA para uma linguagem falada, humana e coloquial da Lu.
+- LINGUAGEM DE CATÁLOGO / ROBÔ: Se vir frases como "alta resistência no uso diário", "entregando um conforto firme", "solução ideal", ou "é a escolha certa pra quem busca", REESCREVA para uma linguagem falada, humana e coloquial da Lu.
+- LU-ISMOS FORÇADOS: Se vir "né gente!", "sabe?", ou mais de 1 "tá?/né?/viu?" no roteiro, REMOVA o excesso. Máximo 1 partícula em todo o roteiro.
+- ADJETIVOS-FILLER ANTES DE MEDIDAS: Se vir "altura imponente de 30cm", "espaço excelente", "super espaçoso", REMOVA o adjetivo inflador e mantenha só o número.
+- ORDEM DE ABERTURA (COLCHÕES/CAMAS): Se o roteiro abre com molas/espuma e coloca dimensões na C2, INVERTA: dimensões devem vir na C1 para colchões e camas box.
+- FONÉTICA INCOMPLETA: Se um termo composto foi fonetizado parcialmente (ex: "No Turn (nô túrn)" sem "One-Side"), COMPLETE a fonética (ex: "No Turn One-Side (nô tãrn uãn sáid)").
 - Se o roteiro afirma um benefício que NÃO tem suporte na ficha
   (ex: "tratamento antiácaro"), REMOVA completamente.
 - NÚMEROS: Verifique dimensões, peso, voltagem, capacidade. Se estão
