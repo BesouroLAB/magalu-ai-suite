@@ -1995,7 +1995,15 @@ if page == "Criar Roteiros":
                     pass
 
                 # Recalcula colunas para incluir Salvar em Ouro se aprovado ou diretamente
-                st.markdown("---")
+                # --- ÁREA DE POLIMENTO ADICIONAL ---
+                st.markdown("<br>", unsafe_allow_html=True)
+                instrucoes_re_polir = st.text_input(
+                    "O que você ainda quer melhorar?", 
+                    key=f"inst_re_polir_{polir_uid}", 
+                    placeholder="Ex: Deixe mais curto, use tom mais formal...",
+                    help="Diga à IA o que mudar nesta nova versão."
+                )
+                
                 c1, c2 = st.columns([1, 1])
                 with c1:
                     if st.button("🏆 Salvar esta versão como OURO", key=f"save_gold_review_{polir_uid}", use_container_width=True):
@@ -2024,7 +2032,8 @@ if page == "Criar Roteiros":
                             res_re = ag_re.polir_roteiro(
                                 roteiro_atual=polir_resultado["roteiro"],
                                 ficha_tecnica=ficha_str,
-                                iteracao=iteracao_num + 1
+                                iteracao=iteracao_num + 1,
+                                instrucoes=instrucoes_re_polir
                             )
                             # Atualiza: o "original" agora é a versão polida anterior
                             st.session_state[f"polir_original_{polir_uid}"] = polir_resultado["roteiro"]
@@ -2059,9 +2068,17 @@ if page == "Criar Roteiros":
                     st.session_state['roteiros'][idx]['roteiro_original'] = novo_conteudo
                     st.session_state[editor_key] = novo_conteudo
 
+                # --- BARRA DE AÇÕES DO ROTEIRO (INFERIOR) ---
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                # Barra de Ações do Roteiro (Inferior)
+                # Campo de instruções para polimento
+                instrucoes_polir = st.text_input(
+                    "O que você quer melhorar no roteiro?", 
+                    key=f"inst_polir_{polir_uid}", 
+                    placeholder="Ex: Deixe mais curto, use tom mais formal, foque no design...",
+                    help="A IA usará estas instruções para refinar o roteiro atual."
+                )
+
                 col_actions_1, col_actions_2, col_actions_3, col_actions_4 = st.columns([1.2, 1.2, 1, 0.8])
                 
                 with col_actions_1:
@@ -2076,7 +2093,8 @@ if page == "Criar Roteiros":
                             # Chama a IA para polir
                             res = ag.polir_roteiro(
                                 roteiro_atual=item.get('roteiro_original', ''),
-                                ficha_tecnica=ficha_str
+                                ficha_tecnica=ficha_str,
+                                instrucoes=instrucoes_polir
                             )
                             st.session_state[f"polir_resultado_{polir_uid}"] = res
                             st.session_state[f"polir_count_{polir_uid}"] = 0
