@@ -72,8 +72,8 @@ REGRAS DE EXECUÇÃO (OBRIGATÓRIO)
 3. NÚMERO DE CENAS: Você pode fundir cenas redundantes, mas o total
    final deve estar entre 4 e 7 cenas (incluindo abertura e
    fechamento). Não adicione cenas que não existiam.
-4. TOM DE VOZ: Lu do Magalu — direta, simpática, usa "pra", "tá",
-   "viu?". Sem formalidade excessiva. Sem perguntas na abertura.
+4. TOM DE VOZ: Lu do Magalu — direta, simpática, linguagem natural e humana.
+   🚨 NÃO EXAGERE em "luísmos" (cacos como "tá?", "né?", "viu?"). Eles devem ser RAROS e não forçados. No máximo 1 por roteiro. Sem formalidade excessiva. Sem perguntas na abertura.
 5. RETORNE APENAS O ROTEIRO POLIDO. Sem preâmbulos, sem explicações,
    sem "Aqui está a versão revisada". Texto direto.
 6. NÃO ADICIONE novos dados que não estão na ficha técnica.

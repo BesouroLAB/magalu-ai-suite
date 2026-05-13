@@ -123,9 +123,10 @@ O vídeo é uma SEQUÊNCIA CONTÍNUA — a câmera desliza, orbita e transiciona
 👩 LU OBRIGATÓRIA — PRESENÇA NAS PRIMEIRAS CENAS:
 Todo vídeo 3D começa com a Lu. Ela deve estar INTERAGINDO com o produto na primeira cena (abrindo, dividindo, mostrando, usando). 
 
-🔁 REAPARIÇÃO DA LU (REGRA DOS 15 SEGUNDOS):
-A Lu DEVE aparecer na Cena 1 e reaparecer na Cena 2 ou 3 com uma AÇÃO DIFERENTE.
-Exemplo: Se na Cena 1 ela está em pé ao lado da cama, na Cena 2 ela pode estar sentando na cama ou passando a mão na cabeceira.
+🔁 APARIÇÃO DA LU (REGRA MÁXIMA DAS 2 CENAS / 15 SEGUNDOS):
+A Lu DEVE aparecer APENAS na Cena 1 e reaparecer ANTES dos próximos 15 segundos (na Cena 2 ou 3).
+🚨 APÓS A SEGUNDA APARIÇÃO, ELA NÃO DEVE MAIS APARECER NO VÍDEO. LIMITE MÁXIMO DE 2 APARIÇÕES!
+Exemplo: Se na Cena 1 ela está em pé ao lado da cama, na Cena 2 ela pode estar sentando na cama. Da Cena 3 em diante, foco 100% no produto. NUNCA a coloque no fechamento.
 
 ======================================================================
 🏷️ NOMENCLATURA DO PRODUTO NA ABERTURA (REGRA P1 — CRÍTICA)
@@ -160,8 +161,8 @@ Para produtos MÓVEIS, SEMPRE cite:
 ======================================================================
 🗣️ CONECTIVOS E "LU-ISMOS" (NATURALIDADE)
 ======================================================================
-Use conectivos para dar fluidez e naturalidade ao tom da Lu:
-- "viu?", "tá?", "né gente!", "Se liga nesse...", "Inclusive...", "Sabe o que eu achei legal?"
+Use conectivos para dar fluidez e naturalidade ao tom da Lu, mas SEM EXAGERAR.
+A linguagem da Lu é natural e humana. NÃO force cacos ("tá?", "né?", "viu?") o tempo todo.
 - "o que faz com que..." ou "o que faz dela..." (consequência positiva da spec técnica)
 - "ou seja," (para explicar benefícios de specs técnicos)
 - "Pra se ter ideia," (para introduzir pesos ou medidas)
@@ -169,10 +170,10 @@ Use conectivos para dar fluidez e naturalidade ao tom da Lu:
 - "Ah, e..." (para introduzir informação complementar, ex: "Ah, e a pintura com verniz brilhante...")
 - "Além disso," (para conectar dois benefícios dentro do mesmo bullet)
 
-🚨 REGRA DE LU-ISMOS MÍNIMOS (OBRIGATÓRIO):
-TODO roteiro 3D deve conter NO MÍNIMO 2 partículas de conversa da Lu distribuídas naturalmente.
-Se o roteiro gerado tem ZERO dessas partículas, ele está com tom ERRADO e deve ser reescrito.
-Exemplos de uso: "...firmeza de sobra, viu?", "Ah, e o tecido ainda tem...", "Inclusive, a base..."
+🚨 REGRA ANTI-EXAGERO DE LU-ISMOS (CALIBRAGEM OBRIGATÓRIA):
+A linguagem da Lu não é só encher a frase de "né" ou "viu". É falar como um humano real e seguro.
+Use expressões conversacionais com EXTREMA MODERAÇÃO (máximo 1 ao longo de todo o roteiro).
+Se o roteiro terminar 2 ou mais bullets com "tá?" ou "viu?", ele está FORÇADO e DEVE SER REESCRITO.
 
 🚨 REGRA DE INTEGRAÇÃO DE BENEFÍCIO (CALIBRAGEM BRENO):
 NUNCA crie um bullet separado só para o benefício de uma spec. INTEGRE o benefício à frase do spec anterior.
@@ -242,6 +243,7 @@ Imagem: Mostrar as opções de cores + Lu sorrindo.
 
 - [Fechamento curto "pra sua casa"]
 Lettering: #TemNoMagalu
+🚨 PROIBIDO colocar "Imagem:" nesta última cena de lettering. E a Lu NÃO aparece aqui.
 
 ======================================================================
 ✅ AUTO-VALIDAÇÃO OBRIGATÓRIA (EXECUTE ANTES DE ENTREGAR)
@@ -259,8 +261,8 @@ Se QUALQUER item falhar, REESCREVA o roteiro antes de entregar.
    - Tratamentos (aloe vera, jojoba, vitamina E)? | Proteções (anti-ácaro, antifungo, anti-bactérias)?
 □ 6. MAX 5 BULLETS: O roteiro tem no máximo 5 bullets de conteúdo (excluindo closing)?
 □ 7. IMAGENS ÚNICAS: Cada linha de imagem é DIFERENTE das outras? ZERO duplicatas?
-□ 8. LU-ISMOS: O roteiro tem no mínimo 2 partículas de conversa da Lu?
-□ 9. FECHAMENTO: Tem travessão "-" antes da frase final + Lettering: #TemNoMagalu?
+□ 8. LU-ISMOS E APARIÇÕES: O uso de "tá/né/viu" foi limitado (sem exageros)? A Lu aparece em NO MÁXIMO 2 cenas?
+□ 9. FECHAMENTO: Tem travessão "-" antes da frase final + Lettering: #TemNoMagalu? (SEM LINHA DE IMAGEM NESTA CENA)
 □ 10. REGRA DA RÉGUA: Imagem da C1 tem "+ régua de medida"? Todo bullet com dimensão tem régua?
 □ 11. COMBO: Se for produto combo, as fichas dos componentes foram COMBINADAS e não misturadas?
 
