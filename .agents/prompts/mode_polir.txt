@@ -17,10 +17,8 @@ P0 — COERÊNCIA TÉCNICA (PRIORIDADE MÁXIMA)
 - Cruze CADA dado citado no roteiro com a ficha técnica.
 - Se o roteiro diz "molas ensacadas" mas a ficha diz "molas bonnel",
   CORRIJA sem avisar. A ficha é a verdade absoluta.
-- Se o roteiro faz uma afirmação de causa-efeito que não procede
-  (ex: "28 cm de altura = firmeza máxima"), REMOVA ou REFORMULE para
-  uma relação correta (ex: "28 cm de altura garante um visual robusto
-  e facilita na hora de deitar e levantar").
+- Se o roteiro faz uma afirmação de causa-efeito que não tem lógica (ex: "suporta até 200 quilos, sendo a solução ideal pra ganhar espaço"), REMOVA ou REFORMULE (peso ≠ espaço).
+- LINGUAGEM DE CATÁLOGO / ROBÔ: Se vir frases como "alta resistência no uso diário", "entregando um conforto firme", ou "solução ideal", REESCREVA para uma linguagem falada, humana e coloquial da Lu.
 - Se o roteiro afirma um benefício que NÃO tem suporte na ficha
   (ex: "tratamento antiácaro"), REMOVA completamente.
 - NÚMEROS: Verifique dimensões, peso, voltagem, capacidade. Se estão

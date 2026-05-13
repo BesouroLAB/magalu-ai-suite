@@ -87,12 +87,13 @@ Quando a ficha indicar TIPO_PRODUTO: COMBO (ou tiver componentes separados):
 ======================================================================
 O roteiro deve ser ÚTIL para quem compra. Fuja do óbvio e foque na consequência técnica.
 
-❌ LISTA NEGRA DE ARGUMENTOS "BOBOS" (PROIBIDO):
+❌ LISTA NEGRA DE ARGUMENTOS "BOBOS" E "CATÁLOGO" (PROIBIDO):
 - "Ideal para casais" (em produtos de casal/queen/king)
 - "Perfeito para sua casa / seu quarto" (vago)
 - "Garante noites de sono tranquilas / revigorantes" (filler)
-- "Traz conforto e qualidade" (clichê)
-- "Ideal pra quem busca espaço" (óbvio em móveis grandes)
+- "Traz conforto e qualidade" ou "Entregando um conforto firme" (clichê de catálogo)
+- "Alta resistência e estabilidade no uso diário" (linguagem robótica e não falada por um humano)
+- "Sendo a solução ideal pra..." (muito formal, vendedor chato)
 - "Ajuda a descansar / a dormir melhor" (genérico)
 
 ✅ COMO TRANSFORMAR SPEC EM BENEFÍCIO REAL:
@@ -106,11 +107,18 @@ O roteiro deve ser ÚTIL para quem compra. Fuja do óbvio e foque na consequênc
 ⚠️ REGRA DE OURO: Se o argumento servir para QUALQUER produto da categoria, ele é FILLER. O argumento deve ser específico daquela ficha técnica.
 
 🚨 REGRA DE COERÊNCIA TÉCNICA (P1 — OBRIGATÓRIO):
-NÃO atribua um benefício a um spec que NÃO o causa. Cada benefício deve ter relação direta de causa-efeito com o spec citado.
+NÃO atribua um benefício a um spec que NÃO o causa. Cada benefício deve ter relação direta, lógica e física com o spec citado.
 - ❌ ERRO: "28 centímetros de altura, que garante suporte firme pra coluna" (altura ≠ firmeza)
 - ✅ CORRETO: "28 centímetros de altura, que combina com a maioria das bases do mercado" (altura → compatibilidade)
 - ❌ ERRO: "revestimento em malha, que deixa o colchão bem resistente" (malha ≠ resistência estrutural)
 - ✅ CORRETO: "revestimento em malha, que ajuda na ventilação e tem um toque mais suave" (malha → respirabilidade)
+- ❌ ERRO: "suporta até 200 quilos, sendo a solução ideal pra ganhar espaço." (capacidade de peso ≠ ganhar espaço)
+- ✅ CORRETO: "suporta até 200 quilos, ou seja, é uma estrutura bem robusta pra família sentar junta." (peso → robustez)
+
+🚨 LINGUAGEM DE SER HUMANO (ANTI-ROBÔ):
+Não fale como uma bula de remédio ou um manual. Transforme textos duros em linguagem falada.
+- ❌ ERRO (Robótico): "O futon é feito com espuma ortopédica D28 e fibra siliconada, entregando um conforto firme e equilibrado."
+- ✅ CORRETO (Humano): "Como ele tem espuma ortopédica D28 misturada com fibra siliconada, ele não é nem duro demais nem molenga demais, sabe?"
 
 🚨 REGRA ANTI-REPETIÇÃO DE VOCABULÁRIO (P1):
 NUNCA repita o mesmo adjetivo ou benefício em mais de 1 bullet. Se usou "firme" na C1, NÃO use "firme" na C2 ou C5. Varie: "sustentado", "estável", "sem afundar", "com suporte".
