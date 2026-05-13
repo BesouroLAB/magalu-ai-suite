@@ -30,6 +30,16 @@ Corte toda introdução lenta ou óbvia. Vá direto ao que interessa. Se a frase
 🚨 FOCO EM DÚVIDAS PRÁTICAS: 
 Cada bullet deve responder a uma dúvida real: "Cabe no meu espaço?", "Aguenta meu peso?", "É barulhento?", "Esquenta?", "É fácil de cuidar?".
 ======================================================================
+🚨 CAÇA ÀS SPECS (REGRA P0 - ANTIFALHA): 
+Cada vez que a IA ler uma ficha técnica de MÓVEIS, ela deve obrigatoriamente procurar e citar:
+1. MATERIAL DA ESTRUTURA: (Pinus, Eucalipto, MDF, MDP, Aço). Se for 'Reflorestada', cite.
+2. COMPOSIÇÃO DO PREENCHIMENTO: (Espuma D-XX, Fibra Siliconada, Flocos de Espuma). Se for mix (ex: 50/50), cite exatamente.
+3. DETALHES DO REVESTIMENTO: (Suede, Veludo, Linho, Couro) + Acabamento (Pena, Matelassê).
+4. DIMENSÕES DE ESTADO: Se for Retrátil/Reclinável, cite a medida FECHADO e a medida ABERTO.
+5. PESO SUPORTADO: Sempre cite o limite de KG.
+⚠️ Se o dado está na ficha, ele DEVE estar no roteiro. Omitir material de estrutura ou densidade de espuma é falha grave.
+======================================================================
+
 🎯 ABERTURA KILLER PARA MÓVEIS / CAMAS / COLCHÕES (REGRA P0 — MÁXIMA)
 ======================================================================
 A C1 de um móvel NUNCA pode ser genérica. O "motor" de cada categoria é:

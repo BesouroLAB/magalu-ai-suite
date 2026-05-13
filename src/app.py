@@ -1978,6 +1978,9 @@ if page == "Criar Roteiros":
                             del st.session_state[widget_key_polir]
                         st.session_state["last_script_uid"] = None
                         st.toast("✅ Versão polida aprovada e salva!", icon="🎉")
+                        
+                        # Opcional: Sugere salvar em Ouro após aprovação? 
+                        # Por enquanto apenas aprovamos.
                         st.rerun()
                 
                 with col_rejeitar:
@@ -1988,9 +1991,32 @@ if page == "Criar Roteiros":
                         st.rerun()
                 
                 with col_polir_again:
+                    # Agora temos 4 colunas se quisermos adicionar o Salvar em Ouro aqui também
+                    pass
+
+                # Recalcula colunas para incluir Salvar em Ouro se aprovado ou diretamente
+                st.markdown("---")
+                c1, c2 = st.columns([1, 1])
+                with c1:
+                    if st.button("🏆 Salvar esta versão como OURO", key=f"save_gold_review_{polir_uid}", use_container_width=True):
+                        try:
+                            prefix = st.session_state.get('table_prefix', 'nw_')
+                            data_ouro = {
+                                "titulo_produto": titulo_curto,
+                                "codigo_produto": codigo_produto,
+                                "roteiro_perfeito": polir_resultado["roteiro"],
+                                "roteiro_original_ia": polir_original,
+                                "modelo_calibragem": polir_resultado.get("model_id", "N/A"),
+                                "categoria_id": cat_id_roteiro,
+                                "aprendizado": f"Polimento aprovado e salvo como Ouro (Iteração {iteracao_num})."
+                            }
+                            sp_cli.table(f"{prefix}roteiros_ouro").insert(data_ouro).execute()
+                            st.toast("🌟 Roteiro salvo no Hub de Ouro!", icon="🏆")
+                        except Exception as e_gold:
+                            st.error(f"Erro ao salvar em Ouro: {e_gold}")
+                with c2:
                     if st.button("🔄 Polir Mais uma vez", key=f"re_polir_{polir_uid}", use_container_width=True):
                         try:
-                            from agents.roteirista_agent import RoteiristaAgent
                             ag_re = RoteiristaAgent(
                                 model_id=st.session_state.get('modelo_llm', 'gemini-3-flash-preview'),
                                 table_prefix=st.session_state.get('table_prefix', 'nw_')
@@ -2006,7 +2032,9 @@ if page == "Criar Roteiros":
                             st.session_state[polir_key_count] = iteracao_num + 1
                             st.rerun()
                         except Exception as e_re:
+                            import traceback
                             st.error(f"❌ Erro ao re-polir: {e_re}")
+                            st.code(traceback.format_exc())
             else:
                 # --- MODO EDIÇÃO NORMAL ---
                 editor_key = f"edit_session_{polir_uid}"
@@ -2034,12 +2062,11 @@ if page == "Criar Roteiros":
                 st.markdown("<br>", unsafe_allow_html=True)
                 
                 # Barra de Ações do Roteiro (Inferior)
-                col_actions_1, col_actions_2, col_actions_3 = st.columns([1.5, 1, 1])
+                col_actions_1, col_actions_2, col_actions_3, col_actions_4 = st.columns([1.2, 1.2, 1, 0.8])
                 
                 with col_actions_1:
                     if st.button("✨ Polir Roteiro com IA", key=f"btn_polir_{polir_uid}", use_container_width=True, type="primary"):
                         try:
-                            from agents.roteirista_agent import RoteiristaAgent
                             ag = RoteiristaAgent(
                                 model_id=st.session_state.get('modelo_llm', 'gemini-3-flash-preview'),
                                 table_prefix=st.session_state.get('table_prefix', 'nw_')
@@ -2055,20 +2082,40 @@ if page == "Criar Roteiros":
                             st.session_state[f"polir_count_{polir_uid}"] = 0
                             st.rerun()
                         except Exception as e:
+                            import traceback
                             st.error(f"Erro ao polir roteiro: {e}")
+                            st.code(traceback.format_exc())
 
                 with col_actions_2:
+                    if st.button("🌟 Salvar em Ouro", key=f"btn_gold_{polir_uid}", use_container_width=True, help="Salva este roteiro como exemplo de alta qualidade para treinar a IA."):
+                        try:
+                            prefix = st.session_state.get('table_prefix', 'nw_')
+                            data_ouro = {
+                                "titulo_produto": titulo_curto,
+                                "codigo_produto": codigo_produto,
+                                "roteiro_perfeito": novo_conteudo,
+                                "roteiro_original_ia": item.get('roteiro_original', novo_conteudo),
+                                "modelo_calibragem": item.get('model_id', 'N/A'),
+                                "categoria_id": cat_id_roteiro,
+                                "aprendizado": "Salvo manualmente pelo usuário como Roteiro Ouro."
+                            }
+                            sp_cli.table(f"{prefix}roteiros_ouro").insert(data_ouro).execute()
+                            st.toast("🌟 Roteiro salvo no Hub de Ouro!", icon="🏆")
+                        except Exception as e_gold:
+                            st.error(f"Erro ao salvar em Ouro: {e_gold}")
+
+                with col_actions_3:
                     # Botão de Download (TXT)
                     st.download_button(
-                        label="📥 Baixar Roteiro",
+                        label="📥 Baixar TXT",
                         data=item.get('roteiro_original', ''),
                         file_name=f"roteiro_{codigo_produto}.txt",
                         mime="text/plain",
                         use_container_width=True
                     )
                 
-                with col_actions_3:
-                    if st.button("🗑️ Remover da Mesa", key=f"btn_del_{polir_uid}", use_container_width=True):
+                with col_actions_4:
+                    if st.button("🗑️ Remover", key=f"btn_del_{polir_uid}", use_container_width=True):
                         st.session_state['roteiros'].pop(idx)
                         if st.session_state.get('roteiro_ativo_idx', 0) >= len(st.session_state['roteiros']):
                             st.session_state['roteiro_ativo_idx'] = max(0, len(st.session_state['roteiros']) - 1)

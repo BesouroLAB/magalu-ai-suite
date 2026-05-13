@@ -27,6 +27,15 @@ P0 — COERÊNCIA TÉCNICA (PRIORIDADE MÁXIMA)
   errados, corrija silenciosamente.
 
 ======================================================================
+🚨 RIGOR TÉCNICO: MÓVEIS & COLCHÕES (STRICT MODE)
+======================================================================
+Se o produto for um MÓVEL ou COLCHÃO, aplique REVISÃO RADICAL:
+- MATERIAIS: Se a ficha diz "Madeira Pinus e Eucalipto", o roteiro NÃO pode dizer apenas "Madeira". Deve ser específico e citar o benefício (ex: "Estrutura reforçada em Pinus e Eucalipto de reflorestamento, que garante mais durabilidade").
+- REVESTIMENTO: Se a ficha diz "Suede Pena", não aceite apenas "Suede". Se houver um benefício (toque macio, fácil limpeza), inclua.
+- CARGA: Verifique o "Peso Suportado". Se o roteiro diz "aguenta muita coisa" e a ficha diz "80kg", corrija para a especificação exata.
+- DENSIDADE: Para colchões/sofás, a DENSIDADE (D28, D33, etc) é a alma do produto. Se estiver na ficha, DEVE estar no roteiro com a explicação de conforto/suporte.
+
+======================================================================
 P1 — FLUXO E TRANSIÇÕES
 ======================================================================
 - Leia o roteiro em voz alta mentalmente. Se uma cena não conecta

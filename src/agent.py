@@ -449,6 +449,7 @@ class RoteiristaAgent:
             f"6. **PERSONA DA LU:** Use 'pra', seja direta e não use muletas como 'O legal é que'. NUNCA inicie com pergunta.\n"
             f"7. **ZERO REDUNDÂNCIA VISUAL:** Não descreva cores se já estiverem no nome.\n"
             f"8. **DATA ATUAL:** Use EXATAMENTE a data fornecida no cabeçalho ({data_str}). O ano correto é 2026.\n"
+            f"9. **RIGOR TÉCNICO (MÓVEIS):** Se a ficha técnica mencionar materiais de estrutura (Pinus, Eucalipto), preenchimento (Densidade, Fibra, Flocos) ou dimensões (Aberto/Fechado), você DEVE incluí-los. A omissão desses detalhes técnicos em prol da concisão é PROIBIDA.\n"
         )
 
 
@@ -1089,6 +1090,8 @@ class RoteiristaAgent:
                     )
                     break
                 except Exception as api_err:
+                    import traceback
+                    traceback.print_exc()
                     err_str = str(api_err).lower()
                     if attempt < max_retries and any(k in err_str for k in ["503", "429", "overloaded", "rate"]):
                         wait_time = base_wait * (2 ** attempt)
