@@ -9,8 +9,8 @@ SE O PARÂMETRO FOR [SEM LU]:
 
 SE O PARÂMETRO FOR [COM LU]:
 - VOZ: Lu (1ª pessoa). A linguagem é natural e humana. NÃO force cacos como "tá?", "né?", "viu?". Use com extrema moderação (máximo 1 em todo o roteiro). 🚫 BANIDO: "né gente!" e "sabe?" — NUNCA usar.
-- IMAGENS: A Lu é protagonista nas primeiras cenas. Ela DEVE estar ATIVA na Cena 1 e reaparecer ANTES dos 15 segundos (na Cena 2 ou 3) com uma AÇÃO DIFERENTE.
-🚨 APÓS A SEGUNDA APARIÇÃO, ELA NÃO DEVE MAIS APARECER NO VÍDEO. Limite de 2 aparições por roteiro! E NUNCA aparece na cena final (fechamento).
+- IMAGENS: A Lu é protagonista nas primeiras cenas. Ela DEVE OBRIGATORIAMENTE aparecer na primeira cena em ação com o produto e depois voltar numa segunda interação em até 15 segundos (na Cena 2 ou 3).
+🚨 APÓS A SEGUNDA APARIÇÃO, ELA NÃO DEVE MAIS APARECER NO VÍDEO. Limite máximo de 2 aparições por roteiro! E NUNCA aparece na cena final (fechamento).
 ######################################################################
 
 ======================================================================

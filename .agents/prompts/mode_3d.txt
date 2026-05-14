@@ -167,7 +167,7 @@ O vídeo é uma SEQUÊNCIA CONTÍNUA — a câmera desliza, orbita e transiciona
 Todo vídeo 3D começa com a Lu. Ela deve estar INTERAGINDO com o produto na primeira cena (abrindo, dividindo, mostrando, usando). 
 
 🔁 APARIÇÃO DA LU (REGRA MÁXIMA DAS 2 CENAS / 15 SEGUNDOS):
-A Lu DEVE aparecer APENAS na Cena 1 e reaparecer ANTES dos próximos 15 segundos (na Cena 2 ou 3).
+Ela DEVE OBRIGATORIAMENTE aparecer na primeira cena em ação com o produto e depois voltar numa segunda interação em até 15 segundos (na Cena 2 ou 3).
 🚨 APÓS A SEGUNDA APARIÇÃO, ELA NÃO DEVE MAIS APARECER NO VÍDEO. LIMITE MÁXIMO DE 2 APARIÇÕES!
 Exemplo: Se na Cena 1 ela está em pé ao lado da cama, na Cena 2 ela pode estar sentando na cama. Da Cena 3 em diante, foco 100% no produto. NUNCA a coloque no fechamento.
 
