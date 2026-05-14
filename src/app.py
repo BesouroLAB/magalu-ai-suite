@@ -1669,6 +1669,72 @@ if page == "Criar Roteiros":
         total_mesa = len(st.session_state['roteiros'])
         num_polidos = sum(1 for r in st.session_state['roteiros'] if st.session_state.get(f"polir_count_{r.get('_uid', '')}", 0) > 0)
         st.caption(f"**{total_mesa}** roteiro{'s' if total_mesa > 1 else ''} na mesa | **{num_polidos}** polido{'s' if num_polidos != 1 else ''}")
+        
+        # --- AÇÕES GLOBAIS DA MESA ---
+        col_all_1, col_all_2 = st.columns([3, 1])
+        with col_all_1:
+            inst_global = st.text_input(
+                "✨ Instruções Globais para Polir Todos (Opcional):",
+                placeholder="Ex: Deixe todos mais curtos, garanta que as medidas apareçam...",
+                key="inst_global_polir"
+            )
+        with col_all_2:
+            st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+            if st.button("✨ Polir Todos", use_container_width=True, type="primary", help="Aplica o polimento de IA em todos os roteiros da mesa simultaneamente."):
+                if not st.session_state['roteiros']:
+                    st.warning("⚠️ Não há roteiros na mesa para polir.")
+                else:
+                    with st.status("✨ Polindo todos os roteiros da mesa...", expanded=True) as status_batch:
+                        total = len(st.session_state['roteiros'])
+                        bar_batch = st.progress(0)
+                        ag_batch = RoteiristaAgent(
+                            model_id=st.session_state.get('modelo_llm', 'gemini-3-flash-preview'),
+                            table_prefix=st.session_state.get('table_prefix', 'nw_')
+                        )
+                        
+                        for i, r_item_batch in enumerate(st.session_state['roteiros']):
+                            sku_batch = r_item_batch.get('codigo', '...')
+                            status_batch.write(f"🔄 Polindo script {i+1}/{total}: SKU {sku_batch}")
+                            
+                            # Prepara ficha técnica
+                            f_raw_batch = r_item_batch.get('ficha', '')
+                            f_str_batch = f_raw_batch.get('text', str(f_raw_batch)) if isinstance(f_raw_batch, dict) else str(f_raw_batch)
+                            
+                            try:
+                                res_batch = ag_batch.polir_roteiro(
+                                    roteiro_atual=r_item_batch.get('roteiro_original', ''),
+                                    ficha_tecnica=f_str_batch,
+                                    instrucoes=inst_global,
+                                    modo=st.session_state.get('modo_trabalho', 'NW (NewWeb)')
+                                )
+                                
+                                # Incrementa contador de polimento para o badge visual e a TAG
+                                uid_batch = r_item_batch.get('_uid', i)
+                                current_count = st.session_state.get(f"polir_count_{uid_batch}", 0)
+                                iter_num = current_count + 1
+                                st.session_state[f"polir_count_{uid_batch}"] = iter_num
+
+                                # Atualiza o roteiro diretamente (Aprovação Automática em Lote)
+                                st.session_state['roteiros'][i]['roteiro_original'] = res_batch["roteiro"]
+                                st.session_state['roteiros'][i]['tag'] = f"V{iter_num}"
+                                
+                                # Acumula custos e tokens
+                                st.session_state['roteiros'][i]['tokens_in'] = r_item_batch.get('tokens_in', 0) + res_batch.get('tokens_in', 0)
+                                st.session_state['roteiros'][i]['tokens_out'] = r_item_batch.get('tokens_out', 0) + res_batch.get('tokens_out', 0)
+                                st.session_state['roteiros'][i]['custo_brl'] = r_item_batch.get('custo_brl', 0) + res_batch.get('custo_brl', 0)
+                                
+                                # Limpa estados de revisão individual se existirem
+                                if f"polir_resultado_{uid_batch}" in st.session_state:
+                                    del st.session_state[f"polir_resultado_{uid_batch}"]
+                                    
+                            except Exception as e_batch:
+                                status_batch.error(f"❌ Erro ao polir SKU {sku_batch}: {e_batch}")
+                            
+                            bar_batch.progress((i+1)/total)
+                        
+                        status_batch.update(label="✅ Todos os roteiros foram polidos!", state="complete")
+                        st.toast("✨ Polimento em lote concluído!", icon="🚀")
+                        st.rerun()
             
         # Grid de cards (3 por linha)
         cols_per_row = 3
@@ -1697,11 +1763,11 @@ if page == "Criar Roteiros":
                 # Status Badge
                 polir_count = st.session_state.get(f"polir_count_{r_item.get('_uid', '')}", 0)
                 if polir_count > 0:
-                    status_badge = f"🔵 Polido v{polir_count}"
-                    status_color = "#3b82f6"
+                    status_badge = f"✅ V{polir_count}"
+                    status_color = "#22c55e" # Verde Magalu (Versão Polida)
                 else:
-                    status_badge = "🟡 Rascunho"
-                    status_color = "#eab308"
+                    status_badge = "⚪ Rascunho"
+                    status_color = "#94a3b8" # Cinza para o estado bruto
                 
                 # Cores do card
                 if is_active:
@@ -1964,6 +2030,8 @@ if page == "Criar Roteiros":
                         st.session_state['roteiros'][idx]['custo_brl'] = (
                             item.get('custo_brl', 0) + polir_resultado.get('custo_brl', 0)
                         )
+                        # Ao aprovar um polimento, o roteiro ganha a tag da iteração (V1, V2, etc)
+                        st.session_state['roteiros'][idx]['tag'] = f"V{iteracao_num}"
                         # Atualiza o contador de iterações
                         st.session_state[polir_key_count] = iteracao_num
                         # Limpa o painel de comparação
@@ -2033,7 +2101,8 @@ if page == "Criar Roteiros":
                                 roteiro_atual=polir_resultado["roteiro"],
                                 ficha_tecnica=ficha_str,
                                 iteracao=iteracao_num + 1,
-                                instrucoes=instrucoes_re_polir
+                                instrucoes=instrucoes_re_polir,
+                                modo=st.session_state.get('modo_trabalho', 'NW (NewWeb)')
                             )
                             # Atualiza: o "original" agora é a versão polida anterior
                             st.session_state[f"polir_original_{polir_uid}"] = polir_resultado["roteiro"]
@@ -2063,11 +2132,6 @@ if page == "Criar Roteiros":
                     label_visibility="collapsed"
                 )
                 
-                # Salva mudanças no estado local ao digitar
-                if novo_conteudo != item.get('roteiro_original', ''):
-                    st.session_state['roteiros'][idx]['roteiro_original'] = novo_conteudo
-                    st.session_state[editor_key] = novo_conteudo
-
                 # --- BARRA DE AÇÕES DO ROTEIRO (INFERIOR) ---
                 st.markdown("<br>", unsafe_allow_html=True)
                 
@@ -2079,10 +2143,19 @@ if page == "Criar Roteiros":
                     help="A IA usará estas instruções para refinar o roteiro atual."
                 )
 
-                col_actions_1, col_actions_2, col_actions_3, col_actions_4 = st.columns([1.2, 1.2, 1, 0.8])
+                col_save, col_actions_1, col_actions_2, col_actions_3, col_actions_4 = st.columns([1, 1.2, 1.2, 1, 0.8])
                 
+                with col_save:
+                    if st.button("💾 Salvar Edição", key=f"btn_save_{polir_uid}", use_container_width=True, help="Salva as alterações manuais feitas no texto acima."):
+                        st.session_state['roteiros'][idx]['roteiro_original'] = novo_conteudo
+                        st.session_state[editor_key] = novo_conteudo
+                        # Ao salvar manualmente, também ganha a tag V1 (Revisado)
+                        st.session_state['roteiros'][idx]['tag'] = "V1"
+                        st.toast("✅ Alterações salvas com sucesso!", icon="💾")
+                        st.rerun()
+
                 with col_actions_1:
-                    if st.button("✨ Polir Roteiro com IA", key=f"btn_polir_{polir_uid}", use_container_width=True, type="primary"):
+                    if st.button("✨ Polir com IA", key=f"btn_polir_{polir_uid}", use_container_width=True, type="primary"):
                         try:
                             ag = RoteiristaAgent(
                                 model_id=st.session_state.get('modelo_llm', 'gemini-3-flash-preview'),
@@ -2094,7 +2167,8 @@ if page == "Criar Roteiros":
                             res = ag.polir_roteiro(
                                 roteiro_atual=item.get('roteiro_original', ''),
                                 ficha_tecnica=ficha_str,
-                                instrucoes=instrucoes_polir
+                                instrucoes=instrucoes_polir,
+                                modo=st.session_state.get('modo_trabalho', 'NW (NewWeb)')
                             )
                             st.session_state[f"polir_resultado_{polir_uid}"] = res
                             st.session_state[f"polir_count_{polir_uid}"] = 0

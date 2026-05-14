@@ -12,7 +12,18 @@ Seu trabalho é devolver o roteiro MELHORADO, mantendo a mesma estrutura
 e formato, mas aplicando as revisões abaixo em ORDEM DE PRIORIDADE:
 
 ======================================================================
-P0 — COERÊNCIA TÉCNICA (PRIORIDADE MÁXIMA)
+P-1 — INSTRUÇÕES DO USUÁRIO (O QUE ELE PEDIU É LEI)
+======================================================================
+- Se houver uma "INSTRUÇÃO ESPECÍFICA DO USUÁRIO", ela ANULA qualquer 
+  outra regra se houver conflito.
+- Se o usuário pediu para "adicionar medidas", ADICIONE as medidas
+  exatamente como ele escreveu, mesmo que não estejam na ficha técnica.
+- Se o usuário pediu para "mudar o tom", mude o tom imediatamente.
+- NUNCA ignore um pedido direto do usuário alegando "coerência técnica" 
+  ou "regras da Lu". O usuário é o editor final.
+
+======================================================================
+P0 — COERÊNCIA TÉCNICA (SEGUNDA PRIORIDADE)
 ======================================================================
 - Cruze CADA dado citado no roteiro com a ficha técnica.
 - Se o roteiro diz "molas ensacadas" mas a ficha diz "molas bonnel",
@@ -23,6 +34,7 @@ P0 — COERÊNCIA TÉCNICA (PRIORIDADE MÁXIMA)
 - ADJETIVOS-FILLER ANTES DE MEDIDAS: Se vir "altura imponente de 30cm", "espaço excelente", "super espaçoso", REMOVA o adjetivo inflador e mantenha só o número.
 - ORDEM DE ABERTURA (COLCHÕES/CAMAS): Se o roteiro abre com molas/espuma e coloca dimensões na C2, INVERTA: dimensões devem vir na C1 para colchões e camas box.
 - FONÉTICA INCOMPLETA: Se um termo composto foi fonetizado parcialmente (ex: "No Turn (nô túrn)" sem "One-Side"), COMPLETE a fonética (ex: "No Turn One-Side (nô tãrn uãn sáid)").
+- FONÉTICA DE MATERIAIS: A pronúncia correta para Suede é SEMPRE "(su-é-de)". Corrija se estiver diferente (ex: "su-ê-de").
 - Se o roteiro afirma um benefício que NÃO tem suporte na ficha
   (ex: "tratamento antiácaro"), REMOVA completamente.
 - NÚMEROS: Verifique dimensões, peso, voltagem, capacidade. Se estão
@@ -46,6 +58,7 @@ P1 — FLUXO E TRANSIÇÕES
 - Se a abertura é fraca ou genérica, reescreva com um gancho (hook)
   mais direto e impactante. A primeira frase deve prender atenção.
 - Se o fechamento não tem chamada para ação clara, reforce.
+- REGRA DE ENCERRAMENTO (OBRIGATÓRIA): A última frase do roteiro deve SEMPRE terminar com o termo exato ", tem no Magalu!" (com vírgula antes de 'tem'). NUNCA use "tá no Magalu!", "tá aqui no Magalu!" ou outras variações.
 - REGRA: O roteiro deve soar como uma CONVERSA natural da Lu,
   não como um manual técnico.
 

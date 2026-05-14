@@ -1037,7 +1037,7 @@ class RoteiristaAgent:
             "custo_brl": custo_brl
         }
 
-    def polir_roteiro(self, roteiro_atual: str, ficha_tecnica: str, iteracao: int = 1, instrucoes: str = "") -> dict:
+    def polir_roteiro(self, roteiro_atual: str, ficha_tecnica: str, iteracao: int = 1, instrucoes: str = "", modo: str = "NW (NewWeb)") -> dict:
         """
         Polir/Revisar um roteiro já gerado. Aplica revisão de coerência técnica,
         melhoria de fluxo e corte de redundâncias.
@@ -1048,10 +1048,15 @@ class RoteiristaAgent:
             iteracao: Número da iteração de polimento (1, 2, 3...)
             instrucoes: Instruções personalizadas do usuário para o polimento
         """
-        # Carrega o prompt de polimento dedicado
+        # Carrega o prompt de polimento dedicado e o contexto dinâmico do Supabase
         sys_prompt = self.prompts.get("polir", "")
         if not sys_prompt:
             raise Exception("Prompt de polimento (mode_polir.txt) não encontrado.")
+
+        # Injeta contexto dinâmico do Supabase para o modo atual (Ouro, Persona, Fonética)
+        dynamic_context = self._build_context(modo)
+        if dynamic_context:
+            sys_prompt = f"{sys_prompt}\n\n--- CONTEXTO E APRENDIZADOS DO MODO {modo.upper()} ---\n{dynamic_context}\n"
 
         # Adiciona nota sobre iteração para evitar polimento circular
         iter_note = ""
@@ -1064,10 +1069,16 @@ class RoteiristaAgent:
                 f"NÃO reescreva por reescrever.\n"
             )
 
-        # Adiciona instruções customizadas se existirem
+        # Adiciona instruções customizadas se existirem (com destaque visual para a IA)
         user_inst = ""
         if instrucoes and instrucoes.strip():
-            user_inst = f"\n🎯 INSTRUÇÃO ESPECÍFICA DO USUÁRIO:\n{instrucoes}\n"
+            user_inst = (
+                f"\n"
+                f"🚨🚨🚨 PRIORIDADE MÁXIMA - INSTRUÇÃO DO USUÁRIO 🚨🚨🚨\n"
+                f"O usuário enviou este pedido direto que deve ser seguido ACIMA de qualquer regra:\n"
+                f"'{instrucoes}'\n"
+                f"🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨\n\n"
+            )
 
         user_prompt = (
             f"{iter_note}"

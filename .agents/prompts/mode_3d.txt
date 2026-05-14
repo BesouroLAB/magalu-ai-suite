@@ -69,12 +69,13 @@ FÓRMULA C1 PARA MÓVEIS:
 - "Essa Cama Box de Casal, da Plumatex, é a escolha certa pra quem busca..." → TEMPLATE DE VENDEDOR, ZERO SPEC
 
 ✅ ABERTURAS CORRETAS (CALIBRAGEM BRENO V2):
-🛏️ COLCHÕES/CAMAS (dimensão primeiro):
+🛏️ COLCHÕES/CAMAS (dimensão primeiro se for apenas o colchão):
 - "Esse Colchão de Casal, da Plumatex, tem 1 metro e 38 de largura por 1 metro e 88 de profundidade e 28 centímetros de altura, o tamanho padrão pra camas de casal."
 - "Este Colchão Queen, da Umaflex, tem 158 centímetros de largura por 198 de profundidade e 30 centímetros de altura, tendo o tamanho ideal pra um sono cheinho de conforto."
-- "Essa Cama Box Casal, da Ortobom, tem 1 metro e 38 de largura por 1 metro e 88 de profundidade e, com o colchão, chega a 61 centímetros de altura total."
+📦 CAMAS BOX / COMBOS (spec de conforto/motor primeiro se for premium):
+- "Dormir com estabilidade e conforto fica fácil com essa Cama Box Casal Diamond Blue, da Gazin, que tem colchão de 165 molas ensacadas e densidade HR50 com D26."
 - "Essa Cama Box Casal Turim Maxx, da Plumatex, já vem completinha com a base e o colchão de molas ensacadas!"
-🛋️ SOFÁS E OUTROS MÓVEIS (spec principal primeiro):
+🛋️ SOFÁS E OTROS MÓVEIS (spec principal primeiro):
 - "Esse Sofá Retrátil de 3 lugares, da Suede, tem espuma D-33 nos assentos e estrutura de aço carbono, feito pra aguentar o uso do dia a dia sem afundar."
 - "Essa Cama de Casal, da Conquista Móveis, tem estrutura em MDF com barras laterais de 18 milímetros e suporta até 180 quilos, ou seja, é bem robusta."
 
@@ -251,7 +252,16 @@ Se dois bullets focam na mesma região do produto, isso é sinal de que deveriam
 🏁 EXEMPLOS MESTRES (ENTRADA E FECHAMENTO)
 ======================================================================
 
-CENA 1 (ENTRADA PERFEITA):
+CENA 1 (ENTRADA PERFEITA - COLCHÃO):
+- Esse Colchão de Casal, da Plumatex, tem 1 metro e 38 de largura por 1 metro e 88 de profundidade e 28 de altura, o tamanho padrão pra camas de casal.
+TL: Verifique as medidas antes de comprar
+Imagem: Câmera orbita o colchão mostrando as proporções + Lu apontando pra lateral + régua de medida.
+
+CENA 1 (ENTRADA PERFEITA - CAMA BOX COMBO):
+- Dormir com estabilidade e conforto fica fácil com essa Cama Box Casal Diamond Blue, da Gazin, que tem colchão de 165 molas ensacadas e densidade HR50 (agá-érre cinquenta) com D26.
+Imagem: Lu sentada na cama testando o conforto + régua de medida.
+
+CENA 1 (ENTRADA PERFEITA - SOFÁ):
 - Se você recebe visitas ou quer otimizar o espaço, esse sofá-cama de três lugares, da Matrix, resolve dois problemas de uma vez só!
 Imagem: Lu sentada no sofá, sorrindo e mostrando o móvel em um ambiente de sala. Régua de medidas: 182cm de largura, 88cm de altura e 101cm de profundidade.
 
