@@ -1319,7 +1319,7 @@ if page == "Criar Roteiros":
                                     "_uid": str(uuid.uuid4()),
                                     "ficha": ficha_principal,
                                     "roteiro_original": res_gen["roteiro"],
-                                    "codigo": main_code,
+                                    "codigo": " ".join(all_codes),
                                     "model_id": res_gen["model_id"],
                                     "tokens_in": res_gen["tokens_in"],
                                     "tokens_out": res_gen["tokens_out"],
@@ -1438,7 +1438,7 @@ if page == "Criar Roteiros":
                                         "_uid": str(uuid.uuid4()),
                                         "ficha": ficha_principal,
                                         "roteiro_original": res_gen["roteiro"],
-                                        "codigo": main_code,
+                                        "codigo": " ".join(all_codes),
                                         "model_id": res_gen["model_id"],
                                         "tokens_in": res_gen["tokens_in"],
                                         "tokens_out": res_gen["tokens_out"],
@@ -1784,8 +1784,8 @@ if page == "Criar Roteiros":
                     st.markdown(f"""
                     <div style='background: {bg_c}; border: 1.5px solid {border_c}; border-radius: 10px; padding: 12px 14px; margin-bottom: 4px; box-shadow: {shadow_c}; min-height: 100px;'>
                         <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;'>
-                            <span style='font-weight: 700; font-size: 14px; color: #e2e8f0;'>{num_tag} {codigo_card}</span>
-                            <span style='background: {status_color}22; color: {status_color}; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;'>{status_badge}</span>
+                            <span style='font-weight: 700; font-size: 14px; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;' title='{codigo_card}'>{num_tag} {codigo_card}</span>
+                            <span style='background: {status_color}22; color: {status_color}; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; flex-shrink: 0;'>{status_badge}</span>
                         </div>
                         <div style='font-size: 12px; color: #94a3b8; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'>{nome_p_card}</div>
                         <div style='font-size: 10px; color: #64748b;'>🧠 {modelo_tag.upper()} | {tag_custo}</div>
@@ -2201,7 +2201,7 @@ if page == "Criar Roteiros":
                     st.download_button(
                         label="📥 Baixar TXT",
                         data=item.get('roteiro_original', ''),
-                        file_name=f"roteiro_{codigo_produto}.txt",
+                        file_name=f"roteiro_{codigo_produto.replace(' ', '_')}.txt",
                         mime="text/plain",
                         use_container_width=True
                     )
