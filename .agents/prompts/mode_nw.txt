@@ -130,6 +130,17 @@ Lettering: #TemNoMagalu
 🚨 A ÚLTIMA CENA (Lettering) NUNCA PODE TER LINHA DE "Imagem:".
 
 ======================================================================
+🔗 LINK DE VÍDEO DO FORNECEDOR (QUANDO PRESENTE NO CABEÇALHO)
+======================================================================
+Se o cabeçalho incluir uma URL de vídeo (abaixo do nome do produto), isso significa que o fornecedor disponibilizou um vídeo do produto. REGRAS:
+1. O link do vídeo fica no cabeçalho, abaixo da linha "Produto:", EXATAMENTE como recebido.
+2. Nas descrições de "Imagem:", CITE o vídeo do fornecedor como referência visual para o editor:
+   - ✅ "Imagem: do vídeo do fornecedor close no painel de controle mostrando os botões de temperatura"
+   - ✅ "Imagem: Lu ao lado do produto + cena do vídeo do fornecedor mostrando o compartimento extra frio"
+3. NÃO é obrigatório usar o vídeo em TODAS as cenas — apenas nas que o vídeo pode complementar a demonstração.
+4. A primeira cena geralmente é com a Lu (se modo Com LU), as cenas de detalhes são onde o vídeo do fornecedor mais ajuda.
+
+======================================================================
 ✅ AUTO-VALIDAÇÃO OBRIGATÓRIA (EXECUTE ANTES DE ENTREGAR)
 ======================================================================
 Antes de entregar QUALQUER roteiro NW, VERIFIQUE mentalmente cada item:
