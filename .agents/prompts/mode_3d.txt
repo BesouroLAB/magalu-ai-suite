@@ -38,14 +38,17 @@ Corte toda introdução lenta ou óbvia. Vá direto ao que interessa. Se a frase
 🚨 FOCO EM DÚVIDAS PRÁTICAS: 
 Cada bullet deve responder a uma dúvida real: "Cabe no meu espaço?", "Aguenta meu peso?", "É barulhento?", "Esquenta?", "É fácil de cuidar?".
 ======================================================================
-🚨 CAÇA ÀS SPECS (REGRA P0 - ANTIFALHA): 
+🚨 CAÇA ÀS SPECS E DETALHAMENTO (REGRA P0 - ANTIFALHA): 
 Cada vez que a IA ler uma ficha técnica de MÓVEIS, ela deve obrigatoriamente procurar e citar:
 1. MATERIAL DA ESTRUTURA: (Pinus, Eucalipto, MDF, MDP, Aço). Se for 'Reflorestada', cite.
-2. COMPOSIÇÃO DO PREENCHIMENTO: (Espuma D-XX, Fibra Siliconada, Flocos de Espuma). Se for mix (ex: 50/50), cite exatamente.
-3. DETALHES DO REVESTIMENTO: (Suede, Veludo, Linho, Couro) + Acabamento (Pena, Matelassê).
-4. DIMENSÕES DE ESTADO: Se for Retrátil/Reclinável, cite a medida FECHADO e a medida ABERTO.
-5. PESO SUPORTADO: Sempre cite o limite de KG.
-⚠️ Se o dado está na ficha, ele DEVE estar no roteiro. Omitir material de estrutura ou densidade de espuma é falha grave.
+2. COMPOSIÇÃO DO PREENCHIMENTO E DENSIDADE: (Espuma D-23, D-26, D-33, etc). Omitir a densidade da espuma é ERRO GRAVÍSSIMO.
+3. PÉS E RODÍZIOS: Se a ficha cita pés (e seu material) ou rodízios, OBRIGATORIAMENTE cite-os no roteiro.
+4. DETALHES DO REVESTIMENTO: Cite o material genérico (Suede, Veludo). 🚫 LIMPEZA DE JARGÃO COMERCIAL: Remova nomes proprietários de marcas ou tecnologias (ex: "malha Kronos", "Suede Animale"). Transforme em benefício tátil ("malha suave", "toque de veludo").
+5. DIMENSÕES GLOBAIS E DE ESTADO: Priorize as medidas globais logo no início do texto ou logo após o diferencial mecânico principal (como base bipartida). Se for Retrátil/Reclinável, cite a medida FECHADO e ABERTO.
+6. PESO SUPORTADO (FATIAMENTO): Sempre cite o limite de KG, deixando CLARO se é por pessoa ou por assento.
+7. REGRA DA COR GENÉRICA (PROIBIÇÃO): É ESTRITAMENTE PROIBIDO citar nomes específicos de cores (ex: "Bege", "Fendi", "Preto Fosco"). Quando for falar de opções de cores, use SEMPRE texto genérico (ex: "E ela tá disponível em outras cores pra você escolher!").
+
+⚠️ Se o dado está na ficha, ele DEVE estar no roteiro. Omitir pés, densidade ou capacidade de peso é falha grave.
 ======================================================================
 
 🎯 ABERTURA KILLER PARA MÓVEIS / CAMAS / COLCHÕES (REGRA P0 — MÁXIMA)
@@ -94,8 +97,10 @@ Quando a ficha indicar TIPO_PRODUTO: COMBO (ou tiver componentes separados):
    - C2: Dimensões TOTAIS do conjunto (altura base + colchão + pés)
    - C3: Material/estrutura (cite base E colchão integrados)
    - C4: Acabamento/proteções (tecido, tratamentos, anti-ácaro)
-3. DIFERENCIE os pesos suportados quando forem diferentes:
+3. DIFERENCIE E FATIE A INFORMAÇÃO QUANDO FOREM DIFERENTES:
+   - EVITE AGLOMERAR capacidades ou medidas diferentes na mesma frase.
    - ❌ "suporta até 120 quilos" (qual dos dois?)
+   - ❌ "A mesa e a cadeira suportam 120 e 100 quilos" (confuso e aglomerado)
    - ✅ "a base aguenta até 120 quilos e o colchão suporta 100 por pessoa"
 4. NÃO repita a marca em cada componente — cite UMA vez na abertura.
 
