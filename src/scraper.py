@@ -14,81 +14,47 @@ EXTRACTION_PROMPT = """
 Você é um pesquisador especialista em produtos do Magazine Luiza.
 
 SUA TAREFA:
-1. Pesquise no Google pelo produto da Magalu com o código: "{code}".
-2. Encontre a página oficial no site magazineluiza.com.br.
-3. Extraia os dados técnicos reais desse produto.
+1. Acesse DIRETAMENTE a página do produto através da URL: https://www.magazineluiza.com.br/produto/p/{code}/br/brmd/?seller_id=magazineluiza
+2. Caso a URL direta não seja o suficiente, faça a busca exata no Google por: site:magazineluiza.com.br "{code}"
+3. Extraia os dados técnicos reais desse produto a partir do site oficial.
+
+🚨 CONTEXTO DO ROTEIRO: {modo}
+- Se for NW (NewWeb): Foco total em ficha técnica, precisão de medidas e materiais.
+- Se for 3D (NewWeb 3D): Foco em detalhes físicos, texturas, partes móveis, e ângulos visuais (essencial para animação).
+- Se for SOCIAL: Foco no "lifestyle", diferenciais visuais e "uau" do produto.
+- Se for REVIEW: Foco em pontos fortes que os clientes costumam elogiar.
 
 🚨 REGRA ANTI-TROCA DE PRODUTO (CRÍTICO):
 - Você DEVE encontrar o produto EXATO que corresponde ao código "{code}".
 - Se o código não aparecer na URL ou na página encontrada, responda: "ERRO: Produto não encontrado ou dados indisponíveis."
 - NÃO substitua por um produto parecido, similar ou da mesma marca. É ESTE código ou ERRO.
-- Se a pesquisa retornar vários resultados, escolha APENAS o que contém exatamente o código "{code}".
 
-======================================================================
-🚨 REGRA DE PRODUTO COMBO / KIT (CRÍTICO — CAMA BOX, SALA COMPLETA, ETC)
-======================================================================
-Muitos produtos Magalu são COMBOS que agrupam itens diferentes em um único código.
-Exemplos: "Cama Box Casal (Box + Colchão)", "Sala de Estar (Sofá + Mesa + Rack)".
+🚨 REGRA DE PRODUTO COMBO / KIT:
+Muitos produtos Magalu são COMBOS. Identifique se o título contém "(Box + Colchão)", "Conjunto", "Kit", etc.
+Se for COMBO: Extraia a ficha de CADA componente separadamente.
 
-COMO IDENTIFICAR UM COMBO:
-- O título contém "(Box + Colchão)", "Conjunto", "Kit", "Sala Completa" ou termos similares.
-- A página do produto tem uma seção "Selecione um item do produto:" com MÚLTIPLOS itens clicáveis
-  (ex: "Base Cama Box Casal Ortobom" e "Colchão Casal Ortobom de Molas Ensacadas").
-- Cada item tem sua PRÓPRIA descrição e ficha técnica separada.
-
-O QUE FAZER QUANDO FOR COMBO:
-1. Extraia a ficha técnica de CADA componente separadamente.
-2. Na seção FICHA TÉCNICA, organize assim:
-
---- COMPONENTE 1: [Nome do componente, ex: "Base Cama Box Casal"] ---
-DESCRIÇÃO COMPONENTE 1: [Descrição específica deste componente]
-- [Item]: [Valor]
-...
-
---- COMPONENTE 2: [Nome do componente, ex: "Colchão Casal de Molas Ensacadas"] ---
-DESCRIÇÃO COMPONENTE 2: [Descrição específica deste componente]
-- [Item]: [Valor]
-...
-
-3. NÃO misture as fichas. Se a Base tem "Peso Suportado: 120kg" e o Colchão tem
-   "Peso Suportado por Pessoa: 100kg", são dados DIFERENTES de componentes DIFERENTES.
-4. Na DESCRIÇÃO principal (fora dos componentes), faça um resumo geral do combo.
-5. Marque o campo TIPO_PRODUTO como "COMBO" para que o sistema saiba que é um kit.
-
-⚠️ Se você NÃO conseguir acessar as fichas separadas dos componentes, pelo menos
-   indique no campo TIPO_PRODUTO: "COMBO_PARCIAL" e liste os nomes dos componentes
-   que você identificou na seção "Selecione um item do produto:".
-======================================================================
+🚨 REGRA DE DETALHES VISUAIS (MUITO IMPORTANTE PARA BRINQUEDOS/LEGO/MODA):
+- Extraia todos os detalhes concretos: peças inclusas, personagens, mecânicas (ex: "tem rodas", "brilha no escuro"), acessórios.
+- Para roupas/móveis: Descreva texturas e acabamentos.
 
 **FORMATO DE SAÍDA OBRIGATÓRIO:**
 CÓDIGO CONFIRMADO: {code}
 TIPO_PRODUTO: [SIMPLES | COMBO | COMBO_PARCIAL]
 TÍTULO: [Nome completo do produto]
 MARCA: [Fabricante]
-LINHA/NOME COMERCIAL: [Nome de marketing da linha, ex: "UltraGear", "Galaxy M53", "Soundgear Clips", "Force". Se não houver, escreva "N/A"]
-DESCRIÇÃO: [Resumo das funcionalidades principais — para COMBOs, descreva o conjunto]
+URLS_IMAGENS: [Liste até 5 URLs diretas de imagens do produto separadas por vírgula. Busque URLs que contenham 'static.mlcdn.com.br'.]
+LINHA/NOME COMERCIAL: [Ex: "UltraGear", "Galaxy M53"]
+FRANQUIA/UNIVERSO: [Ex: Star Wars, Marvel. Se não houver, N/A]
+DESCRIÇÃO: [Resumo factual e sem marketing]
 FICHA TÉCNICA:
 - [Item]: [Valor]
 ...
-(Para COMBOs, use o formato com --- COMPONENTE N --- descrito acima)
-
-VOLTAGEM: [110V / 220V / Bivolt / Não se aplica]
-CORES DISPONÍVEIS: [Liste TODAS as cores/variantes visíveis na página do produto ou em SKUs relacionados. Se houver apenas uma cor, informe "Apenas [cor]". Se não encontrar, escreva "Não informado"]
-FEATURES PRÁTICAS: [Liste recursos "escondidos" que costumam ficar no final da ficha ou na descrição longa, como: dreno, rodízios, fechadura, painel de controle, suportes, bandejas, grades organizadoras, tipo de pé/base, classificação energética, certificações. Se não encontrar nenhum, escreva "Nenhum identificado"]
-
-**REGRAS DE PESQUISA E REDAÇÃO:**
-- Use a ferramenta de busca do Google para encontrar a ficha técnica real.
-- Tente pesquisar exatamente por: site:magazineluiza.com.br "{code}"
-- Se não achar, tente pesquisar por: "{code}" magazineluiza
-- 🚨 REGRA ANTI-PLÁGIO (MUITO IMPORTANTE): Você NÃO DEVE copiar textos inteiros da internet palavra por palavra.
-- RESUMA E PARAFRASEIE a "DESCRIÇÃO" com suas próprias palavras, mantendo apenas os fatos técnicos importantes. Sintetize a informação para evitar bloqueios de direitos autorais.
-- Na "FICHA TÉCNICA", organize os dados brutos de forma concisa.
-- Para CORES DISPONÍVEIS, verifique se a página mostra seletores de cor ou SKUs irmãos com variações. Isso é importante para o roteiro.
-- Para FEATURES PRÁTICAS, leia a descrição ATÉ O FINAL — os diferenciais práticos costumam estar escondidos no meio ou no fim do texto.
-- Se não encontrar absolutamente nada sobre esse código, responda rigorosamente: "ERRO: Produto não encontrado ou dados indisponíveis."
+VOLTAGEM: [110V / 220V / Bivolt / N/A]
+CORES DISPONÍVEIS: [Liste todas as variantes visíveis]
+FEATURES PRÁTICAS: [Recursos úteis escondidos]
 """
 
-def scrape_with_gemini(code_or_url: str, api_key: str | None = None) -> dict:
+def scrape_with_gemini(code_or_url: str, api_key: str | None = None, modo: str = "NW") -> dict:
     """Extrai dados usando Grounding do Google Search via SDK v2 (google.genai)."""
     api_key = api_key or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     if not api_key:
@@ -102,30 +68,26 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None) -> dict:
     else:
         code = re.sub(r'[^0-9a-zA-Z]', '', input_val)
 
-    prompt = EXTRACTION_PROMPT.replace("{code}", code)
+    prompt = EXTRACTION_PROMPT.format(code=code, modo=modo)
 
     try:
         os.environ.setdefault("GOOGLE_API_KEY", api_key)
         client = genai.Client(api_key=api_key, http_options={'timeout': 150000})
         result_text = None
         
-        # O novo SDK v2 exige o uso de GoogleSearch em vez de GoogleSearchRetrieval
         config = GenerateContentConfig(
             tools=[Tool(google_search=GoogleSearch())],
             temperature=0.0
         )
         
-        # Tenta primeiro com Gemini 2.5 Flash, com retry para erros 503/429
         import time as _time
         response = None
         scraper_max_retries = 3
-        scraper_base_wait = 10  # segundos
+        scraper_base_wait = 10
         
         def _call_with_retry(model_name, prompt_text, cfg, retries=scraper_max_retries):
-            """Chamada com retry e backoff exponencial para erros transitórios."""
             for attempt in range(retries + 1):
                 try:
-                    print(f"[SCRAPER] Tentando {model_name} (tentativa {attempt + 1}/{retries + 1})...")
                     return client.models.generate_content(
                         model=model_name, 
                         contents=prompt_text,
@@ -133,55 +95,52 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None) -> dict:
                     )
                 except Exception as e:
                     err_str = str(e)
-                    is_retryable = any(code in err_str for code in ["503", "429", "UNAVAILABLE", "RESOURCE_EXHAUSTED", "high demand", "overloaded"])
+                    is_retryable = any(code in err_str for code in ["503", "429", "UNAVAILABLE", "RESOURCE_EXHAUSTED"])
                     if is_retryable and attempt < retries:
-                        wait_time = scraper_base_wait * (2 ** attempt)  # 10s, 20s, 40s
-                        print(f"[SCRAPER RETRY] {model_name} retornando erro transitório. Aguardando {wait_time}s...")
-                        _time.sleep(wait_time)
+                        _time.sleep(scraper_base_wait * (2 ** attempt))
                     else:
                         raise e
         
         try:
-            response = _call_with_retry('gemini-2.5-flash', prompt, config)
-        except Exception as e_1:
-            print(f"[SCRAPER] Gemini 2.5 Flash esgotou retries ({e_1}). Acionando FALLBACK 3.1 Pro...")
+            response = _call_with_retry('gemini-2.0-flash', prompt, config)
+        except:
             try:
                 response = _call_with_retry('gemini-3.1-pro-preview', prompt, config)
-            except Exception as e_2:
-                print(f"[SCRAPER] Gemini 3.1 Pro também falhou ({e_2}).")
+            except:
                 response = None
         
         def get_text_safe(resp):
             try:
-                if resp and hasattr(resp, 'text'):
-                    return resp.text
-                return None
+                return resp.text if resp and hasattr(resp, 'text') else None
             except:
                 return None
 
         result_text = get_text_safe(response)
         
-        if not result_text or len(result_text.strip()) < 50 or "ERRO:" in result_text:
-            print(f"[SCRAPER] Grounding falhou para {code}. Tentando Prompt Direto...")
-            # Fallback 1: Prompt Direto sem Tools — COM ANCORAGEM DE CÓDIGO
-            fallback_prompt = (
-                f"Extraia a ficha técnica do produto do Magazine Luiza com o código EXATO: {code}.\n"
-                f"🚨 NÃO retorne dados de outro produto. Se não souber dados desse código específico, retorne apenas 'FALHA_TOTAL'.\n"
-                f"Comece a resposta com: CÓDIGO CONFIRMADO: {code}"
-            )
-            fallback_config = GenerateContentConfig(temperature=0.0)
-            try:
-                response_fallback = _call_with_retry('gemini-2.5-flash', fallback_prompt, fallback_config, retries=2)
-            except:
-                try:
-                    response_fallback = _call_with_retry('gemini-3.1-pro-preview', fallback_prompt, fallback_config, retries=2)
-                except:
-                    response_fallback = None
-            result_text = get_text_safe(response_fallback)
+        # Parsing de imagens da resposta do Gemini
+        image_urls = []
+        if result_text:
+            img_match = re.search(r'URLS_IMAGENS:\s*([^\n]+)', result_text, re.IGNORECASE)
+            if img_match:
+                urls_raw = img_match.group(1).split(',')
+                image_urls = [u.strip() for u in urls_raw if 'http' in u]
 
+        if not result_text or len(result_text.strip()) < 50 or "ERRO:" in result_text:
+            # Fallback 1: Prompt Direto
+            fallback_prompt = f"Extraia a ficha técnica e 3 URLs de imagens (static.mlcdn.com.br) do produto Magalu código: {code}. Comece com CÓDIGO CONFIRMADO: {code}"
+            try:
+                response_fallback = _call_with_retry('gemini-2.0-flash', fallback_prompt, GenerateContentConfig(temperature=0.0), retries=2)
+                result_text = get_text_safe(response_fallback)
+                if result_text:
+                    img_match = re.search(r'(?:URLS_IMAGENS:|Imagens:)\s*([^\n]+)', result_text, re.IGNORECASE)
+                    if img_match:
+                        urls_raw = img_match.group(1).split(',')
+                        image_urls.extend([u.strip() for u in urls_raw if 'http' in u])
+            except:
+                pass
+
+        # Fallback 2: Extração via URL Context + BeautifulSoup (se for URL)
         if (not result_text or "FALHA_TOTAL" in result_text) and input_val.startswith("http"):
-            print(f"[SCRAPER] Prompt Direto falhou. Tentando extração via URL Context...")
-            # Fallback 2: URL Context
             try:
                 import requests
                 from bs4 import BeautifulSoup
@@ -190,28 +149,28 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None) -> dict:
                 if resp.status_code == 200:
                     soup = BeautifulSoup(resp.text, 'html.parser')
                     text_content = soup.get_text(separator='\n')
-                    
-                    try:
-                        res_url = client.models.generate_content(
-                            model='gemini-2.5-flash',
-                            contents=f"Resuma os dados técnicos deste produto Magalu (código {code}) a partir do conteúdo bruto abaixo. Comece com CÓDIGO CONFIRMADO: {code}\n\n{text_content[:15000]}"
-                        )
-                    except:
-                        res_url = client.models.generate_content(
-                            model='gemini-3.1-pro-preview',
-                            contents=f"Resuma os dados técnicos deste produto Magalu (código {code}) a partir do conteúdo bruto abaixo. Comece com CÓDIGO CONFIRMADO: {code}\n\n{text_content[:15000]}"
-                        )
-                    result_text = get_text_safe(res_url)
-            except Exception as e:
-                print(f"[SCRAPER] Erro no Fallback URL: {e}")
+                    # Tenta capturar imagens da Magalu no HTML
+                    if not image_urls:
+                        imgs = soup.find_all('img', src=re.compile(r'static\.mlcdn\.com\.br'))
+                        image_urls = [img['src'] for img in imgs if 'src' in img.attrs][:5]
 
+                    res_url = client.models.generate_content(
+                        model='gemini-2.0-flash',
+                        contents=f"Resuma os dados técnicos deste produto (código {code}). Comece com CÓDIGO CONFIRMADO: {code}\n\n{text_content[:15000]}"
+                    )
+                    result_text = get_text_safe(res_url)
+            except:
+                pass
 
         if not result_text or len(result_text.strip()) < 50:
-             result_text = f"⚠️ EXTRAÇÃO AUTOMÁTICA FALHOU: Não conseguimos resgatar dados para o SKU {code}. Por favor, cole a ficha técnica manualmente no campo de entrada."
+             result_text = f"⚠️ EXTRAÇÃO AUTOMÁTICA FALHOU: SKU {code}. Cole a ficha manualmente."
 
-        return {"text": result_text, "images": []}
+        # Limpeza de duplicatas nas URLs
+        image_urls = list(dict.fromkeys(image_urls))
+
+        return {"text": result_text, "image_urls": image_urls}
     except Exception as e:
-        return {"text": f"❌ Erro Crítico no Scraper: {str(e)}", "images": []}
+        return {"text": f"❌ Erro Crítico no Scraper: {str(e)}", "image_urls": []}
 
 def parse_codes(raw_input: str) -> list[str]:
     """Parseia códigos separados por vírgula, espaço ou nova linha (legado)."""

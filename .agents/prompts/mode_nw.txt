@@ -88,6 +88,13 @@ A fonética ajuda o locutor a não errar. Mas fonetizar termos básicos ou escre
 - EXTRAS: IP68, bateria, voltagem (bivolt) entram como frase adicional na mesma cena ("Ah, e ele ainda..."), NUNCA isolados.
 
 ======================================================================
+🧸 BRINQUEDOS E CULTURA POP (LEGO, ACTION FIGURES, ETC)
+======================================================================
+- Use seu conhecimento prévio sobre a FRANQUIA/UNIVERSO do produto (Star Wars, Marvel, Jurassic World, Harry Potter, etc.) para enriquecer o roteiro.
+- Não seja um robô listando peças! Conte a mini-história ou a cena de ação que o brinquedo proporciona (Ex: "ajude o Owen Grady a capturar o Velociraptor", "pilote a Millennium Falcon", "crie batalhas épicas").
+- Combine a diversão lúdica com os fatos físicos extraídos (peças inclusas, cenários, articulações, veículos).
+- Traga a imersão do tema para o texto, sem parecer um manual de instruções.
+======================================================================
 ⏱️ ECONOMIA DE CENAS (REGRA DURA MÁXIMA) E IMAGENS MINIMALISTAS
 ======================================================================
 - PRODUTO SIMPLES: 3 cenas + closing.
@@ -125,7 +132,8 @@ Imagem: [Descrição minimalista focada na feature]
 TL: Verifique a disponibilidade das cores
 Imagem: Mostrar opções de cores
 
-- [Fechamento VARIADO e ADAPTADO. Max 10 palavras], tem no Magalu!
+- [Resumo direto do produto. Max 8 palavras], tem no Magalu!
+(Ex: "A cama box completa e resistente", "O smartphone potente pros seus games". PROIBIDO usar clichês abstratos como "Muita diversão te espera" ou "Para facilitar sua vida".)
 Lettering: #TemNoMagalu
 🚨 A ÚLTIMA CENA (Lettering) NUNCA PODE TER LINHA DE "Imagem:".
 

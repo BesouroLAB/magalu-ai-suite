@@ -16,6 +16,8 @@ from src.agent import RoteiristaAgent, MODELOS_DISPONIVEIS, MODELOS_DESCRICAO, P
 from src.scraper import scrape_with_gemini, parse_codes, parse_grouped_input, detect_variants
 from src.exporter import export_roteiro_docx, format_for_display, export_all_roteiros_zip
 from src.jsonld_generator import export_jsonld_string, wrap_in_script_tag
+import requests
+import mimetypes
 
 load_dotenv()
 
@@ -631,6 +633,52 @@ def salvar_nuance(sp_client, frase, analise, exemplo):
 
 
 
+def process_images_input(uploaded_files=None, urls_input=None):
+    """Processa arquivos carregados e URLs de imagem em formato para o agente.
+    'urls_input' pode ser uma string (separada por \n) ou uma lista de strings.
+    """
+    images = []
+    
+    # 1. Processar Arquivos
+    if uploaded_files:
+        for f in uploaded_files:
+            try:
+                images.append({
+                    "bytes": f.getvalue(),
+                    "mime": f.type
+                })
+            except Exception as e:
+                st.error(f"Erro ao processar arquivo {f.name}: {e}")
+
+    # 2. Processar URLs
+    urls = []
+    if isinstance(urls_input, str) and urls_input.strip():
+        urls = [u.strip() for u in urls_input.split('\n') if u.strip()]
+    elif isinstance(urls_input, list):
+        urls = [u.strip() for u in urls_input if u.strip()]
+
+    if urls:
+        for url in urls:
+            try:
+                # User-Agent para evitar bloqueios básicos
+                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+                resp = requests.get(url, timeout=15, headers=headers)
+                if resp.status_code == 200:
+                    mime = resp.headers.get('Content-Type')
+                    if not mime or 'image' not in mime:
+                        mime, _ = mimetypes.guess_type(url)
+                    
+                    images.append({
+                        "bytes": resp.content,
+                        "mime": mime or "image/jpeg"
+                    })
+                else:
+                    st.error(f"Erro ao baixar imagem da URL {url}: Status {resp.status_code}")
+            except Exception as e:
+                st.error(f"Falha na URL {url}: {e}")
+                
+    return images
+
 def render_visual_diff(original, final):
     # Normalização básica para evitar diffs de "espaço em branco" ou quebras de linha diferentes
     text_ia = [l.strip() for l in original.splitlines()]
@@ -1202,6 +1250,12 @@ if page == "Criar Roteiros":
             st.caption("💡 O código fica na URL: magazineluiza.com.br/.../p/**240304700**/...")
 
             st.markdown("<br>", unsafe_allow_html=True)
+            with st.expander("📸 Enriquecimento Visual (Opcional - Gemini Multimodal)", expanded=False):
+                st.info("💡 Use para produtos com muitos detalhes visuais (LEGO, Brinquedos, Moda). As imagens ajudam a IA a ser mais criativa.")
+                up_files_auto = st.file_uploader("Upload de Imagens do Produto", type=["png", "jpg", "jpeg", "webp"], accept_multiple_files=True, key="up_auto")
+                up_urls_auto = st.text_area("Ou cole links de imagens (um por linha):", placeholder="https://a-static.mlcdn.com.br/...", key="urls_auto")
+
+            st.markdown("<br>", unsafe_allow_html=True)
             
             # --- NOVO FLUXO CONSOLIDADO: GERAÇÃO DIRETA POR GRUPO ---
             if st.button("🚀 Iniciar Geração em Lote", use_container_width=True, type="primary", key="btn_auto_direto"):
@@ -1224,6 +1278,9 @@ if page == "Criar Roteiros":
                     modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
                     table_prefix = st.session_state.get('table_prefix', 'nw_')
                     agent = RoteiristaAgent(supabase_client=sp_cli, model_id=modelo_id, table_prefix=table_prefix)
+                    
+                    # Processa imagens globais do lote (se houver)
+                    imagens_adicionais = process_images_input(up_files_auto, up_urls_auto)
                     
                     erros_lote = []
                     tempos_por_roteiro = []
@@ -1250,19 +1307,43 @@ if page == "Criar Roteiros":
                         
                         try:
                             with st.status(f"🚀 Roteiro {i+1} (SKUs: {', '.join(all_codes)})", expanded=True) as status_box:
-                                # 1. Scrape de todos os códigos do grupo
-                                status_box.write(f"🔍 **Etapa 1:** Extraindo dados de {len(all_codes)} SKUs...")
-                                fichas_grupo = {}
-                                ficha_principal = None
-                                
-                                for c in all_codes:
-                                    status_box.write(f"  • Scraping SKU {c}...")
-                                    f = scrape_with_gemini(c, api_key=gemini_key)
-                                    fichas_grupo[c] = f
+                                    # 1. Scrape de todos os códigos do grupo
+                                    status_box.write(f"🔍 **Etapa 1:** Extraindo dados de {len(all_codes)} SKUs (Modo: {modo_selecionado})...")
+                                    fichas_grupo = {}
+                                    ficha_principal = None
+                                    
+                                    for c in all_codes:
+                                        status_box.write(f"  • Scraping SKU {c}...")
+                                        f = scrape_with_gemini(c, api_key=gemini_key, modo=modo_selecionado)
+                                        fichas_grupo[c] = f
                                     if c == main_code:
                                         ficha_principal = f
-                                    # Delay para evitar rate limits
-                                    _time.sleep(1)
+                                        # Injeta imagens adicionais na ficha principal para o Gemini
+                                        if imagens_adicionais:
+                                            if not isinstance(ficha_principal, dict):
+                                                ficha_principal = {"text": str(ficha_principal), "images": []}
+                                            
+                                            if "images" not in ficha_principal:
+                                                ficha_principal["images"] = []
+                                            
+                                            ficha_principal["images"].extend(imagens_adicionais)
+                                            status_box.info(f"🖼️ {len(imagens_adicionais)} imagens globais injetadas.")
+                                        
+                                        # Injeta imagens descobertas pelo SCRAPER
+                                        auto_images_urls = f.get("image_urls", [])
+                                        if auto_images_urls:
+                                            status_box.write(f"📸 **Extra:** {len(auto_images_urls)} imagens encontradas no site. Baixando...")
+                                            auto_images = process_images_input(None, auto_images_urls)
+                                            if auto_images:
+                                                if not isinstance(ficha_principal, dict):
+                                                    ficha_principal = {"text": str(ficha_principal), "images": []}
+                                                if "images" not in ficha_principal:
+                                                    ficha_principal["images"] = []
+                                                ficha_principal["images"].extend(auto_images)
+                                                status_box.success(f"🖼️ {len(auto_images)} imagens automáticas adicionadas para análise.")
+
+                                        # Delay para evitar rate limits
+                                        _time.sleep(1)
                                 
                                 # --- VALIDAÇÃO DE QUALIDADE DO SCRAPING ---
                                 ficha_text = ficha_principal.get("text", "") if isinstance(ficha_principal, dict) else str(ficha_principal)
@@ -1531,7 +1612,19 @@ if page == "Criar Roteiros":
                         )
                     else:
                         coment_man = ""
-                fichas_informadas.append({"sku": sku_man, "ficha": val, "link": link_man, "comentarios": coment_man})
+                fichas_informadas.append({
+                    "sku": sku_man, 
+                    "ficha": val, 
+                    "link": link_man, 
+                    "comentarios": coment_man,
+                    "key_id": i # Para vincular uploads
+                })
+            
+            st.markdown("---")
+            with st.expander("📸 Enriquecimento Visual (Opcional)", expanded=False):
+                st.info("💡 Carregue imagens para ajudar a IA a descrever detalhes que não estão na ficha técnica.")
+                up_files_man = st.file_uploader("Upload de Imagens", type=["png", "jpg", "jpeg", "webp"], accept_multiple_files=True, key="up_man")
+                up_urls_man = st.text_area("Links de imagens (um por linha):", placeholder="https://...", key="urls_man")
                 
             col_add, col_rem = st.columns(2)
             with col_add:
@@ -1583,6 +1676,9 @@ if page == "Criar Roteiros":
                     # Instancia Agente (fora do loop para eficiência)
                     agent = RoteiristaAgent(supabase_client=sp_cli, model_id=modelo_id, table_prefix=table_prefix)
                     
+                    # Processa imagens manuais
+                    imagens_man_globais = process_images_input(up_files_man, up_urls_man)
+                    
                     progress_text_man = st.empty()
                     any_error = False
                     for i, itm in enumerate(fichas_validas):
@@ -1594,7 +1690,7 @@ if page == "Criar Roteiros":
                             with st.status(f"🚀 SKU {itm['sku']} ({i+1}/{total})", expanded=True) as status_box_man:
                                 # 1. Preparação
                                 status_box_man.write("📝 **Etapa 1:** Processando ficha técnica manual...")
-                                ficha_man = {"text": itm["ficha"], "images": []}
+                                ficha_man = {"text": itm["ficha"], "images": imagens_man_globais}
                                 
                                 # 2. Geração
                                 status_box_man.write("🧠 **Etapa 2:** Consultando IA e aplicando aprendizados...")

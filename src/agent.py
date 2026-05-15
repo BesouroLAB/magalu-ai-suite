@@ -453,17 +453,25 @@ class RoteiristaAgent:
         )
 
 
+        if images_list:
+            final_prompt += (
+                "\n\n📸 **ANÁLISE MULTIMODAL (IMAGENS ANEXADAS):**\n"
+                "- Analise CUIDADOSAMENTE as imagens anexadas deste produto.\n"
+                "- Identifique detalhes visuais, texturas, cores, acabamentos e 'segredos' do produto que não estão explícitos no texto da ficha técnica.\n"
+                "- Para brinquedos e LEGOs: Identifique a ação, os personagens e a 'emoção' da cena montada.\n"
+                "- Utilize essas informações visuais para tornar o roteiro mais criativo, lúdico e descritivo.\n"
+            )
+
         if self.client_gemini:
+            # No SDK v2 (google-genai), contents é uma lista que pode conter strings ou Parts
             contents = [final_prompt]
             if images_list:
                 for img_dict in images_list:
                     img_bytes = img_dict.get("bytes")
                     img_mime = img_dict.get("mime")
                     if img_bytes and img_mime:
-                        contents.append({
-                            "mime_type": img_mime,
-                            "data": img_bytes
-                        })
+                        # Formato explícito do SDK v2 para Parts binárias
+                        contents.append(types.Part.from_bytes(data=img_bytes, mime_type=img_mime))
 
             # Chamada via SDK v2 com retry e backoff exponencial para erros 503/429
             import time as _time
