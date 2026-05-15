@@ -192,23 +192,26 @@ def parse_grouped_input(raw_input: str) -> list[dict]:
         if not line:
             continue
         
-        tokens = re.split(r'[,\s]+', line)
+        # Divide por vírgula, espaço, +, | ou ;
+        tokens = re.split(r'[,\s+|;]+', line)
         codes = []
         images = []
         video = None
         
         for token in tokens:
-            token = token.strip()
+            token = token.strip().strip('*').strip('(').strip(')').strip('"').strip("'")
             if not token:
                 continue
+                
             if token.startswith('http'):
                 # Heurística para diferenciar Vídeo de Imagem
-                is_img = any(ext in token.lower() for ext in ['.jpg', '.jpeg', '.png', '.webp', '.gif']) or 'static.mlcdn.com.br' in token or 'a-static' in token
+                is_img = any(ext in token.lower() for ext in ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif']) or 'static.mlcdn.com.br' in token or 'a-static' in token or 'img' in token.lower()
                 if is_img:
                     images.append(token)
                 else:
                     video = token
             else:
+                # Remove qualquer caractere que não seja alfanumérico para limpar códigos
                 clean = re.sub(r'[^0-9a-zA-Z]', '', token)
                 if len(clean) >= 3:
                     codes.append(clean)

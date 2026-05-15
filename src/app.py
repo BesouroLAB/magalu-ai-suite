@@ -661,9 +661,24 @@ def process_images_input(uploaded_files=None, urls_input=None):
     if urls:
         for url in urls:
             try:
-                # User-Agent para evitar bloqueios básicos
-                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
-                resp = requests.get(url, timeout=15, headers=headers)
+                # Limpa URL de possíveis caracteres de formatação (ex: **, (, ), ", ')
+                import re
+                match = re.search(r'(https?://[^\s)\]">]+)', url)
+                if match:
+                    url = match.group(1)
+                else:
+                    continue
+
+                # Headers mais robustos para evitar 403
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+                    'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+                    'Referer': 'https://www.magazineluiza.com.br/',
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+                resp = requests.get(url, timeout=20, headers=headers)
                 if resp.status_code == 200:
                     mime = resp.headers.get('Content-Type')
                     if not mime or 'image' not in mime:
@@ -1436,7 +1451,7 @@ if page == "Criar Roteiros":
                                     except Exception as e:
                                         print(f"❌ Erro ao salvar histórico: {e}")
                                 
-                                roteiro_elapsed = _time.time() - roteiro_start_time
+                                roteiro_elapsed = time.time() - roteiro_start_time
                                 tempos_por_roteiro.append(roteiro_elapsed)
                                 r_min = int(roteiro_elapsed // 60)
                                 r_sec = int(roteiro_elapsed % 60)
@@ -1460,25 +1475,25 @@ if page == "Criar Roteiros":
                             else:
                                 erros_lote.append(full_err_msg)
                                 
-                            tempos_por_roteiro.append(_time.time() - roteiro_start_time)
+                            tempos_por_roteiro.append(time.time() - roteiro_start_time)
                         
                         # Cooldown entre roteiros para evitar sobrecarga na API (503)
                         if i < total_roteiros - 1:
-                            _time.sleep(3)
+                            time.sleep(3)
                     
                     # --- FILA DE REPESCAGEM (SEGUNDA CHANCE) ---
                     if fila_repescagem:
                         num_repescagem = len(fila_repescagem)
                         st.divider()
                         st.info(f"🔄 **Iniciando Repescagem:** Tentando recuperar {num_repescagem} roteiros que falharam por instabilidade na API...")
-                        _time.sleep(10) # Pausa estratégica para a API respirar
+                        time.sleep(10) # Pausa estratégica para a API respirar
                         
                         for i_rep, grupo in enumerate(fila_repescagem):
                             main_code = grupo["codes"][0]
                             all_codes = grupo["codes"]
                             video_url = grupo["video"]
                             idx_orig = grupo.get("original_index", 0)
-                            roteiro_start_time = _time.time()
+                            roteiro_start_time = time.time()
                             
                             progress_text.markdown(f"**🔄 REPESCAGEM ({i_rep+1}/{num_repescagem}):** Recuperando SKU {main_code}...")
                             
@@ -1492,7 +1507,7 @@ if page == "Criar Roteiros":
                                         f = scrape_with_gemini(c, api_key=gemini_key)
                                         fichas_grupo[c] = f
                                         if c == main_code: ficha_principal = f
-                                        _time.sleep(2)
+                                        time.sleep(2)
                                     
                                     if not ficha_principal or not ficha_principal.get('titulo'):
                                         raise Exception("Falha crítica no scraping durante repescagem")
@@ -1547,7 +1562,7 @@ if page == "Criar Roteiros":
                                             "categoria_id": cat_selecionada_id, "criado_em": get_now_sp().isoformat()
                                         }).execute()
 
-                                    tempos_por_roteiro.append(_time.time() - roteiro_start_time)
+                                    tempos_por_roteiro.append(time.time() - roteiro_start_time)
                                     st.session_state['roteiros'].insert(0, novo_roteiro)
                                     status_box.update(label=f"✅ SKU {main_code} Recuperado com Sucesso!", state="complete")
                                     st.success(f"🎉 O SKU {main_code} foi recuperado na repescagem!")
@@ -1556,13 +1571,13 @@ if page == "Criar Roteiros":
                                 fail_msg = f"❌ Falha persistente no SKU {main_code} (Repescagem): {str(e2)}"
                                 st.error(fail_msg)
                                 erros_lote.append(fail_msg)
-                                tempos_por_roteiro.append(_time.time() - roteiro_start_time)
+                                tempos_por_roteiro.append(time.time() - roteiro_start_time)
                             
                             if i_rep < num_repescagem - 1:
-                                _time.sleep(5)
+                                time.sleep(5)
                     
                     # --- RESUMO FINAL COM TEMPO ---
-                    total_elapsed = _time.time() - lote_start_time
+                    total_elapsed = time.time() - lote_start_time
                     total_min = int(total_elapsed // 60)
                     total_sec = int(total_elapsed % 60)
                     avg_time = total_elapsed / total_roteiros if total_roteiros > 0 else 0
@@ -1588,421 +1603,7 @@ if page == "Criar Roteiros":
                         if st.button("🔄 Atualizar Visualização"):
                             st.rerun()
 
-        with tab_manual:
-            # --- MODO MANUAL (FALLBACK) ---
-            st.markdown("### 2. Dados dos Produtos")
-            st.markdown("<p style='font-size: 14px; color: #8b92a5'>Cole o código e a ficha técnica dos produtos:</p>", unsafe_allow_html=True)
-            
-            if 'num_fichas' not in st.session_state:
-                st.session_state['num_fichas'] = 1
-                
-            fichas_informadas = []
-            
-            for i in range(st.session_state['num_fichas']):
-                col_sku_man, col_ficha_man, col_rev_man = st.columns([1, 2, 2])
-                with col_sku_man:
-                    sku_man = st.text_input(f"Cód. Produto {i+1}", key=f"sku_man_{i}", placeholder="Ex: 2403047")
-                    link_man = st.text_input(f"Link do Vídeo {i+1}", key=f"link_man_{i}", placeholder="Opcional: YouTube/Drive")
-                with col_ficha_man:
-                    val = st.text_area(
-                        f"Ficha Técnica {i+1}",
-                        height=100,
-                        key=f"ficha_input_{i}",
-                        placeholder="Cole a ficha técnica aqui..."
-                    )
-                with col_rev_man:
-                    if "Review" in modo_selecionado:
-                        coment_man = st.text_area(
-                            f"Avaliações/Comentários {i+1}",
-                            height=100,
-                            key=f"rev_input_{i}",
-                            placeholder="Cole as avaliações dos clientes aqui..."
-                        )
-                    else:
-                        coment_man = ""
-                fichas_informadas.append({
-                    "sku": sku_man, 
-                    "ficha": val, 
-                    "link": link_man, 
-                    "comentarios": coment_man,
-                    "key_id": i # Para vincular uploads
-                })
-            
-            st.markdown("---")
-                
-            col_add, col_rem = st.columns(2)
-            with col_add:
-                if st.button("➕ Adicionar", use_container_width=True, type="secondary", key="btn_add_ficha"):
-                    st.session_state['num_fichas'] += 1
-                    st.rerun()
-            with col_rem:
-                if st.session_state['num_fichas'] > 1:
-                    if st.button("➖ Remover", use_container_width=True, type="secondary", key="btn_rem_ficha"):
-                        st.session_state['num_fichas'] -= 1
-                        st.rerun()
 
-            st.markdown("---")
-            
-            col_m_man, col_d_man, col_lu_man = st.columns([2, 2, 1])
-            with col_m_man:
-                st.markdown("**Mês de Lançamento**")
-                mes_selecionado_man = st.selectbox(
-                    "Mês de Lançamento",
-                    ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"],
-                    index=2, # MAR
-                    key="mes_man",
-                    label_visibility="collapsed"
-                )
-            with col_d_man:
-                st.markdown("**Data do Roteiro**")
-                now_sp_man = get_now_sp()
-                data_roteiro_man = st.date_input("Data do Roteiro:", value=now_sp_man, format="DD/MM/YYYY", key="date_man", label_visibility="collapsed")
-                data_roteiro_str_man = data_roteiro_man.strftime('%d/%m/%Y')
-            with col_lu_man:
-                st.markdown("**Personagem**")
-                com_lu_man = st.selectbox("Cena 1", ["Com LU", "Sem LU"], key="com_lu_man_opt", label_visibility="collapsed")
-            
-            # Modo manual agora usa o seletor global
-            modo_man_selecionado = modo_selecionado
-
-            if st.button("🚀 Gerar Roteiros a partir de Fichas", use_container_width=True, type="primary", key="btn_manual"):
-                fichas_validas = [f for f in fichas_informadas if f["ficha"].strip() and f["sku"].strip()]
-                
-                if not fichas_validas:
-                    st.warning("⚠️ Preencha o Código e a Ficha Técnica de pelo menos um produto.")
-                else:
-                    total = len(fichas_validas)
-                    bar = st.progress(0)
-                    sp_cli = st.session_state.get('supabase_client')
-                    modelo_id = st.session_state.get('modelo_llm', 'gemini-3-flash-preview')
-                    table_prefix = st.session_state.get('table_prefix', 'nw_')
-
-                    # Instancia Agente (fora do loop para eficiência)
-                    agent = RoteiristaAgent(supabase_client=sp_cli, model_id=modelo_id, table_prefix=table_prefix)
-                    
-                    # Imagens globais removidas
-                    imagens_man_globais = []
-                    
-                    progress_text_man = st.empty()
-                    any_error = False
-                    for i, itm in enumerate(fichas_validas):
-                        percent = int((i + 1) / total * 100)
-                        progress_text_man.markdown(f"**⏳ Processando {i+1}/{total} ({percent}%):** SKU {itm['sku']}")
-                        bar.progress((i+1)/total)
-                        
-                        try:
-                            with st.status(f"🚀 SKU {itm['sku']} ({i+1}/{total})", expanded=True) as status_box_man:
-                                # 1. Preparação
-                                status_box_man.write("📝 **Etapa 1:** Processando ficha técnica manual...")
-                                ficha_man = {"text": itm["ficha"], "images": imagens_man_globais}
-                                
-                                # 2. Geração
-                                status_box_man.write("🧠 **Etapa 2:** Consultando IA e aplicando aprendizados...")
-                                res_gen = agent.gerar_roteiro(
-                                    scraped_data=ficha_man,
-                                    modo_trabalho=modo_man_selecionado,
-                                    codigo=itm["sku"],
-                                    data_roteiro=data_roteiro_str_man,
-                                    mes=mes_selecionado_man,
-                                    video_url=itm.get("link", ""),
-                                    com_lu=(com_lu_man == "Com LU"),
-                                    comentarios=itm.get("comentarios", "")
-                                )
-                                
-                                # 3. Salvamento
-                                status_box_man.write("💾 **Etapa 3:** Registrando no histórico...")
-                                global_num = get_total_script_count(sp_cli) + 1
-                                novo_roteiro = {
-                                    "_uid": str(uuid.uuid4()),
-                                    "ficha": ficha_man,
-                                    "roteiro_original": res_gen["roteiro"],
-                                    "codigo": itm["sku"],
-                                    "model_id": res_gen["model_id"],
-                                    "tokens_in": res_gen["tokens_in"],
-                                    "tokens_out": res_gen["tokens_out"],
-                                    "custo_brl": res_gen["custo_brl"],
-                                    "global_num": global_num,
-                                    "mes": mes_selecionado_man,
-                                    "modo_trabalho": modo_man_selecionado,
-                                    "com_lu": "REVIEW" if "Review" in modo_man_selecionado else (com_lu_man == "Com LU")
-                                }
-                                st.session_state['roteiros'].insert(0, novo_roteiro)
-                                
-                                # Detecção de erro interno para evitar st.rerun silencioso
-                                if "ERRO" in res_gen["roteiro"][:100].upper():
-                                    any_error = True
-                                    st.error(f"❌ Falha interna detectada no SKU {itm['sku']}: {res_gen['roteiro'][:100]}...")
-                                
-                                # Log Histórico
-                                if sp_cli:
-                                    try:
-                                        sp_cli.table(f"{table_prefix}historico_roteiros").insert({
-                                            "codigo_produto": itm['sku'],
-                                            "modo_trabalho": modo_man_selecionado,
-                                            "roteiro_gerado": res_gen["roteiro"],
-                                            "ficha_extraida": itm['ficha'],
-                                            "tokens_entrada": res_gen["tokens_in"],
-                                            "tokens_saida": res_gen["tokens_out"],
-                                            "custo_estimado_brl": res_gen["custo_brl"],
-                                            "modelo_llm": res_gen["model_id"],
-                                            "categoria_id": cat_selecionada_id
-                                        }).execute()
-                                    except Exception as e:
-                                        print(f"❌ Erro ao salvar histórico (Manual): {e}")
-                                
-                                status_box_man.update(label=f"✅ SKU {itm['sku']} Finalizado!", state="complete")
-                                
-                        except Exception as e:
-                            any_error = True
-                            st.error(f"❌ Erro no SKU {itm['sku']}: {e}")
-
-                    if not any_error:
-                        st.session_state['roteiro_ativo_idx'] = 0
-                        st.rerun()
-
-    # --- SCRIPTS DA SESSÃO (CARDS VISÍVEIS — SEM EXPANDER) ---
-    if 'roteiros' in st.session_state and st.session_state['roteiros']:
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        st.markdown("### 📋 Mesa de Trabalho")
-        
-        total_mesa = len(st.session_state['roteiros'])
-        num_polidos = sum(1 for r in st.session_state['roteiros'] if st.session_state.get(f"polir_count_{r.get('_uid', '')}", 0) > 0)
-        st.caption(f"**{total_mesa}** roteiro{'s' if total_mesa > 1 else ''} na mesa | **{num_polidos}** polido{'s' if num_polidos != 1 else ''}")
-        
-        # --- AÇÕES GLOBAIS DA MESA ---
-        col_all_1, col_all_2 = st.columns([3, 1])
-        with col_all_1:
-            inst_global = st.text_input(
-                "✨ Instruções Globais para Polir Todos (Opcional):",
-                placeholder="Ex: Deixe todos mais curtos, garanta que as medidas apareçam...",
-                key="inst_global_polir"
-            )
-        with col_all_2:
-            st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-            if st.button("✨ Polir Todos", use_container_width=True, type="primary", help="Aplica o polimento de IA em todos os roteiros da mesa simultaneamente."):
-                if not st.session_state['roteiros']:
-                    st.warning("⚠️ Não há roteiros na mesa para polir.")
-                else:
-                    with st.status("✨ Polindo todos os roteiros da mesa...", expanded=True) as status_batch:
-                        total = len(st.session_state['roteiros'])
-                        bar_batch = st.progress(0)
-                        ag_batch = RoteiristaAgent(
-                            model_id=st.session_state.get('modelo_llm', 'gemini-3-flash-preview'),
-                            table_prefix=st.session_state.get('table_prefix', 'nw_')
-                        )
-                        
-                        for i, r_item_batch in enumerate(st.session_state['roteiros']):
-                            sku_batch = r_item_batch.get('codigo', '...')
-                            status_batch.write(f"🔄 Polindo script {i+1}/{total}: SKU {sku_batch}")
-                            
-                            # Prepara ficha técnica
-                            f_raw_batch = r_item_batch.get('ficha', '')
-                            f_str_batch = f_raw_batch.get('text', str(f_raw_batch)) if isinstance(f_raw_batch, dict) else str(f_raw_batch)
-                            
-                            try:
-                                res_batch = ag_batch.polir_roteiro(
-                                    roteiro_atual=r_item_batch.get('roteiro_original', ''),
-                                    ficha_tecnica=f_str_batch,
-                                    instrucoes=inst_global,
-                                    modo=st.session_state.get('modo_trabalho', 'NW (NewWeb)')
-                                )
-                                
-                                # Incrementa contador de polimento para o badge visual e a TAG
-                                uid_batch = r_item_batch.get('_uid', i)
-                                current_count = st.session_state.get(f"polir_count_{uid_batch}", 0)
-                                iter_num = current_count + 1
-                                st.session_state[f"polir_count_{uid_batch}"] = iter_num
-
-                                # Atualiza o roteiro diretamente (Aprovação Automática em Lote)
-                                st.session_state['roteiros'][i]['roteiro_original'] = res_batch["roteiro"]
-                                st.session_state['roteiros'][i]['tag'] = f"V{iter_num}"
-                                
-                                # Acumula custos e tokens
-                                st.session_state['roteiros'][i]['tokens_in'] = r_item_batch.get('tokens_in', 0) + res_batch.get('tokens_in', 0)
-                                st.session_state['roteiros'][i]['tokens_out'] = r_item_batch.get('tokens_out', 0) + res_batch.get('tokens_out', 0)
-                                st.session_state['roteiros'][i]['custo_brl'] = r_item_batch.get('custo_brl', 0) + res_batch.get('custo_brl', 0)
-                                
-                                # Limpa estados de revisão individual se existirem
-                                if f"polir_resultado_{uid_batch}" in st.session_state:
-                                    del st.session_state[f"polir_resultado_{uid_batch}"]
-                                    
-                            except Exception as e_batch:
-                                status_batch.error(f"❌ Erro ao polir SKU {sku_batch}: {e_batch}")
-                            
-                            bar_batch.progress((i+1)/total)
-                        
-                        status_batch.update(label="✅ Todos os roteiros foram polidos!", state="complete")
-                        st.toast("✨ Polimento em lote concluído!", icon="🚀")
-                        st.rerun()
-            
-        # Grid de cards (3 por linha)
-        cols_per_row = 3
-        for row_start in range(0, total_mesa, cols_per_row):
-            cols = st.columns(cols_per_row)
-            for col_idx in range(cols_per_row):
-                idx_card = row_start + col_idx
-                if idx_card >= total_mesa:
-                    break
-                    
-                r_item = st.session_state["roteiros"][idx_card]
-                codigo_card = r_item.get("codigo", "...")
-                num_tag = f"#{r_item.get('global_num', '?')}"
-                modelo_tag = r_item.get("model_id", "").split("/")[-1][:15]
-                
-                # Nome do produto
-                ficha_raw = r_item.get('ficha', '')
-                ficha_str_card = ficha_raw.get('text', str(ficha_raw)) if isinstance(ficha_raw, dict) else str(ficha_raw)
-                linhas_f = ficha_str_card.split('\n')
-                nome_p_card = linhas_f[0][:35].strip() if linhas_f and len(linhas_f[0]) > 2 else "Produto"
-                
-                custo = r_item.get("custo_brl", 0)
-                tag_custo = "Grátis" if custo == 0 else f"R$ {custo:.4f}"
-                is_active = st.session_state.get("roteiro_ativo_idx", 0) == idx_card
-                
-                # Status Badge
-                polir_count = st.session_state.get(f"polir_count_{r_item.get('_uid', '')}", 0)
-                if polir_count > 0:
-                    status_badge = f"✅ V{polir_count}"
-                    status_color = "#22c55e" # Verde Magalu (Versão Polida)
-                else:
-                    status_badge = "⚪ Rascunho"
-                    status_color = "#94a3b8" # Cinza para o estado bruto
-                
-                # Cores do card
-                if is_active:
-                    border_c = "#3b82f6"
-                    bg_c = "rgba(59, 130, 246, 0.08)"
-                    shadow_c = "0 0 12px rgba(59, 130, 246, 0.3)"
-                else:
-                    border_c = "#2A3241"
-                    bg_c = "#1a1f2e"
-                    shadow_c = "none"
-                
-                with cols[col_idx]:
-                    # Card HTML
-                    st.markdown(f"""
-                    <div style='background: {bg_c}; border: 1.5px solid {border_c}; border-radius: 10px; padding: 12px 14px; margin-bottom: 4px; box-shadow: {shadow_c}; min-height: 100px;'>
-                        <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;'>
-                            <span style='font-weight: 700; font-size: 14px; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;' title='{codigo_card}'>{num_tag} {codigo_card}</span>
-                            <span style='background: {status_color}22; color: {status_color}; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; flex-shrink: 0;'>{status_badge}</span>
-                        </div>
-                        <div style='font-size: 12px; color: #94a3b8; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'>{nome_p_card}</div>
-                        <div style='font-size: 10px; color: #64748b;'>🧠 {modelo_tag.upper()} | {tag_custo}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    # Botões do card
-                    btn_edit_col, btn_del_col = st.columns([4, 1])
-                    with btn_edit_col:
-                        if st.button("✏️ Editar" if not is_active else "📝 Ativo", key=f"sel_{idx_card}", use_container_width=True, type="primary" if is_active else "secondary"):
-                            st.session_state["roteiro_ativo_idx"] = idx_card
-                            st.rerun()
-                    with btn_del_col:
-                        if st.button("🗑️", key=f"del_{idx_card}", help="Remover da mesa"):
-                            st.session_state["roteiros"].pop(idx_card)
-                            ativo = st.session_state.get("roteiro_ativo_idx", 0)
-                            if ativo == idx_card:
-                                st.session_state["roteiro_ativo_idx"] = max(0, idx_card - 1)
-                            elif ativo > idx_card:
-                                st.session_state["roteiro_ativo_idx"] -= 1
-                            st.rerun()
-        
-        # Limpar mesa de trabalho
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("🗑️ Limpar Mesa de Trabalho", use_container_width=True, type="secondary"):
-            if 'roteiros' in st.session_state:
-                del st.session_state['roteiros']
-            if 'roteiro_ativo_idx' in st.session_state:
-                del st.session_state['roteiro_ativo_idx']
-            st.rerun()
-
-    # --- HISTÓRICO DO BANCO (Expandível, separado) ---
-    if 'supabase_client' in st.session_state:
-        is_hist_open = st.session_state.get('hist_open', False)
-        with st.expander("📜 Histórico do Banco de Dados", expanded=is_hist_open):
-            sp_h = st.session_state['supabase_client']
-            try:
-                res_recent = sp_h.table(f"{st.session_state.get('table_prefix', 'nw_')}historico_roteiros").select("criado_em, codigo_produto, modo_trabalho, roteiro_gerado, ficha_extraida, modelo_llm, custo_estimado_brl").order('criado_em', desc=True).limit(500).execute()
-                
-                if res_recent.data:
-                    df_recent = pd.DataFrame(res_recent.data)
-                    df_recent['data_simples'] = pd.to_datetime(df_recent['criado_em']).dt.date
-                    
-                    search_q = st.text_input("🔍 Buscar no histórico:", placeholder="Nome ou SKU...", key="hist_search")
-                    if search_q:
-                        df_recent = df_recent[
-                            df_recent['codigo_produto'].str.contains(search_q, case=False, na=False) |
-                            df_recent['roteiro_gerado'].str.contains(search_q, case=False, na=False)
-                        ]
-                    
-                    datas_unicas = df_recent['data_simples'].unique()
-                    
-                    for dia in datas_unicas:
-                        dia_df = df_recent[df_recent['data_simples'] == dia]
-                        num_roteiros_dia = len(dia_df)
-                        # Para manter as datas abertas também caso recarregue, salvamos o ID do dia
-                        is_dia_open = st.session_state.get('hist_dia_open') == dia.strftime('%d/%m/%Y')
-                        with st.expander(f"📁 {dia.strftime('%d/%m/%Y')} ({num_roteiros_dia} roteiros)", expanded=is_dia_open):
-                            cols_db = st.columns(4)
-                            for i, (_, r_row) in enumerate(dia_df.iterrows()):
-                                # Inverte a numeração para que o primeiro (mais antigo do dia) seja #1
-                                n_hist = len(dia_df) - i
-                                model_label = r_row['modelo_llm'].split('/')[-1] if r_row['modelo_llm'] else "IA"
-                                # Destaca de cor específica caso seja rota "otimizada" no modelo
-                                is_nw3d = (st.session_state.get('active_mode') == 'NW 3D')
-                                cor_bot = "violet" if is_nw3d else "green"
-                                
-                                if "(otimizado)" in model_label.lower():
-                                    btn_label = f"👁️ {r_row['codigo_produto']} :{cor_bot}[*{model_label.upper()}*]"
-                                    is_otimizado = True
-                                else:
-                                    btn_label = f"👁️ {r_row['codigo_produto']} :blue[*{model_label.upper()}*]"
-                                    is_otimizado = False
-                                    
-                                with cols_db[i % 4]:
-                                    if st.button(btn_label, key=f"recall_{r_row['criado_em']}", use_container_width=True):
-                                        rec_item = {
-                                            "ficha": r_row['ficha_extraida'],
-                                            "roteiro_original": r_row['roteiro_gerado'],
-                                            "categoria_id": 77,
-                                            "codigo": r_row['codigo_produto'],
-                                            "model_id": r_row['modelo_llm'],
-                                            "custo_brl": r_row['custo_estimado_brl'],
-                                            "is_best_version": is_otimizado,
-                                            "_uid": str(uuid.uuid4())
-                                        }
-                                        try:
-                                            first_line = r_row['roteiro_gerado'].split('\n')[0]
-                                            if "NW LU" in first_line:
-                                                parts = first_line.split()
-                                                if len(parts) >= 3:
-                                                    rec_item["mes"] = parts[2]
-                                        except:
-                                            pass
-                                        if 'roteiros' not in st.session_state:
-                                            st.session_state['roteiros'] = []
-                                        
-                                        # Verifica se já existe na mesa (mesmo SKU e mesmo Modelo)
-                                        existing_idx = next(
-                                            (idx for idx, x in enumerate(st.session_state['roteiros']) 
-                                             if str(x.get('codigo')) == str(rec_item['codigo']) and str(x.get('model_id')) == str(rec_item['model_id'])), 
-                                            -1
-                                        )
-                                        
-                                        if existing_idx == -1: # Não existe, insere novo no topo
-                                            st.session_state['roteiros'].insert(0, rec_item)
-                                            st.session_state['roteiro_ativo_idx'] = 0
-                                        else: # Já existe, foca nele
-                                            st.session_state['roteiro_ativo_idx'] = existing_idx
-                                            
-                                        st.session_state['hist_open'] = True
-                                        st.session_state['hist_dia_open'] = dia.strftime('%d/%m/%Y')
-                                        st.rerun()
-                else:
-                    st.info("Nenhum histórico recente no banco.")
-            except Exception as e:
-                st.error(f"Erro ao carregar histórico: {e}")
 
     # --- CANVA DO ROTEIRO ATIVO (AGORA OCUPANDO TODA A LARGURA) ---
     if 'roteiros' in st.session_state and st.session_state['roteiros']:
