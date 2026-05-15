@@ -1251,12 +1251,6 @@ if page == "Criar Roteiros":
             st.caption("💡 O código fica na URL: magazineluiza.com.br/.../p/**240304700**/...")
 
             st.markdown("<br>", unsafe_allow_html=True)
-            with st.expander("📸 Enriquecimento Visual (Opcional - Gemini Multimodal)", expanded=False):
-                st.info("💡 Use para produtos com muitos detalhes visuais (LEGO, Brinquedos, Moda). As imagens ajudam a IA a ser mais criativa.")
-                up_files_auto = st.file_uploader("Upload de Imagens do Produto", type=["png", "jpg", "jpeg", "webp"], accept_multiple_files=True, key="up_auto")
-                up_urls_auto = st.text_area("Ou cole links de imagens (um por linha):", placeholder="https://a-static.mlcdn.com.br/...", key="urls_auto")
-
-            st.markdown("<br>", unsafe_allow_html=True)
             
             # --- NOVO FLUXO CONSOLIDADO: GERAÇÃO DIRETA POR GRUPO ---
             if st.button("🚀 Iniciar Geração em Lote", use_container_width=True, type="primary", key="btn_auto_direto"):
@@ -1279,8 +1273,8 @@ if page == "Criar Roteiros":
                     table_prefix = st.session_state.get('table_prefix', 'nw_')
                     agent = RoteiristaAgent(supabase_client=sp_cli, model_id=modelo_id, table_prefix=table_prefix)
                     
-                    # Processa imagens globais do lote (se houver)
-                    imagens_adicionais = process_images_input(up_files_auto, up_urls_auto)
+                    # Imagens globais removidas em favor do link por SKU
+                    imagens_adicionais = []
                     
                     erros_lote = []
                     tempos_por_roteiro = []
@@ -1635,10 +1629,6 @@ if page == "Criar Roteiros":
                 })
             
             st.markdown("---")
-            with st.expander("📸 Enriquecimento Visual (Opcional)", expanded=False):
-                st.info("💡 Carregue imagens para ajudar a IA a descrever detalhes que não estão na ficha técnica.")
-                up_files_man = st.file_uploader("Upload de Imagens", type=["png", "jpg", "jpeg", "webp"], accept_multiple_files=True, key="up_man")
-                up_urls_man = st.text_area("Links de imagens (um por linha):", placeholder="https://...", key="urls_man")
                 
             col_add, col_rem = st.columns(2)
             with col_add:
@@ -1690,8 +1680,8 @@ if page == "Criar Roteiros":
                     # Instancia Agente (fora do loop para eficiência)
                     agent = RoteiristaAgent(supabase_client=sp_cli, model_id=modelo_id, table_prefix=table_prefix)
                     
-                    # Processa imagens manuais
-                    imagens_man_globais = process_images_input(up_files_man, up_urls_man)
+                    # Imagens globais removidas
+                    imagens_man_globais = []
                     
                     progress_text_man = st.empty()
                     any_error = False
