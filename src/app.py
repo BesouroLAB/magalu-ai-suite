@@ -1294,6 +1294,7 @@ if page == "Criar Roteiros":
                         main_code = grupo["codes"][0]
                         all_codes = grupo["codes"]
                         video_url = grupo["video"]
+                        grupo_images_urls = grupo.get("images", [])
                         roteiro_start_time = time.time()
                         
                         elapsed_total = time.time() - lote_start_time
@@ -1318,7 +1319,20 @@ if page == "Criar Roteiros":
                                     fichas_grupo[c] = f
                                     if c == main_code:
                                         ficha_principal = f
-                                        # Injeta imagens adicionais na ficha principal para o Gemini
+                                        
+                                        # a) Injeta imagens específicas da LINHA (ex: SKU, Link_Foto.jpg)
+                                        if grupo_images_urls:
+                                            status_box.write(f"📸 **Extra:** {len(grupo_images_urls)} imagens encontradas na linha. Baixando...")
+                                            grupo_images = process_images_input(None, grupo_images_urls)
+                                            if grupo_images:
+                                                if not isinstance(ficha_principal, dict):
+                                                    ficha_principal = {"text": str(ficha_principal), "images": []}
+                                                if "images" not in ficha_principal:
+                                                    ficha_principal["images"] = []
+                                                ficha_principal["images"].extend(grupo_images)
+                                                status_box.info(f"🖼️ {len(grupo_images)} imagens da linha injetadas.")
+
+                                        # b) Injeta imagens GLOBAIS (da barra lateral)
                                         if imagens_adicionais:
                                             if not isinstance(ficha_principal, dict):
                                                 ficha_principal = {"text": str(ficha_principal), "images": []}
@@ -1329,7 +1343,7 @@ if page == "Criar Roteiros":
                                             ficha_principal["images"].extend(imagens_adicionais)
                                             status_box.info(f"🖼️ {len(imagens_adicionais)} imagens globais injetadas.")
                                         
-                                        # Injeta imagens descobertas pelo SCRAPER
+                                        # c) Injeta imagens descobertas pelo SCRAPER
                                         auto_images_urls = f.get("image_urls", [])
                                         if auto_images_urls:
                                             status_box.write(f"📸 **Extra:** {len(auto_images_urls)} imagens encontradas no site. Baixando...")

@@ -181,11 +181,10 @@ def parse_grouped_input(raw_input: str) -> list[dict]:
     """
     Parseia input agrupado onde cada linha = 1 roteiro.
     Códigos na mesma linha = variantes do mesmo produto.
-    URLs (http...) = link de vídeo do fornecedor.
+    URLs (http...) = link de vídeo ou imagem.
     
     Retorna lista de dicts:
-      [{"codes": ["232878800"], "video": None},
-       {"codes": ["232879000", "232879500"], "video": "https://..."}]
+      [{"codes": ["232878800"], "video": None, "images": ["https://..."]}, ...]
     """
     groups = []
     for line in raw_input.strip().split('\n'):
@@ -195,6 +194,7 @@ def parse_grouped_input(raw_input: str) -> list[dict]:
         
         tokens = re.split(r'[,\s]+', line)
         codes = []
+        images = []
         video = None
         
         for token in tokens:
@@ -202,14 +202,23 @@ def parse_grouped_input(raw_input: str) -> list[dict]:
             if not token:
                 continue
             if token.startswith('http'):
-                video = token
+                # Heurística para diferenciar Vídeo de Imagem
+                is_img = any(ext in token.lower() for ext in ['.jpg', '.jpeg', '.png', '.webp', '.gif']) or 'static.mlcdn.com.br' in token or 'a-static' in token
+                if is_img:
+                    images.append(token)
+                else:
+                    video = token
             else:
                 clean = re.sub(r'[^0-9a-zA-Z]', '', token)
                 if len(clean) >= 3:
                     codes.append(clean)
         
         if codes:
-            groups.append({"codes": codes, "video": video})
+            groups.append({
+                "codes": codes, 
+                "video": video,
+                "images": images
+            })
     
     return groups
 
