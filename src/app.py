@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 import sys
+import time
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -1266,9 +1267,8 @@ if page == "Criar Roteiros":
                 elif len(grupos) > 15:
                     st.warning("⚠️ Limite de 15 roteiros por vez atingido.")
                 else:
-                    import time as _time
                     total_roteiros = len(grupos)
-                    lote_start_time = _time.time()
+                    lote_start_time = time.time()
                     
                     progress_text = st.empty()
                     timer_display = st.empty()
@@ -1294,9 +1294,9 @@ if page == "Criar Roteiros":
                         main_code = grupo["codes"][0]
                         all_codes = grupo["codes"]
                         video_url = grupo["video"]
-                        roteiro_start_time = _time.time()
+                        roteiro_start_time = time.time()
                         
-                        elapsed_total = _time.time() - lote_start_time
+                        elapsed_total = time.time() - lote_start_time
                         elapsed_min = int(elapsed_total // 60)
                         elapsed_sec = int(elapsed_total % 60)
                         
@@ -1307,15 +1307,15 @@ if page == "Criar Roteiros":
                         
                         try:
                             with st.status(f"🚀 Roteiro {i+1} (SKUs: {', '.join(all_codes)})", expanded=True) as status_box:
-                                    # 1. Scrape de todos os códigos do grupo
-                                    status_box.write(f"🔍 **Etapa 1:** Extraindo dados de {len(all_codes)} SKUs (Modo: {modo_selecionado})...")
-                                    fichas_grupo = {}
-                                    ficha_principal = None
-                                    
-                                    for c in all_codes:
-                                        status_box.write(f"  • Scraping SKU {c}...")
-                                        f = scrape_with_gemini(c, api_key=gemini_key, modo=modo_selecionado)
-                                        fichas_grupo[c] = f
+                                # 1. Scrape de todos os códigos do grupo
+                                status_box.write(f"🔍 **Etapa 1:** Extraindo dados de {len(all_codes)} SKUs (Modo: {modo_selecionado})...")
+                                fichas_grupo = {}
+                                ficha_principal = None
+                                
+                                for c in all_codes:
+                                    status_box.write(f"  • Scraping SKU {c}...")
+                                    f = scrape_with_gemini(c, api_key=gemini_key, modo=modo_selecionado)
+                                    fichas_grupo[c] = f
                                     if c == main_code:
                                         ficha_principal = f
                                         # Injeta imagens adicionais na ficha principal para o Gemini
@@ -1342,8 +1342,8 @@ if page == "Criar Roteiros":
                                                 ficha_principal["images"].extend(auto_images)
                                                 status_box.success(f"🖼️ {len(auto_images)} imagens automáticas adicionadas para análise.")
 
-                                        # Delay para evitar rate limits
-                                        _time.sleep(1)
+                                # Delay para evitar rate limits
+                                time.sleep(1)
                                 
                                 # --- VALIDAÇÃO DE QUALIDADE DO SCRAPING ---
                                 ficha_text = ficha_principal.get("text", "") if isinstance(ficha_principal, dict) else str(ficha_principal)
@@ -1351,13 +1351,13 @@ if page == "Criar Roteiros":
                                 if "ERRO:" in ficha_text or "FALHA_TOTAL" in ficha_text:
                                     status_box.update(label=f"⚠️ Roteiro {i+1} — Scraping falhou para SKU {main_code}", state="error")
                                     erros_lote.append(f"SKU {main_code}: Scraping falhou — {ficha_text[:150]}...")
-                                    tempos_por_roteiro.append(_time.time() - roteiro_start_time)
+                                    tempos_por_roteiro.append(time.time() - roteiro_start_time)
                                     continue
                                 
                                 if len(ficha_text.strip()) < 100:
                                     status_box.update(label=f"⚠️ Roteiro {i+1} — Ficha muito curta para SKU {main_code}", state="error")
                                     erros_lote.append(f"SKU {main_code}: Ficha extraída muito curta ({len(ficha_text.strip())} chars). Dados insuficientes para gerar roteiro de qualidade.")
-                                    tempos_por_roteiro.append(_time.time() - roteiro_start_time)
+                                    tempos_por_roteiro.append(time.time() - roteiro_start_time)
                                     continue
                                 
                                 # Verifica se o código foi confirmado na ficha
