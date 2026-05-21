@@ -9,16 +9,14 @@ from datetime import datetime
 import pytz
 import uuid
 from dotenv import load_dotenv
-from supabase import create_client, Client
+from supabase import create_client
 import difflib
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from src.agent import RoteiristaAgent, MODELOS_DISPONIVEIS, MODELOS_DESCRICAO, PROVIDER_KEY_MAP
-from src.scraper import scrape_with_gemini, parse_codes, parse_grouped_input, detect_variants
-from src.exporter import export_roteiro_docx, format_for_display, export_all_roteiros_zip
-from src.jsonld_generator import export_jsonld_string, wrap_in_script_tag
-import requests
-import mimetypes
+from src.agent import RoteiristaAgent, MODELOS_DISPONIVEIS, MODELOS_DESCRICAO
+from src.scraper import scrape_with_gemini, parse_grouped_input, detect_variants
+from src.exporter import export_roteiro_docx, export_all_roteiros_zip
+from src.jsonld_generator import export_jsonld_string
 
 load_dotenv()
 
@@ -266,7 +264,7 @@ st.markdown(DARK_MODE_CSS, unsafe_allow_html=True)
 def check_login():
     """Tela de login com persistência simples."""
     auth_file = os.path.join(os.path.dirname(__file__), ".auth_token")
-    
+
     # 1. Tenta recuperar sessão salva
     if 'authenticated' not in st.session_state:
         if os.path.exists(auth_file):
@@ -283,7 +281,7 @@ def check_login():
 
     if st.session_state.get('authenticated'):
         return True
-    
+
     col_left, col_center, col_right = st.columns([1, 2, 1])
     with col_center:
         st.markdown("")
@@ -294,17 +292,17 @@ def check_login():
             <span style="color: white; font-weight: 300; font-size: 42px; letter-spacing: 1px;">AI Suite</span>
         </div>
         """, unsafe_allow_html=True)
-        
+
         with st.form("login_form"):
             user = st.text_input("Usuário:", placeholder="admin")
             pwd = st.text_input("Senha:", type="password", placeholder="••••••")
             remember = st.checkbox("Lembrar de mim", value=True)
             submitted = st.form_submit_button("🔐 Entrar", use_container_width=True, type="primary")
-            
+
             if submitted:
                 valid_user = os.environ.get("APP_USER", "admin").strip()
                 valid_pwd = os.environ.get("APP_PASSWORD", "admin").strip()
-                
+
                 if user.strip() == valid_user and pwd.strip() == valid_pwd:
                     st.session_state['authenticated'] = True
                     if remember:
@@ -313,7 +311,7 @@ def check_login():
                     st.rerun()
                 else:
                     st.error("❌ Usuário ou senha incorretos.")
-        
+
         st.caption("Acesso restrito à equipe de conteúdo Magalu.")
     return False
 
@@ -452,7 +450,7 @@ def _auto_salvar_fonetica(sp_client, fonetica_regras):
     """Salva regras fonéticas automaticamente a partir da calibragem, evitando duplicatas."""
     if not sp_client or not fonetica_regras:
         return 0
-    
+
     count = 0
     for regra in fonetica_regras:
         if not isinstance(regra, dict):
@@ -462,7 +460,7 @@ def _auto_salvar_fonetica(sp_client, fonetica_regras):
         exemplo = str(regra.get('exemplo', '')).strip()
         if not termo_err or not termo_cor:
             continue
-        
+
         try:
             existing = sp_client.table("nw_treinamento_fonetica").select("id").eq("termo_errado", termo_err).execute()
             if not existing.data:
@@ -475,7 +473,7 @@ def _auto_salvar_fonetica(sp_client, fonetica_regras):
                 count += 1
         except Exception as e:
             st.error(f"Erro ao salvar fonética: {e}")
-    
+
     if count > 0:
         st.toast(f"📖 {count} regra(s) fonética(s) aprendida(s) automaticamente!", icon="🎓")
     return count
@@ -484,7 +482,7 @@ def _auto_salvar_estrutura(sp_client, estrutura_regras):
     """Salva regras de abertura/fechamento automaticamente a partir da calibragem."""
     if not sp_client or not estrutura_regras:
         return 0
-    
+
     count = 0
     for regra in estrutura_regras:
         if not isinstance(regra, dict):
@@ -494,15 +492,15 @@ def _auto_salvar_estrutura(sp_client, estrutura_regras):
         # Tenta pegar prioritariamente 'texto_ia' (novo padrão) ou 'antes' (fallback)
         raw_ia = regra.get('texto_ia', regra.get('antes', ''))
         texto_ia_rej = str(raw_ia).strip() if raw_ia and str(raw_ia).lower() != 'none' else ""
-        
+
         # Normalização para o padrão do banco
         if "Abertura" in tipo: tipo = "Abertura (Gancho)"
         elif "Fechamento" in tipo or "CTA" in tipo: tipo = "Fechamento (CTA)"
         else: tipo = "Desenvolvimento (Venda)"
-        
+
         if not texto_ouro or tipo not in ('Abertura (Gancho)', 'Fechamento (CTA)', 'Desenvolvimento (Venda)'):
             continue
-        
+
         try:
             sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}treinamento_estruturas").insert({
                 "tipo_estrutura": tipo,
@@ -514,7 +512,7 @@ def _auto_salvar_estrutura(sp_client, estrutura_regras):
             count += 1
         except Exception as e:
             st.error(f"Erro ao salvar estrutura: {e}")
-    
+
     if count > 0:
         st.toast(f"📝 {count} estrutura(s) (abertura/fechamento) aprendida(s)!", icon="✨")
     return count
@@ -523,7 +521,7 @@ def _auto_salvar_persona(sp_client, persona_regras):
     """Salva regras de persona da Lu automaticamente a partir da calibragem."""
     if not sp_client or not persona_regras:
         return 0
-    
+
     count = 0
     for regra in persona_regras:
         if not isinstance(regra, dict):
@@ -534,7 +532,7 @@ def _auto_salvar_persona(sp_client, persona_regras):
         lexico = str(regra.get('lexico', '')).strip()
         if not pilar or not erro:
             continue
-        
+
         try:
             sp_client.table("nw_treinamento_persona_lu").insert({
                 "pilar_persona": pilar,
@@ -546,7 +544,7 @@ def _auto_salvar_persona(sp_client, persona_regras):
             count += 1
         except Exception as e:
             st.error(f"Erro ao salvar persona: {e}")
-    
+
     if count > 0:
         st.toast(f"💃 {count} regra(s) de persona da Lu aprendida(s)!", icon="🎭")
     return count
@@ -555,7 +553,7 @@ def _auto_salvar_imagens(sp_client, imagens_regras, codigo_p=""):
     """Salva calibragem de descrições de imagem automaticamente."""
     if not sp_client or not imagens_regras:
         return 0
-    
+
     count = 0
     for regra in imagens_regras:
         if not isinstance(regra, dict):
@@ -565,10 +563,10 @@ def _auto_salvar_imagens(sp_client, imagens_regras, codigo_p=""):
         antes = str(raw_antes).strip() if raw_antes and str(raw_antes).lower() != 'none' else ""
         depois = str(raw_depois).strip() if raw_depois and str(raw_depois).lower() != 'none' else ""
         motivo = str(regra.get('motivo', '')).strip()
-        
+
         if not antes or not depois:
             continue
-            
+
         try:
             prefix = st.session_state.get('table_prefix', 'nw_')
             sp_client.table(f"{prefix}treinamento_imagens").insert({
@@ -581,7 +579,7 @@ def _auto_salvar_imagens(sp_client, imagens_regras, codigo_p=""):
             count += 1
         except Exception as e:
             st.error(f"Erro ao salvar lição visual: {e}")
-            
+
     if count > 0:
         st.toast(f"📸 {count} lição(ões) visual(ais) aprendida(s)!", icon="🖼️")
     return count
@@ -663,7 +661,7 @@ def process_images_input(uploaded_files=None, urls_input=None):
     'urls_input' pode ser uma string (separada por \n) ou uma lista de strings.
     """
     images = []
-    
+
     # 1. Processar Arquivos
     if uploaded_files:
         for f in uploaded_files:
@@ -697,7 +695,7 @@ def process_images_input(uploaded_files=None, urls_input=None):
                 "url": url,
                 "mime": "image/url" # Metadata para controle interno
             })
-                
+
     return images
 
 def render_visual_diff(original, final):
@@ -713,7 +711,7 @@ def render_visual_diff(original, final):
         context=True,
         numlines=2
     )
-    
+
     # CSS Refinado para Modal Centrado e Escuro
     diff_css = """
     <style>
@@ -749,7 +747,7 @@ def modal_doc_viewer(file_path):
             st.error(f"Arquivo não encontrado: {file_path}")
     except Exception as e:
         st.error(f"Erro ao ler documentação: {e}")
-    
+
     if st.button("Fechar", use_container_width=True):
         del st.session_state['show_doc_modal']
         st.rerun()
@@ -761,7 +759,7 @@ def modal_resultado_calibragem(calc, sp_cli, roteiro_ia, roteiro_humano, titulo_
         'calc': calc, 'roteiro_ia': roteiro_ia, 'roteiro_humano': roteiro_humano,
         'titulo_curto': titulo_curto, 'codigo_p': codigo_p
     }
-    
+
     if 'show_diff' not in st.session_state:
         st.session_state['show_diff'] = False
 
@@ -772,12 +770,12 @@ def modal_resultado_calibragem(calc, sp_cli, roteiro_ia, roteiro_humano, titulo_
         if st.button("🔍 Ver Diff", use_container_width=True):
             st.session_state['show_diff'] = not st.session_state['show_diff']
             st.rerun()
-            
+
     if st.session_state.get('show_diff', False):
         st.markdown("#### 🔍 Comparação Visual de Alterações")
         render_visual_diff(roteiro_ia, roteiro_humano)
         st.divider()
-    
+
     # 0. Resumo Estratégico (Meta-Análise)
     resumo = calc.get('resumo_estrategico', '')
     if resumo:
@@ -833,7 +831,7 @@ def modal_resultado_calibragem(calc, sp_cli, roteiro_ia, roteiro_humano, titulo_
             </div>
             """, unsafe_allow_html=True)
     else:
-        st.markdown(f"""
+        st.markdown("""
         <div style='background-color: #2e1065; padding: 15px; border-radius: 8px; border-left: 5px solid #8b5cf6; margin-bottom: 10px; color: #c4b5fd;'>
             📸 <b>Imagens:</b> Não houve mudanças nas descrições visuais.
         </div>
@@ -845,7 +843,7 @@ def modal_resultado_calibragem(calc, sp_cli, roteiro_ia, roteiro_humano, titulo_
 
     st.divider()
     st.caption("Ao confirmar, a IA alimentará simultaneamente as tabelas acima.")
-    
+
     if st.button("🚀 Confirmar e Gravar Todas as Lições", type="primary", use_container_width=True):
         # Salva Feedback Ouro (Aba Feedback)
         cat_id = final_cat_id_modal
@@ -859,20 +857,20 @@ def modal_resultado_calibragem(calc, sp_cli, roteiro_ia, roteiro_humano, titulo_
              except Exception as e_cat:
                  print(f"Erro ao buscar categorias: {e_cat}")
                  cat_id = 77
-                 
+
         # Concatena resumo estratégico com diretrizes técnicas
         aprendizado_final = calc['aprendizado']
         if calc.get('resumo_estrategico'):
             aprendizado_final = f"🎯 DIREÇÃO CRIATIVA: {calc['resumo_estrategico']}\n\n📝 DIRETRIZES TÉCNICAS:\n{calc['aprendizado']}"
 
         salvar_calibracao_ouro(sp_cli, cat_id, roteiro_ia, roteiro_humano, calc['percentual'], aprendizado_final, codigo_p, titulo_curto, calc.get('modelo_calibragem', 'N/A'))
-        
+
         # Salva as outras tabelas (Persona, Fonética, Estrutura, Imagens)
         _auto_salvar_fonetica(sp_cli, f_regras)
         _auto_salvar_estrutura(sp_cli, e_regras)
         _auto_salvar_persona(sp_cli, p_regras)
         _auto_salvar_imagens(sp_cli, i_regras, codigo_p)
-        
+
         st.session_state['calibragem_concluida'] = True
         if 'pending_calibration' in st.session_state:
             del st.session_state['pending_calibration']
@@ -884,68 +882,68 @@ with st.sidebar:
     if api_key_env:
         os.environ["GEMINI_API_KEY"] = api_key_env
         os.environ["GOOGLE_API_KEY"] = api_key_env
-    
+
     puter_key_env = os.environ.get("PUTER_API_KEY") or st.secrets.get("PUTER_API_KEY")
     if puter_key_env: os.environ["PUTER_API_KEY"] = puter_key_env
-    
+
     openai_key_env = os.environ.get("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
     if openai_key_env: os.environ["OPENAI_API_KEY"] = openai_key_env
-    
+
     openrouter_key_env = os.environ.get("OPENROUTER_API_KEY") or st.secrets.get("OPENROUTER_API_KEY")
     if openrouter_key_env: os.environ["OPENROUTER_API_KEY"] = openrouter_key_env
-    
+
     zai_key_env = os.environ.get("ZAI_API_KEY") or st.secrets.get("ZAI_API_KEY")
     if zai_key_env: os.environ["ZAI_API_KEY"] = zai_key_env
-    
+
     kimi_key_env = os.environ.get("KIMI_API_KEY") or st.secrets.get("KIMI_API_KEY")
     if kimi_key_env: os.environ["KIMI_API_KEY"] = kimi_key_env
     supabase_client = init_supabase()
     if supabase_client:
         st.session_state['supabase_client'] = supabase_client
-    
+
     # --- LOGO & BRANDING ---
     LOGO_URL = "https://hvlnltccuekptytwgfrl.supabase.co/storage/v1/object/sign/media/logo_ml_ai_suite.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xMzdkZWExZi0yODU5LTQ1NTAtYWY3ZS0xZTdlY2M1NjE4ZGUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJtZWRpYS9sb2dvX21sX2FpX3N1aXRlLnBuZyIsImlhdCI6MTc3MTgxNDM3NywiZXhwIjoxODAzMzUwMzc3fQ.TNDhROj8HLpGqwkC71zA2sv_gWRxPNUleJkM2NPvloI"
     try:
         st.image(LOGO_URL, use_container_width=True)
     except Exception:
-        st.markdown(f"""
+        st.markdown("""
         <div style="display: flex; flex-direction: column; width: 220px; line-height: 1.1; margin-bottom: 4px;">
             <span style="color: #0086ff; font-weight: 800; font-size: 18px; letter-spacing: 3px;">MAGALU</span>
             <span style="color: white; font-weight: 300; font-size: 36px; letter-spacing: 1px;">AI Suite</span>
         </div>
         """, unsafe_allow_html=True)
-    
+
     # --- STATUS INDICATORS (apenas LLM ativa + Supabase) ---
-    _modelo_atual = st.session_state.get('modelo_llm', 'gemini-3-flash-preview')
+    _modelo_atual = st.session_state.get('modelo_llm', 'gemini-3.5-flash')
     _prov = _modelo_atual.split('/')[0] if '/' in _modelo_atual else 'gemini'
     _env_map = {
-        "gemini": api_key_env, 
-        "openai": openai_key_env, 
-        "puter": puter_key_env, 
-        "openrouter": openrouter_key_env, 
+        "gemini": api_key_env,
+        "openai": openai_key_env,
+        "puter": puter_key_env,
+        "openrouter": openrouter_key_env,
         "zai": zai_key_env,
         "kimi": kimi_key_env
     }
     _llm_active = bool(_env_map.get(_prov))
-    
+
     _nomes_modelos = {v: k for k, v in MODELOS_DISPONIVEIS.items()}
     _full_name = _nomes_modelos.get(_modelo_atual, "LLM Desconhecida")
-    
+
     # Ex: "⚡ Gemini 3 Flash Preview — Beta" -> "Gemini 3 Flash Preview"
     _llm_name = _full_name.split(' — ')[0]
-    
+
     # Remove emoji/símbolo inicial se houver espaco logo apos
     if _llm_name and " " in _llm_name and ord(_llm_name[0]) > 127:
         _llm_name = _llm_name.split(" ", 1)[-1].strip()
-        
+
     if len(_llm_name) > 15:
         _llm_name = _llm_name[:13] + ".."
 
-    
+
     sc_llm = "#00ff88" if _llm_active else "#ff4b4b"
     sl_llm = "ON" if _llm_active else "OFF"
     sb_llm = "rgba(0, 255, 136, 0.12)" if _llm_active else "rgba(255, 75, 75, 0.12)"
-    
+
     sc_sup = "#00ff88" if supabase_client else "#ff4b4b"
     sl_sup = "ON" if supabase_client else "OFF"
     sb_sup = "rgba(0, 255, 136, 0.12)" if supabase_client else "rgba(255, 75, 75, 0.12)"
@@ -964,7 +962,7 @@ with st.sidebar:
             </div>
         </div>
     """, unsafe_allow_html=True)
-    
+
     # --- SELETOR DE AMBIENTE (NW x NW 3D) ---
     st.markdown("<div style='margin-bottom: 5px; font-weight: 600; font-size: 14px; color: #b0bdd0;'>📁 Ambiente (Tabelas):</div>", unsafe_allow_html=True)
     active_env = st.radio(
@@ -974,7 +972,7 @@ with st.sidebar:
         label_visibility="collapsed",
         key="active_mode_radio"
     )
-    
+
     # Salva no session state para refazer queries de banco dinâmicas
     st.session_state['active_mode'] = active_env
     if active_env == "NW Padrão":
@@ -997,7 +995,7 @@ with st.sidebar:
         key="model_selector"
     )
     modelo_id_selecionado = MODELOS_DISPONIVEIS[modelo_label]
-    
+
     # Se mudou o modelo, mostramos o loading e validamos
     if st.session_state.get('last_model') != modelo_id_selecionado:
         with st.spinner(f"⚡ Sincronizando nova Inteligência: {modelo_label.split(' — ')[0]}..."):
@@ -1012,7 +1010,7 @@ with st.sidebar:
                 time.sleep(1.0) # Espera o toast ser lido antes do rebuild
             except Exception as e:
                 # Se falhar (ex: chave faltando), voltamos para o Gemini mas marcamos que JÁ TENTAMOS esse modelo
-                st.session_state['modelo_llm'] = "gemini-3-flash-preview"
+                st.session_state['modelo_llm'] = "gemini-3.5-flash"
                 st.session_state['last_model'] = modelo_id_selecionado # Importante: marca como tentado para parar o loop
                 st.error(f"❌ Falha ao carregar {modelo_label}: {str(e)}")
                 time.sleep(3.0)
@@ -1026,7 +1024,7 @@ with st.sidebar:
                 <p style='font-size: 13.5px; color: #f0f0f0; margin: 0; line-height: 1.4; opacity: 0.9;'>{_desc}</p>
             </div>
         """, unsafe_allow_html=True)
-    
+
     # CSS Sidebar Navigation (Alinhamento de botão à esquerda)
     st.markdown("""
     <style>
@@ -1047,15 +1045,15 @@ with st.sidebar:
         "Histórico": "🕒 Histórico",
         "Dashboard": "📊 Dashboard"
     }
-    
+
     for page_key, page_label in nav_items.items():
         is_active = st.session_state['page'] == page_key
         if st.button(page_label, use_container_width=True, type="primary" if is_active else "secondary"):
             st.session_state['page'] = page_key
             st.rerun()
-    
+
     st.divider()
-    
+
     # --- RODAPÉ: GUIA, CHAT E CONFIGURAÇÕES ---
     is_guia_active = st.session_state['page'] == "Guia de Modelos"
     if st.button("📖 Guia de Modelos", use_container_width=True, type="primary" if is_guia_active else "secondary"):
@@ -1115,7 +1113,7 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
     page = st.session_state['page']
-    
+
     # --- RECUPERAÇÃO DE CALIBRAGEM ACCIDENTALMENTE FECHADA ---
     if st.session_state.get('pending_calibration'):
         pc = st.session_state['pending_calibration']
@@ -1135,28 +1133,28 @@ def show_calibragem_summary():
     if 'show_calib_modal' in st.session_state:
         m = st.session_state['show_calib_modal']
         calc = m['calc']
-        
-        st.markdown(f"### 🧪 Resumo do Aprendizado da IA")
+
+        st.markdown("### 🧪 Resumo do Aprendizado da IA")
         st.success(f"🏆 Roteiro Ouro Salvo! {m['score_color']} Qualidade: {m['estrelas']:.1f} ⭐")
-        
+
         with st.container(border=True):
             if m['n_f'] > 0:
                 st.markdown(f"**🎓 Fonética ({m['n_f']}):**")
                 for r in calc['fonetica_regras']:
                     st.code(f"{r['termo_errado']} → {r['termo_corrigido']}", language="text")
-            
+
             if m['n_e'] > 0:
                 st.markdown(f"**✨ Estrutura ({m['n_e']}):**")
                 for r in calc['estrutura_regras']:
                     st.caption(f"Tipo: {r['tipo']}")
                     st.text_area("Texto Ouro:", value=r['texto_ouro'], height=70, disabled=True, key=f"mdl_est_{r['tipo']}")
-            
+
             if m['n_p'] > 0:
                 st.markdown(f"**🎭 Persona Lu ({m['n_p']}):**")
                 for r in calc['persona_regras']:
                     st.caption(f"Pilar: {r['pilar']}")
                     st.markdown(f"*Correção:* {r['correcao']}")
-        
+
         st.info("Estas regras foram integradas ao 'cérebro' da IA e serão aplicadas nos próximos roteiros.")
         if st.button("✅ Entendido, Fechar Relatório", use_container_width=True, type="primary"):
             del st.session_state['show_calib_modal']
@@ -1172,7 +1170,7 @@ if 'show_doc_modal' in st.session_state:
 
     # --- PÁGINA 1: CRIAR ROTEIROS ---
 if page == "Criar Roteiros":
-    
+
     # --- EXIBIÇÃO DE ERROS PERSISTENTES ---
     if st.session_state.get('last_errors'):
         with st.expander("🚨 Detalhes de Erros Recentemente Ocorridos", expanded=True):
@@ -1190,7 +1188,7 @@ if page == "Criar Roteiros":
     is_generating = st.session_state.get('is_generating', False)
     should_expand = (len(st.session_state['roteiros']) == 0) or is_generating
     expander_input = st.expander("✍️ Inserir Códigos e Gerar", expanded=should_expand)
-    
+
     with expander_input:
         cat_selecionada_id = 77
         # Categoria removida da UI para ser automática (ID 77 - Genérico)
@@ -1209,7 +1207,7 @@ if page == "Criar Roteiros":
             "🎮 3D (NewWeb 3D)": "Cenas em 3D autorais Magalu (Contínuo)",
             "🎙️ Review": "Síntese de avaliações reais de clientes (UGC)"
         }
-        
+
         try:
             # Tenta usar st.pills (Streamlit 1.30+)
             modo_pill = st.pills(
@@ -1243,7 +1241,7 @@ if page == "Criar Roteiros":
             mes_selecionado = st.selectbox(
                 "Mês de Lançamento",
                 ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"],
-                index=get_now_sp().month - 1, 
+                index=get_now_sp().month - 1,
                 key="mes_global",
                 label_visibility="collapsed"
             )
@@ -1259,8 +1257,8 @@ if page == "Criar Roteiros":
         st.markdown("<br>", unsafe_allow_html=True)
 
         tab_manual, tab_auto, tab_repescagem = st.tabs([
-            "✍️ Manual (Colar Fichas)", 
-            "⚡ Automático (SKUs da Magalu)", 
+            "✍️ Manual (Colar Fichas)",
+            "⚡ Automático (SKUs da Magalu)",
             "♻️ Repescagem"
         ])
 
@@ -1269,7 +1267,7 @@ if page == "Criar Roteiros":
             st.markdown("### 3. Códigos dos Produtos")
 
             st.markdown("<p style='font-size: 14px; color: #8b92a5'>Digite os códigos Magalu, um por linha. Mínimo 3 dígitos. Máximo 15 por vez.</p>", unsafe_allow_html=True)
-            
+
             codigos_raw = st.text_area(
                 "Códigos dos Produtos",
                 height=150,
@@ -1280,11 +1278,11 @@ if page == "Criar Roteiros":
             st.caption("💡 O código fica na URL: magazineluiza.com.br/.../p/**240304700**/...")
 
             st.markdown("<br>", unsafe_allow_html=True)
-            
+
             # --- NOVO FLUXO CONSOLIDADO: GERAÇÃO DIRETA POR GRUPO ---
             if st.button("🚀 Iniciar Geração em Lote", use_container_width=True, type="primary", key="btn_auto_direto"):
                 grupos = parse_grouped_input(codigos_raw) if codigos_raw else []
-                
+
                 if not grupos:
                     st.warning("⚠️ Digite pelo menos um código de produto.")
                 elif len(grupos) > 15:
@@ -1292,19 +1290,19 @@ if page == "Criar Roteiros":
                 else:
                     total_roteiros = len(grupos)
                     lote_start_time = time.time()
-                    
+
                     progress_text = st.empty()
                     timer_display = st.empty()
                     bar = st.progress(0)
-                    
+
                     sp_cli = st.session_state.get('supabase_client')
                     modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
                     table_prefix = st.session_state.get('table_prefix', 'nw_')
                     agent = RoteiristaAgent(supabase_client=sp_cli, model_id=modelo_id, table_prefix=table_prefix)
-                    
+
                     # Imagens globais removidas em favor do link por SKU
                     imagens_adicionais = []
-                    
+
                     erros_lote = []
                     tempos_por_roteiro = []
                     gemini_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
@@ -1312,7 +1310,7 @@ if page == "Criar Roteiros":
 
                     for i, grupo in enumerate(grupos):
                         grupo["original_index"] = i # Preservar índice original para repescagem
-                    
+
                     # Preparação da Mesa (Placeholders para Live Update)
                     uids_lote = []
                     for grupo in grupos:
@@ -1326,9 +1324,9 @@ if page == "Criar Roteiros":
                             "is_placeholder": True
                         }
                         st.session_state['roteiros'].insert(0, placeholder)
-                    
+
                     st.session_state['roteiro_ativo_idx'] = 0
-                    
+
                     fila_repescagem = []
                     for i, grupo in enumerate(grupos):
                         main_code = grupo["codes"][0]
@@ -1336,30 +1334,30 @@ if page == "Criar Roteiros":
                         video_url = grupo["video"]
                         grupo_images_urls = grupo.get("images", [])
                         roteiro_start_time = time.time()
-                        
+
                         elapsed_total = time.time() - lote_start_time
                         elapsed_min = int(elapsed_total // 60)
                         elapsed_sec = int(elapsed_total % 60)
-                        
+
                         percent = int((i) / total_roteiros * 100)
                         progress_text.markdown(f"**⏳ Processando Roteiro {i+1}/{total_roteiros} ({percent}%):** SKU {main_code}")
                         timer_display.markdown(f"⏱️ Tempo decorrido: **{elapsed_min}min {elapsed_sec}s**")
                         bar.progress(i / total_roteiros)
-                        
+
                         try:
                             with st.status(f"🚀 Roteiro {i+1} (SKUs: {', '.join(all_codes)})", expanded=True) as status_box:
                                 # 1. Scrape de todos os códigos do grupo
                                 status_box.write(f"🔍 **Etapa 1:** Extraindo dados de {len(all_codes)} SKUs (Modo: {modo_selecionado})...")
                                 fichas_grupo = {}
                                 ficha_principal = None
-                                
+
                                 for c in all_codes:
                                     status_box.write(f"  • Scraping SKU {c}...")
                                     f = scrape_with_gemini(c, api_key=gemini_key, modo=modo_selecionado)
                                     fichas_grupo[c] = f
                                     if c == main_code:
                                         ficha_principal = f
-                                        
+
                                         # a) Injeta imagens específicas da LINHA (ex: SKU, Link_Foto.jpg)
                                         if grupo_images_urls:
                                             status_box.write(f"📸 **Extra:** {len(grupo_images_urls)} imagens encontradas na linha. Injetando URLs...")
@@ -1376,13 +1374,13 @@ if page == "Criar Roteiros":
                                         if imagens_adicionais:
                                             if not isinstance(ficha_principal, dict):
                                                 ficha_principal = {"text": str(ficha_principal), "images": []}
-                                            
+
                                             if "images" not in ficha_principal:
                                                 ficha_principal["images"] = []
-                                            
+
                                             ficha_principal["images"].extend(imagens_adicionais)
                                             status_box.info(f"🖼️ {len(imagens_adicionais)} imagens globais injetadas.")
-                                        
+
                                         # c) Injeta imagens descobertas pelo SCRAPER
                                         auto_images_urls = f.get("image_urls", [])
                                         if auto_images_urls:
@@ -1398,26 +1396,26 @@ if page == "Criar Roteiros":
 
                                 # Delay para evitar rate limits
                                 time.sleep(1)
-                                
+
                                 # --- VALIDAÇÃO DE QUALIDADE DO SCRAPING ---
                                 ficha_text = ficha_principal.get("text", "") if isinstance(ficha_principal, dict) else str(ficha_principal)
-                                
+
                                 if "ERRO:" in ficha_text or "FALHA_TOTAL" in ficha_text:
                                     status_box.update(label=f"⚠️ Roteiro {i+1} — Scraping falhou para SKU {main_code}", state="error")
                                     erros_lote.append(f"SKU {main_code}: Scraping falhou — {ficha_text[:150]}...")
                                     tempos_por_roteiro.append(time.time() - roteiro_start_time)
                                     continue
-                                
+
                                 if len(ficha_text.strip()) < 50:
                                     status_box.update(label=f"⚠️ Roteiro {i+1} — Ficha muito curta para SKU {main_code}", state="error")
                                     erros_lote.append(f"SKU {main_code}: Ficha extraída muito curta ({len(ficha_text.strip())} chars). Tente o modo manual se os dados não aparecerem.")
                                     tempos_por_roteiro.append(time.time() - roteiro_start_time)
                                     continue
-                                
+
                                 # Verifica se o código foi confirmado na ficha
                                 if "CÓDIGO CONFIRMADO" not in ficha_text.upper():
                                     status_box.warning(f"⚠️ Atenção: Código não confirmado na ficha do SKU {main_code}. Pode haver troca de produto.")
-                                
+
                                 # Detecta se é combo e informa
                                 if "TIPO_PRODUTO: COMBO" in ficha_text.upper():
                                     status_box.info("📦 Produto COMBO detectado — fichas de múltiplos componentes serão consolidadas.")
@@ -1434,7 +1432,7 @@ if page == "Criar Roteiros":
                                 status_box.write("🧠 **Etapa 3:** Gerando roteiro com IA... (pode levar alguns minutos)")
                                 # Concatena outros códigos para o cabeçalho
                                 outros_codigos = " ".join(all_codes[1:]) if len(all_codes) > 1 else ""
-                                
+
                                 res_gen = agent.gerar_roteiro(
                                     scraped_data=ficha_principal,
                                     modo_trabalho=modo_selecionado,
@@ -1446,7 +1444,7 @@ if page == "Criar Roteiros":
                                     com_lu=(com_lu_global == "Com LU"),
                                     variantes_info=info_variantes
                                 )
-                                
+
                                 # 4. Resultado e Salvamento
                                 status_box.write("💾 **Etapa 4:** Registrando no histórico...")
                                 global_num = get_total_script_count(sp_cli) + 1
@@ -1464,7 +1462,7 @@ if page == "Criar Roteiros":
                                     "modo_trabalho": modo_selecionado,
                                     "com_lu": "REVIEW" if "Review" in modo_selecionado else (com_lu_global == "Com LU")
                                 }
-                                
+
                                 if sp_cli:
                                     try:
                                         sp_cli.table(f"{table_prefix}historico_roteiros").insert({
@@ -1481,13 +1479,13 @@ if page == "Criar Roteiros":
                                         }).execute()
                                     except Exception as e:
                                         print(f"❌ Erro ao salvar histórico: {e}")
-                                
+
                                 roteiro_elapsed = time.time() - roteiro_start_time
                                 tempos_por_roteiro.append(roteiro_elapsed)
                                 r_min = int(roteiro_elapsed // 60)
                                 r_sec = int(roteiro_elapsed % 60)
                                 status_box.update(label=f"✅ Roteiro {i+1} Finalizado! ({r_min}min {r_sec}s)", state="complete")
-                                
+
                                 # Atualiza o placeholder na mesa
                                 for idx_r, r_item in enumerate(st.session_state['roteiros']):
                                     if r_item.get('_uid') == uids_lote[i]:
@@ -1510,10 +1508,10 @@ if page == "Criar Roteiros":
                                 if r_item.get('_uid') == uids_lote[i]:
                                     st.session_state['roteiros'][idx_r]['status'] = "❌"
                                     break
-                            
+
                             full_err_msg = f"❌ Erro no Roteiro {i+1} (SKU {main_code}): {err_msg}"
                             st.error(full_err_msg)
-                            
+
                             # Adiciona à fila de repescagem se for erro de sobrecarga ou conexão
                             retryable_errors = ["503", "429", "overloaded", "rate limit", "deadline exceeded", "connection"]
                             if any(msg in err_msg.lower() for msg in retryable_errors):
@@ -1521,29 +1519,29 @@ if page == "Criar Roteiros":
                                 st.warning(f"🔁 SKU {main_code} adicionado à fila de repescagem para tentativa final.")
                             else:
                                 erros_lote.append(full_err_msg)
-                                
+
                             tempos_por_roteiro.append(time.time() - roteiro_start_time)
-                        
+
                         # Cooldown entre roteiros para evitar sobrecarga na API (503)
                         if i < total_roteiros - 1:
                             time.sleep(3)
-                    
+
                     # --- FILA DE REPESCAGEM (SEGUNDA CHANCE) ---
                     if fila_repescagem:
                         num_repescagem = len(fila_repescagem)
                         st.divider()
                         st.info(f"🔄 **Iniciando Repescagem:** Tentando recuperar {num_repescagem} roteiros que falharam por instabilidade na API...")
                         time.sleep(10) # Pausa estratégica para a API respirar
-                        
+
                         for i_rep, grupo in enumerate(fila_repescagem):
                             main_code = grupo["codes"][0]
                             all_codes = grupo["codes"]
                             video_url = grupo["video"]
                             idx_orig = grupo.get("original_index", 0)
                             roteiro_start_time = time.time()
-                            
+
                             progress_text.markdown(f"**🔄 REPESCAGEM ({i_rep+1}/{num_repescagem}):** Recuperando SKU {main_code}...")
-                            
+
                             try:
                                 with st.status(f"♻️ Recuperando Roteiro {idx_orig+1} (SKU: {main_code})", expanded=True) as status_box:
                                     # Lógica idêntica ao loop principal (Scraping -> Geração -> Exportação)
@@ -1555,7 +1553,7 @@ if page == "Criar Roteiros":
                                         fichas_grupo[c] = f
                                         if c == main_code: ficha_principal = f
                                         time.sleep(2)
-                                    
+
                                     if not ficha_principal or not ficha_principal.get('titulo'):
                                         raise Exception("Falha crítica no scraping durante repescagem")
 
@@ -1599,7 +1597,7 @@ if page == "Criar Roteiros":
                                         "modo_trabalho": modo_selecionado,
                                         "com_lu": "REVIEW" if "Review" in modo_selecionado else (com_lu_global == "Com LU")
                                     }
-                                    
+
                                     if sp_cli:
                                         sp_cli.table(f"{table_prefix}historico_roteiros").insert({
                                             "codigo_produto": main_code, "modo_trabalho": modo_selecionado,
@@ -1619,10 +1617,10 @@ if page == "Criar Roteiros":
                                 st.error(fail_msg)
                                 erros_lote.append(fail_msg)
                                 tempos_por_roteiro.append(time.time() - roteiro_start_time)
-                            
+
                             if i_rep < num_repescagem - 1:
                                 time.sleep(5)
-                    
+
                     # --- RESUMO FINAL COM TEMPO ---
                     total_elapsed = time.time() - lote_start_time
                     total_min = int(total_elapsed // 60)
@@ -1630,14 +1628,14 @@ if page == "Criar Roteiros":
                     avg_time = total_elapsed / total_roteiros if total_roteiros > 0 else 0
                     avg_min = int(avg_time // 60)
                     avg_sec = int(avg_time % 60)
-                    
+
                     bar.progress(1.0)
                     timer_display.markdown(f"⏱️ **Tempo total: {total_min}min {total_sec}s** | Média por roteiro: {avg_min}min {avg_sec}s")
-                    
+
                     st.session_state['roteiro_ativo_idx'] = 0
                     if erros_lote:
                         st.session_state['last_errors'] = erros_lote
-                    
+
                     st.session_state['is_generating'] = False
                     roteiros_ok = total_roteiros - len(erros_lote)
                     if not erros_lote:
@@ -1654,14 +1652,14 @@ if page == "Criar Roteiros":
         with tab_repescagem:
             st.markdown("### ♻️ Fila de Repescagem")
             st.markdown("<p style='font-size: 14px; color: #8b92a5'>Os códigos que falharam durante a geração automática por instabilidade da API podem ser tentados novamente aqui.</p>", unsafe_allow_html=True)
-            
+
             repescagem_raw = st.text_area(
                 "SKUs para nova tentativa",
                 height=150,
                 placeholder="Ex: 232878800",
                 key="repescagem_input_manual"
             )
-            
+
             if st.button("🔄 Reiniciar Repescagem", use_container_width=True):
                 st.info("Funcionalidade em desenvolvimento. Por enquanto, cole os códigos novamente no tab 'Automático'.")
 
@@ -1695,17 +1693,17 @@ if page == "Criar Roteiros":
 
             # Seletor de Quantidade e Botões Adicionar / Remover
             col_qty, col_add, col_rem = st.columns([2, 1, 1])
-            
+
             with col_qty:
                 # Se não existir no estado, inicializa com o tamanho atual das entradas
                 if "man_qty_input" not in st.session_state:
                     st.session_state["man_qty_input"] = len(st.session_state['manual_entries'])
-                
+
                 st.number_input(
-                    "Quantidade total de produtos:", 
-                    min_value=1, 
-                    max_value=50, 
-                    key="man_qty_input", 
+                    "Quantidade total de produtos:",
+                    min_value=1,
+                    max_value=50,
+                    key="man_qty_input",
                     on_change=cb_man_qty_change,
                     help="Digite a quantidade total de produtos que deseja cadastrar de uma vez."
                 )
@@ -1725,7 +1723,7 @@ if page == "Criar Roteiros":
                 with st.container(border=True):
                     # Badge Visível
                     st.markdown(f"<div class='product-badge'>PRODUTO {idx + 1}</div>", unsafe_allow_html=True)
-                    
+
                     c1, c2 = st.columns([1, 1])
                     with c1:
                         st.text_input("SKU / Código", placeholder="Ex: 232878800", key=f"man_sku_{entry_id}")
@@ -1757,7 +1755,7 @@ if page == "Criar Roteiros":
                     total = len(entradas_validas)
                     erros_lote = []
                     st.session_state['is_generating'] = True
-                    
+
                     # Dashboard de Progresso (UI Melhorada)
                     status_container = st.container(border=True)
                     with status_container:
@@ -1765,12 +1763,12 @@ if page == "Criar Roteiros":
                         progress_bar = st.progress(0)
                         status_text = st.empty()
                         batch_status_table = st.empty()
-                    
+
                     # Estado local para a tabela de status
                     batch_data = []
                     for i, entrada in enumerate(entradas_validas):
                         batch_data.append({"Produto": i+1, "SKU": entrada['sku'], "Status": "⏳ Pendente"})
-                    
+
                     # Preparação da Mesa (Placeholders para Live Update)
                     uids_lote_man = []
                     for entrada in entradas_validas:
@@ -1784,7 +1782,7 @@ if page == "Criar Roteiros":
                             "is_placeholder": True
                         }
                         st.session_state['roteiros'].insert(0, placeholder)
-                    
+
                     st.session_state['roteiro_ativo_idx'] = 0
 
                     for i, entrada in enumerate(entradas_validas):
@@ -1832,7 +1830,7 @@ if page == "Criar Roteiros":
                                     "modo_trabalho": modo_selecionado,
                                     "com_lu": "REVIEW" if "Review" in modo_selecionado else (com_lu_global == "Com LU")
                                 }
-                                
+
                                 # Salva no Supabase
                                 if sp_cli:
                                     try:
@@ -1856,7 +1854,7 @@ if page == "Criar Roteiros":
                                     if r_item.get('_uid') == uids_lote_man[i]:
                                         st.session_state['roteiros'][idx_r] = novo_roteiro
                                         break
-                                
+
                                 batch_data[i]["Status"] = "✅ Concluído"
                                 sbox.update(label=f"✅ Roteiro {i+1} Finalizado!", state="complete")
 
@@ -1870,7 +1868,7 @@ if page == "Criar Roteiros":
                                     st.session_state['roteiros'][idx_r]['status'] = "❌"
                                     break
                             st.error(f"❌ Erro no Roteiro {i+1}: {err_msg}")
-                        
+
                         # Atualiza tabela de progresso visual
                         batch_status_table.table(pd.DataFrame(batch_data))
                         progress_bar.progress((i + 1) / total)
@@ -1881,13 +1879,13 @@ if page == "Criar Roteiros":
                     status_text.markdown(f"✨ **Processamento concluído!** {total - len(erros_lote)}/{total} roteiros gerados.")
                     st.session_state['roteiro_ativo_idx'] = 0
                     st.session_state['is_generating'] = False
-                    
+
                     if erros_lote:
                         st.session_state['last_errors'] = erros_lote
                         st.warning(f"⚠️ {total - len(erros_lote)}/{total} OK. Ver detalhes nos erros persistentes no topo.")
                     else:
                         st.success(f"🎯 {total} roteiro(s) gerado(s) com sucesso!")
-                    
+
                     time.sleep(1)
                     st.rerun()
 
@@ -1921,13 +1919,13 @@ if page == "Criar Roteiros":
                         st.button("📥 Baixar Todos os Roteiros", disabled=True, use_container_width=True, help="Aguarde a conclusão dos roteiros para baixar o ZIP")
                 except Exception as e:
                     st.button("📥 Erro ao gerar ZIP", disabled=True, use_container_width=True, help=f"Erro: {str(e)}")
-            
+
             with c_clear:
                 if st.button("🗑️ Limpar Mesa", use_container_width=True, help="Remove todos os roteiros da mesa atual"):
                     st.session_state['roteiros'] = []
                     st.session_state['roteiro_ativo_idx'] = 0
                     st.rerun()
-        
+
         # Grid horizontal de cards de navegação
         n_roteiros = len(st.session_state['roteiros'])
         cols_per_row = 4 # 4 por linha para dar espaço aos botões
@@ -1939,15 +1937,15 @@ if page == "Criar Roteiros":
                     item_card = st.session_state['roteiros'][idx_card]
                     with batch_cols[j]:
                         is_active = (st.session_state['roteiro_ativo_idx'] == idx_card)
-                        
+
                         cod_display = str(item_card.get('codigo', ''))[:12]
                         if not cod_display: cod_display = f"Prod {idx_card+1}"
-                        
+
                         # Extrair o nome do produto (Pula cabeçalhos de código)
                         ficha_raw = item_card.get('ficha', '')
                         ficha_str = ficha_raw.get('text', str(ficha_raw)) if isinstance(ficha_raw, dict) else str(ficha_raw)
                         linhas_ficha = [l.strip() for l in ficha_str.split('\n') if l.strip()]
-                        
+
                         titulo_curto = f"Produto {idx_card+1}"
                         for linha in linhas_ficha:
                             linha_up = linha.upper()
@@ -1957,18 +1955,18 @@ if page == "Criar Roteiros":
                             if len(linha) > 3:
                                 titulo_curto = linha[:35]
                                 break
-                        
+
                         status_item = item_card.get('status', '✅')
-                        
+
                         with st.container(border=True):
                             # Identificação de Status (Rascunho vs Polido)
                             is_polished = item_card.get('tag') == "V1"
                             status_label = "✨ Polido" if is_polished else "📝 Rascunho"
                             status_color = "#10b981" if is_polished else "#64748b"
-                            
+
                             # Badge adicional se for a melhor versão
                             best_badge = " ⭐" if item_card.get('is_best_version') else ""
-                            
+
                             # 1. Cabeçalho Clicável (Seleção)
                             if st.button(f"{status_item} {cod_display}{best_badge}", key=f"sel_{idx_card}", use_container_width=True, type="primary" if is_active else "secondary"):
                                 st.session_state['roteiro_ativo_idx'] = idx_card
@@ -1980,7 +1978,7 @@ if page == "Criar Roteiros":
                             # Remove markdown (** ou __) que possa vir da ficha técnica
                             titulo_limpo = re.sub(r'[\*_]{1,}', '', titulo_curto).strip()
                             titulo_safe = html.escape(titulo_limpo)
-                            
+
                             # HTML em linha única para evitar quebra de renderização no Streamlit
                             card_info_html = (
                                 f'<div style="padding: 4px; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 8px; margin-bottom: 8px;">'
@@ -1993,7 +1991,7 @@ if page == "Criar Roteiros":
                                 f'</div>'
                             )
                             st.markdown(card_info_html, unsafe_allow_html=True)
-                            
+
                             # Botões de Controle (Download e Excluir)
                             c_dl, c_del = st.columns([1, 1], gap="small")
                             with c_dl:
@@ -2006,14 +2004,14 @@ if page == "Criar Roteiros":
                                         selected_month=st.session_state.get('mes_global', 'MAR'),
                                         selected_date=st.session_state.get('data_global', get_now_sp()).strftime('%d/%m/%y') if hasattr(st.session_state.get('data_global'), 'strftime') else None,
                                         model_id=st.session_state.get('model_name', ''),
-                                        com_lu=True, 
+                                        com_lu=True,
                                         modo_trabalho=st.session_state.get('active_mode', '')
                                     )
                                     st.download_button("📥", data=doc_data, file_name=doc_name, mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", key=f"dl_{idx_card}", use_container_width=True, help="Baixar DOCX")
                                 except Exception:
                                     roteiro_txt = item_card.get('roteiro_original', item_card.get('roteiro', ''))
                                     st.download_button("📥", data=roteiro_txt, file_name=f"roteiro_{cod_display}.txt", mime="text/plain", key=f"dl_{idx_card}", use_container_width=True)
-                            
+
                             with c_del:
                                 if st.button("🗑️", key=f"del_card_{idx_card}", use_container_width=True, help="Excluir da mesa"):
                                     st.session_state['roteiros'].pop(idx_card)
@@ -2025,7 +2023,7 @@ if page == "Criar Roteiros":
     # --- RENDERIZAÇÃO DO ROTEIRO ATIVO ---
     if st.session_state['roteiros']:
         idx = st.session_state['roteiro_ativo_idx']
-        
+
         # Garante que idx está nos limites (pode acontecer após deleções ou limpezas)
         if idx >= len(st.session_state['roteiros']):
             st.session_state['roteiro_ativo_idx'] = 0
@@ -2039,11 +2037,11 @@ if page == "Criar Roteiros":
             titulo_curto = linhas_ficha[0][:60] if linhas_ficha and len(linhas_ficha[0]) > 2 else f"Produto {idx+1}"
             cat_id_roteiro = item.get("categoria_id", cat_selecionada_id)
             codigo_produto = item.get("codigo", "")
-            
+
             custo = item.get('custo_brl', 0)
             tag_custo = "⚡ Gratuito" if custo == 0 else f"💲 R$ {custo:.4f}"
             tokens_text = "Sem Custo de Tokens" if custo == 0 else f"{item.get('tokens_in', 0)} / {item.get('tokens_out', 0)} tk"
-            
+
             # Container estilizado para o roteiro ativo (Header Card)
             is_nw3d = (st.session_state.get('active_mode') == 'NW 3D')
             if item.get("is_best_version"):
@@ -2052,7 +2050,7 @@ if page == "Criar Roteiros":
             else:
                 border_color = "#0086ff"
                 shadow_color = "rgba(0, 134, 255, 0.1)"
-            
+
             st.markdown(f"""
             <div style='background: #1e2530; padding: 20px; border-radius: 12px; border: 2px solid {border_color}; box-shadow: 0 4px 15px {shadow_color}; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: start;'>
                 <div>
@@ -2066,19 +2064,19 @@ if page == "Criar Roteiros":
                 </div>
             </div>
             """, unsafe_allow_html=True)
-    
+
             sp_cli = st.session_state.get('supabase_client', None)
-            
+
             # Verifica se estamos em modo de revisão de polimento
             polir_uid = item.get('_uid', idx)
             polir_resultado = st.session_state.get(f"polir_resultado_{polir_uid}")
-            
+
             if polir_resultado:
                 # --- MODO REVISÃO DE POLIMENTO ---
                 polir_original = st.session_state.get(f"polir_original_{polir_uid}", "")
                 polir_key_count = f"polir_count_{polir_uid}"
                 iteracao_num = st.session_state.get(polir_key_count, 0) + 1
-                
+
                 st.markdown(f"""
                 <div style='background: linear-gradient(135deg, #1a1f2e 0%, #1e2a3a 100%); padding: 16px 20px; border-radius: 12px; border: 1px solid #3b82f6; margin-bottom: 20px;'>
                     <div style='display: flex; justify-content: space-between; align-items: center;'>
@@ -2092,16 +2090,16 @@ if page == "Criar Roteiros":
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
-                
+
                 if st.button("🔍 Comparação Visual (Ver Diff)", key=f"btn_diff_polir_{polir_uid}"):
                     st.session_state[f"show_diff_polir_{polir_uid}"] = not st.session_state.get(f"show_diff_polir_{polir_uid}", False)
-                
+
                 if st.session_state.get(f"show_diff_polir_{polir_uid}", False):
                     render_visual_diff(polir_original, polir_resultado["roteiro"])
                     st.divider()
-                
+
                 col_antes, col_depois = st.columns(2)
-                
+
                 with col_antes:
                     st.markdown("#### 📄 Roteiro Atual (Antes)")
                     st.text_area(
@@ -2112,7 +2110,7 @@ if page == "Criar Roteiros":
                         key=f"polir_antes_{polir_uid}",
                         label_visibility="collapsed"
                     )
-                
+
                 with col_depois:
                     st.markdown("#### ✨ Roteiro Polido (Nova Versão)")
                     st.text_area(
@@ -2123,10 +2121,10 @@ if page == "Criar Roteiros":
                         key=f"polir_depois_{polir_uid}",
                         label_visibility="collapsed"
                     )
-                
+
                 st.markdown("<br>", unsafe_allow_html=True)
                 col_aprovar, col_rejeitar, col_polir_again = st.columns(3)
-                
+
                 with col_aprovar:
                     if st.button("✅ Aprovar e Salvar", key=f"aprovar_polir_{polir_uid}", use_container_width=True, type="primary"):
                         novo_texto = polir_resultado["roteiro"]
@@ -2158,18 +2156,18 @@ if page == "Criar Roteiros":
                             del st.session_state[widget_key_polir]
                         st.session_state["last_script_uid"] = None
                         st.toast("✅ Versão polida aprovada e salva!", icon="🎉")
-                        
-                        # Opcional: Sugere salvar em Ouro após aprovação? 
+
+                        # Opcional: Sugere salvar em Ouro após aprovação?
                         # Por enquanto apenas aprovamos.
                         st.rerun()
-                
+
                 with col_rejeitar:
                     if st.button("❌ Descartar Sugestão", key=f"rejeitar_polir_{polir_uid}", use_container_width=True, type="secondary"):
                         del st.session_state[f"polir_resultado_{polir_uid}"]
                         del st.session_state[f"polir_original_{polir_uid}"]
                         st.toast("Revisão descartada. Mantendo original.", icon="🗑️")
                         st.rerun()
-                
+
                 with col_polir_again:
                     # Agora temos 4 colunas se quisermos adicionar o Salvar em Ouro aqui também
                     pass
@@ -2178,12 +2176,12 @@ if page == "Criar Roteiros":
                 # --- ÁREA DE POLIMENTO ADICIONAL ---
                 st.markdown("<br>", unsafe_allow_html=True)
                 instrucoes_re_polir = st.text_input(
-                    "O que você ainda quer melhorar?", 
-                    key=f"inst_re_polir_{polir_uid}", 
+                    "O que você ainda quer melhorar?",
+                    key=f"inst_re_polir_{polir_uid}",
                     placeholder="Ex: Deixe mais curto, use tom mais formal...",
                     help="Diga à IA o que mudar nesta nova versão."
                 )
-                
+
                 c1, c2 = st.columns([1, 1])
                 with c1:
                     if st.button("🏆 Salvar esta versão como OURO", key=f"save_gold_review_{polir_uid}", use_container_width=True):
@@ -2206,7 +2204,7 @@ if page == "Criar Roteiros":
                     if st.button("🔄 Polir Mais uma vez", key=f"re_polir_{polir_uid}", use_container_width=True):
                         try:
                             ag_re = RoteiristaAgent(
-                                model_id=st.session_state.get('modelo_llm', 'gemini-3-flash-preview'),
+                                model_id=st.session_state.get('modelo_llm', 'gemini-3.5-flash'),
                                 table_prefix=st.session_state.get('table_prefix', 'nw_')
                             )
                             res_re = ag_re.polir_roteiro(
@@ -2229,12 +2227,12 @@ if page == "Criar Roteiros":
                 # --- MODO EDIÇÃO NORMAL ---
                 editor_key = f"edit_session_{polir_uid}"
                 widget_key = f"text_area_{polir_uid}"
-                
+
                 # Sincroniza estado se mudou o roteiro ativo
                 if st.session_state.get("last_script_uid") != polir_uid:
                     st.session_state[editor_key] = item.get('roteiro_original', '')
                     st.session_state["last_script_uid"] = polir_uid
-                
+
                 # Editor principal (Só aparece se não estiver revisando)
                 novo_conteudo = st.text_area(
                     "Editar Roteiro",
@@ -2243,20 +2241,20 @@ if page == "Criar Roteiros":
                     key=widget_key,
                     label_visibility="collapsed"
                 )
-                
+
                 # --- BARRA DE AÇÕES DO ROTEIRO (INFERIOR) ---
                 st.markdown("<br>", unsafe_allow_html=True)
-                
+
                 # Campo de instruções para polimento
                 instrucoes_polir = st.text_input(
-                    "O que você quer melhorar no roteiro?", 
-                    key=f"inst_polir_{polir_uid}", 
+                    "O que você quer melhorar no roteiro?",
+                    key=f"inst_polir_{polir_uid}",
                     placeholder="Ex: Deixe mais curto, use tom mais formal, foque no design...",
                     help="A IA usará estas instruções para refinar o roteiro atual."
                 )
 
                 col_save, col_actions_1, col_actions_2, col_actions_3, col_actions_4 = st.columns([1, 1.2, 1.2, 1, 0.8])
-                
+
                 with col_save:
                     if st.button("💾 Salvar Edição", key=f"btn_save_{polir_uid}", use_container_width=True, help="Salva as alterações manuais feitas no texto acima."):
                         st.session_state['roteiros'][idx]['roteiro_original'] = novo_conteudo
@@ -2270,7 +2268,7 @@ if page == "Criar Roteiros":
                     if st.button("✨ Polir com IA", key=f"btn_polir_{polir_uid}", use_container_width=True, type="primary"):
                         try:
                             ag = RoteiristaAgent(
-                                model_id=st.session_state.get('modelo_llm', 'gemini-3-flash-preview'),
+                                model_id=st.session_state.get('modelo_llm', 'gemini-3.5-flash'),
                                 table_prefix=st.session_state.get('table_prefix', 'nw_')
                             )
                             # Salva o original para comparação
@@ -2317,7 +2315,7 @@ if page == "Criar Roteiros":
                         mime="text/plain",
                         use_container_width=True
                     )
-                
+
                 with col_actions_4:
                     if st.button("🗑️ Remover", key=f"btn_del_{polir_uid}", use_container_width=True, help="Remove este roteiro da mesa permanentemente."):
                         st.session_state['roteiros'].pop(idx)
@@ -2329,7 +2327,7 @@ if page == "Criar Roteiros":
 
         if st.session_state.get('roteiro_ativo_idx', 0) >= len(st.session_state['roteiros']):
              st.session_state['roteiro_ativo_idx'] = 0
-             
+
     else:
         st.markdown(
             """
@@ -2338,7 +2336,7 @@ if page == "Criar Roteiros":
             <div style='font-size: 16px; font-weight: 600; color: #c9d1e0;'>Nenhum roteiro na mesa</div>
             <div style='font-size: 13px; margin-top: 6px;'>Abra "Inserir Códigos e Gerar" acima, cole os SKUs e clique em Gerar.</div>
             </div>
-            """, 
+            """,
             unsafe_allow_html=True
         )
 
@@ -2348,12 +2346,12 @@ if page == "Criar Roteiros":
 elif page == "Treinar IA":
     st.subheader("🧠 Hub de Treinamento da IA")
     st.markdown("Acompanhe o aprendizado da IA, calibre configurações, insira Regras Fonéticas, Aberturas e CTAs para o Agente usar nos próximos roteiros.")
-    
+
     if 'supabase_client' not in st.session_state:
         st.warning("Conecte o Supabase no painel lateral para visualizar e treinar a IA.")
     else:
         sp_client = st.session_state['supabase_client']
-        
+
         # --- CARREGAMENTO GLOBAL DE DADOS PARA O HUB ---
         try:
             prefix = st.session_state.get('table_prefix', 'nw_')
@@ -2364,7 +2362,7 @@ elif page == "Treinar IA":
             res_cats = sp_client.table("nw_categorias").select("*").execute()
             res_nuan = sp_client.table(f"{prefix}treinamento_nuances").select("*").execute()
             res_img = sp_client.table(f"{prefix}treinamento_imagens").select("*").execute()
-            
+
             df_est = pd.DataFrame(res_est.data if hasattr(res_est, 'data') else [])
             df_fon = pd.DataFrame(res_fon.data if hasattr(res_fon, 'data') else [])
             df_pers = pd.DataFrame(res_pers.data if hasattr(res_pers, 'data') else [])
@@ -2372,7 +2370,7 @@ elif page == "Treinar IA":
             df_cats = pd.DataFrame(res_cats.data if hasattr(res_cats, 'data') else [])
             df_nuan = pd.DataFrame(res_nuan.data if hasattr(res_nuan, 'data') else [])
             df_img = pd.DataFrame(res_img.data if hasattr(res_img, 'data') else [])
-            
+
             # --- CONVERSÃO DE FUSO HORÁRIO GLOBAL (UTC -> SÃO PAULO) ---
             for df in [df_est, df_fon, df_pers, df_ouro, df_cats, df_nuan, df_img]:
                 if not df.empty and 'criado_em' in df.columns:
@@ -2381,13 +2379,13 @@ elif page == "Treinar IA":
                     df.sort_values(by='criado_em', ascending=False, inplace=True)
                     # Agora converte para string formatada para exibição
                     df['criado_em'] = df['criado_em'].apply(convert_to_sp_time)
-                    
+
         except Exception as e:
             st.error(f"Erro ao carregar dados do hub: {e}")
             df_est = df_fon = df_pers = df_ouro = df_cats = df_nuan = df_img = pd.DataFrame()
 
         tab_fb, tab_nuan, tab_est, tab_img, tab_pers, tab_fon, tab_ouro, tab_cat = st.tabs(["⚖️ Calibragem", "🧠 Nuances", "💬 Ganchos & CTAs", "📸 Imagens", "💃 Persona", "🗣️ Fonética", "🏆 Roteiros Ouro", "📂 Categorias"])
-        
+
         # --- FUNÇÕES MODAIS DE DOCUMENTAÇÃO ---
         @st.dialog("📚 Guia do Redator V3.0", width="large")
         def modal_doc_redator():
@@ -2416,7 +2414,7 @@ elif page == "Treinar IA":
             with col_btn2:
                 if st.button("⚙️ Manual Técnico", use_container_width=True):
                     modal_doc_tecnica()
-            
+
             st.markdown("""
             <div style='background-color: rgba(0, 134, 255, 0.1); padding: 15px; border-radius: 8px; border-left: 5px solid #0084ff; margin-bottom: 20px;'>
                 <p style='font-size: 0.9rem; font-weight: 600; color: #0084ff; margin-bottom: 8px;'>⭐ Como funciona a Nova Régua de Calibragem?</p>
@@ -2428,7 +2426,7 @@ elif page == "Treinar IA":
                 </ul>
             </div>
             """, unsafe_allow_html=True)
-            
+
             # --- FORMULÁRIO DE ENTRADA ---
             with st.form("form_calibracao", clear_on_submit=False):
                 col_ia, col_humano = st.columns(2)
@@ -2438,9 +2436,9 @@ elif page == "Treinar IA":
                 with col_humano:
                     st.markdown("**✅ DEPOIS (Aprovado pelo Humano)**")
                     roteiro_humano_input = st.text_area("Cole aqui a versão final aprovada:", height=200, key="calib_humano")
-                
+
                 # A IA identificará a categoria automaticamente via analisar_calibracao
-                
+
                 submitted = st.form_submit_button("⚖️ Executar Calibragem e Salvar em Ouro", type="primary", use_container_width=True)
                 if submitted:
                     if roteiro_ia_input.strip() and roteiro_humano_input.strip():
@@ -2464,10 +2462,10 @@ elif page == "Treinar IA":
                             else:
                                 st.error("Nenhuma chave de IA configurada (Gemini, Puter ou OpenRouter).")
                                 _calib_model = None
-                            
+
                             if _calib_model:
                                 ag = RoteiristaAgent(
-                                    supabase_client=sp_client, 
+                                    supabase_client=sp_client,
                                     model_id=_calib_model,
                                     table_prefix=st.session_state.get('table_prefix', 'nw_')
                                 )
@@ -2475,7 +2473,7 @@ elif page == "Treinar IA":
                                 with st.spinner("🧠 Analisando a calibragem para identificar lições aprendidas..."):
                                     cats_list_manual = df_cats[['id', 'nome']].to_dict('records') if not df_cats.empty else []
                                     calc = ag.analisar_calibracao(roteiro_ia_input, roteiro_humano_input, cats_list_manual)
-                                    
+
                                 think_hub.empty()
                                 st.session_state['pending_calibration'] = {
                                     'calc': calc,
@@ -2490,7 +2488,7 @@ elif page == "Treinar IA":
                             st.error(f"Erro ao salvar calibragem: {e}")
                     else:
                         st.warning("Preencha ambos os campos (IA e Humano).")
-            
+
             st.divider()
             st.markdown("#### 📋 Histórico de Calibragens Ouro")
             if not df_ouro.empty and 'nota_percentual' in df_ouro.columns:
@@ -2498,10 +2496,10 @@ elif page == "Treinar IA":
                 if 'nota_percentual' in df_ouro.columns: cols_view.append('nota_percentual')
                 if 'modelo_calibragem' in df_ouro.columns: cols_view.append('modelo_calibragem')
                 if 'aprendizado' in df_ouro.columns: cols_view.append('aprendizado')
-                
+
                 df_view = df_ouro[cols_view + (['categoria_id'] if 'categoria_id' in df_ouro.columns else [])].dropna(subset=['aprendizado']).copy()
                 df_view = df_view.reset_index(drop=True)
-                
+
                 # Mapeia nome da categoria
                 if not df_cats.empty and 'categoria_id' in df_view.columns:
                     cat_map = dict(zip(df_cats['id'], df_cats['nome']))
@@ -2510,7 +2508,7 @@ elif page == "Treinar IA":
                 # Adiciona Sequential ID (#005, #004...) e Emojis de Qualidade
                 total_calib = len(df_view)
                 df_view.index = [f"#{total_calib - i:03d}" for i in range(total_calib)]
-                
+
                 if 'nota_percentual' in df_view.columns:
                     def safe_format_stars(x):
                         try:
@@ -2523,9 +2521,9 @@ elif page == "Treinar IA":
 
                 rename_map = {
                     'categoria_id': 'Categoria',
-                    'aprendizado': 'Memória da IA (Lição Aprendida)', 
-                    'nota_percentual': 'Estrelas ⭐', 
-                    'codigo_produto': 'SKU', 
+                    'aprendizado': 'Memória da IA (Lição Aprendida)',
+                    'nota_percentual': 'Estrelas ⭐',
+                    'codigo_produto': 'SKU',
                     'modelo_calibragem': 'IA Analista',
                     'criado_em': 'Data'
                 }
@@ -2533,46 +2531,46 @@ elif page == "Treinar IA":
                 st.dataframe(df_view, use_container_width=True)
             else:
                 st.info("Nenhuma calibragem ouro registrada ainda.")
-        
+
         with tab_nuan:
             st.markdown("### 🧠 Treinamento de Nuances e Construção")
             st.caption("Ajude a IA a entender as sutilezas da língua portuguesa e a evitar construções artificiais.")
-            
+
             with st.form("form_nuance", clear_on_submit=True):
                 n_frase = st.text_area("Frase gerada pela IA (O que evitar):", placeholder="Ex: 'Este produto possui uma característica de cor azul que é muito legal.'")
                 n_analise = st.text_area("Análise Crítica (Por que é ruim?):", placeholder="Ex: 'Construção redundante e pobre. O uso de 'possui' com 'característica de' soa burocrático. 'Muito legal' é genérico.'")
                 n_exemplo = st.text_area("Exemplo Ouro (Como seria o ideal?):", placeholder="Ex: 'Com um tom azul vibrante, ele se destaca pelo design moderno.'")
-                
+
                 if st.form_submit_button("📥 Registrar Nuance", type="primary", use_container_width=True):
                     if n_frase.strip() and n_analise.strip():
                         salvar_nuance(sp_client, n_frase, n_analise, n_exemplo)
                         st.rerun()
                     else:
                         st.warning("Preencha pelo menos a frase da IA e a análise crítica.")
-            
+
             st.divider()
             if not df_nuan.empty:
                 st.markdown("#### 📋 Nuances Registradas")
                 st.dataframe(df_nuan[['criado_em', 'frase_ia', 'analise_critica', 'exemplo_ouro']], use_container_width=True)
             else:
                 st.info("Nenhuma nuance registrada ainda.")
-                
+
         with tab_est:
             st.markdown("### 💬 Ganchos e Fechamentos (\"Hooks & CTAs\")")
             st.caption("Armazena ganchos criativos e chamadas para ação Aprovadas para a IA usar como inspiração.")
-            
+
             col_est1, col_est2 = st.columns([1, 2])
             with col_est1:
                 t_tipo = st.selectbox("Tipo de Estrutura:", ["Abertura (Gancho)", "Fechamento (CTA)"])
             with col_est2:
                 t_texto = st.text_area("Texto Ouro (Aprovado):", height=100)
-                
+
             if st.button("Salvar Estrutura", type="primary", use_container_width=True):
                 if t_texto.strip():
                     salvar_estrutura(sp_client, t_tipo, t_texto)
                 else:
                     st.warning("Preencha o texto da estrutura.")
-                    
+
             st.divider()
             if not df_est.empty:
                 cols_display = ['criado_em', 'tipo_estrutura', 'texto_ouro']
@@ -2585,7 +2583,7 @@ elif page == "Treinar IA":
         with tab_img:
             st.markdown("### 📸 Calibragem Visual (Imagens)")
             st.caption("Ensine a IA como descrever as cenas e enquadramentos. O que aparece na tela é tão importante quanto o que a Lu fala.")
-            
+
             with st.form("form_img_manual", clear_on_submit=True):
                 col_sku_img, _ = st.columns([1, 2])
                 with col_sku_img:
@@ -2593,14 +2591,14 @@ elif page == "Treinar IA":
                 i_ia = st.text_area("Descrição da IA (Erro):", placeholder="Ex: Close no botão de ligar")
                 i_hum = st.text_area("Descrição do Humano (Ideal):", placeholder="Ex: Detalhe macro da textura premium do botão em liga metálica")
                 i_mot = st.text_area("Motivo da Mudança / Lição:", placeholder="Ex: Valorizar o material e acabamento do produto em vez de apenas a função.")
-                
+
                 if st.form_submit_button("📥 Registrar Calibragem Visual", type="primary", use_container_width=True):
                     if i_ia.strip() and i_hum.strip():
                         salvar_imagem(sp_client, i_sku, i_ia, i_hum, i_mot)
                         st.rerun()
                     else:
                         st.warning("Preencha a descrição da IA e do Humano.")
-            
+
             st.divider()
             if not df_img.empty:
                 st.dataframe(df_img[['criado_em', 'codigo_produto', 'descricao_ia', 'descricao_humano', 'aprendizado']], use_container_width=True)
@@ -2610,51 +2608,51 @@ elif page == "Treinar IA":
         with tab_pers:
             st.markdown("### 💃 Persona da Lu")
             st.caption("Diretrizes de comportamento, vocabulário e estilo da personagem Lu do Magalu.")
-            
+
             with st.form("form_persona_manual", clear_on_submit=True):
                 p_pilar = st.selectbox("Pilar da Persona:", ["Tom de Voz", "Vocabulário", "Empatia", "Clareza", "Engajamento"])
                 p_erro = st.text_area("O que evitar (Erro da IA):", placeholder="Ex: Linguagem muito formal ou uso de termos técnicos complexos.")
                 p_cor = st.text_area("Como a Lu diria (Correção):", placeholder="Ex: Linguagem próxima do cliente, usando termos do dia a dia.")
                 p_lex = st.text_input("Léxico / Palavras-chave:", placeholder="Ex: 'olha só', 'vem conferir', 'praticidade'")
-                
+
                 if st.form_submit_button("📥 Registrar Regra de Persona", type="primary", use_container_width=True):
                     if p_erro.strip() and p_cor.strip():
                         salvar_persona(sp_client, p_pilar, p_erro, p_cor, p_lex, p_erro)
                         st.rerun()
                     else:
                         st.warning("Preencha o erro e a correção.")
-            
+
             st.divider()
             if not df_pers.empty:
                 st.dataframe(df_pers[['criado_em', 'pilar_persona', 'texto_corrigido_humano', 'lexico_sugerido']], use_container_width=True)
             else:
                 st.info("Nenhuma regra de persona cadastrada ainda.")
-                
+
         with tab_fon:
             st.markdown("### 🗣️ Treinar Fonética")
             st.caption("Ensine a IA a escrever termos técnicos da forma que devem ser lidos ou ignore termos que não precisam de fonética.")
-            
+
             t_err = st.text_input("Como a IA escreveu:", placeholder="Ex: cinco gê", key="hub_te")
             t_cor = st.text_input("Como deveria ser pelo humano:", placeholder="Ex: 5G", key="hub_tc")
-            
+
             st.markdown("<p style='font-size: 0.85rem; color: #8b92a5; margin-top: -10px;'><b>Obs.:</b> 5G é um termo comum que não precisa de fonética, assim como USB ou HDMI</p>", unsafe_allow_html=True)
-            
+
             if st.button("📥 Registrar Regra de Pronúncia", key="hub_btn_fon", use_container_width=True, type="primary"):
                 if t_err.strip() and t_cor.strip():
                     salvar_fonetica(sp_client, t_err, t_cor, "Regra de fonética/exceção")
                 else:
                     st.warning("Preencha ambos os campos.")
-            
+
             st.divider()
             if not df_fon.empty:
                 st.dataframe(df_fon[['termo_errado', 'termo_corrigido', 'criado_em']], use_container_width=True)
             else:
                 st.info("Nenhuma regra fonética cadastrada.")
-        
+
         with tab_ouro:
             st.markdown("### 🏆 Hall da Fama (Roteiros Ouro)")
             st.caption("Roteiros finalizados e aprovados. Alimentam o Few-Shot da IA e podem ser exportados como JSON-LD.")
-            
+
             with st.form("form_roteiro_ouro", clear_on_submit=True):
                 col_sku, col_prod = st.columns([1, 2])
                 with col_sku:
@@ -2676,7 +2674,7 @@ elif page == "Treinar IA":
                         st.rerun()
                     else:
                         st.warning("Preencha pelo menos o título e o roteiro.")
-            
+
             st.divider()
             if not df_ouro.empty:
                 # Tabela de visualização
@@ -2684,12 +2682,12 @@ elif page == "Treinar IA":
                 if 'codigo_produto' in df_ouro.columns:
                     cols_ouro.insert(1, 'codigo_produto')
                 st.dataframe(df_ouro[cols_ouro], use_container_width=True)
-                
+
                 # --- EXPORTAÇÃO JSON-LD ---
                 st.divider()
                 st.markdown("#### 🌐 Exportar JSON-LD (Schema.org)")
                 st.caption("Gere dados estruturados prontos para SEO e integração com sistemas externos.")
-                
+
                 # Busca nomes das categorias para o mapeamento
                 cats_dict_ouro = {}
                 try:
@@ -2698,16 +2696,16 @@ elif page == "Treinar IA":
                         cats_dict_ouro = {c['id']: c['nome'] for c in res_cats_ouro.data}
                 except Exception:
                     pass
-                
+
                 # Seletor de qual roteiro exportar
                 opcoes_ouro = [f"{r.get('codigo_produto', '???')} - {r.get('titulo_produto', 'Sem Título')[:40]}" for _, r in df_ouro.iterrows()]
                 sel_ouro = st.selectbox("Selecione o Roteiro Ouro:", opcoes_ouro)
-                
+
                 if sel_ouro:
                     idx_ouro = opcoes_ouro.index(sel_ouro)
                     roteiro_sel = df_ouro.iloc[idx_ouro].to_dict()
                     cat_name = cats_dict_ouro.get(roteiro_sel.get('categoria_id'), 'Genérico')
-                    
+
                     col_prod_ld, col_cw_ld = st.columns(2)
                     with col_prod_ld:
                         jsonld_product = export_jsonld_string(roteiro_sel, cat_name, "Product")
@@ -2727,7 +2725,7 @@ elif page == "Treinar IA":
                             mime="application/json",
                             use_container_width=True
                         )
-                    
+
                     with st.expander("👁️ Pré-visualizar JSON-LD (Product)"):
                         st.code(jsonld_product, language="json")
             else:
@@ -2736,7 +2734,7 @@ elif page == "Treinar IA":
         with tab_cat:
             st.markdown("### 📂 Gestão de Categorias e Tom de Voz")
             st.caption("A IA usa o 'Tom de Voz' de cada categoria para adaptar a linguagem do roteiro.")
-            
+
             with st.form("form_nova_cat", clear_on_submit=True):
                 c_nome = st.text_input("Nome da Categoria (Ex: Eletrodomésticos, Beleza)")
                 c_tom = st.text_area("Tom de Voz / Diretrizes", placeholder="Ex: Linguagem alegre, empolgada, focada em praticidade do dia a dia...")
@@ -2747,7 +2745,7 @@ elif page == "Treinar IA":
                         st.rerun()
                     else:
                         st.warning("Preencha nome e tom de voz.")
-            
+
             st.divider()
             if not df_cats.empty:
                 cols_to_show = ['id', 'nome', 'tom_de_voz']
@@ -2764,19 +2762,19 @@ elif page == "Guia de Modelos":
         Bem-vindo ao guia oficial de inteligência da **Magalu AI Suite**. Aqui você encontra os detalhes técnicos 
         e o perfil de 'personalidade' de cada modelo integrado para escolher o melhor para o seu lote.
     """)
-    
+
     st.divider()
-    
+
     # Categorizando modelos por provedor
     categorias = {
-        "Google (Desempenho & Custo)": ["gemini-3.1-pro-preview", "gemini-3-flash-preview", "gemini-2.5-flash-lite"],
+        "Google (Desempenho & Custo)": ["gemini-3.5-flash", "gemini-3.1-pro-preview", "gemini-3-flash-preview", "gemini-2.5-flash-lite"],
         "Puter / x-AI (Criatividade Premium)": ["puter/x-ai/grok-4-1-fast", "puter/gpt-4o-mini"],
         "Z.ai (Precisão Técnica)": ["zai/glm-4.5-flash"]
     }
-    
+
     # Invertemos o MODELOS_DISPONIVEIS para facilitar a busca pelo nome amigável
     NOME_AMIGAVEL = {v: k for k, v in MODELOS_DISPONIVEIS.items()}
-    
+
     for cat_name, models in categorias.items():
         st.markdown(f"#### {cat_name}")
         cols = st.columns(2)
@@ -2787,7 +2785,7 @@ elif page == "Guia de Modelos":
                 preco_tag = "Grátis" if "Grátis" in display_name else "Pago/Créditos"
                 bg_color = "rgba(0, 255, 136, 0.1)" if preco_tag == "Grátis" else "rgba(255, 75, 75, 0.1)"
                 text_color = "#00ff88" if preco_tag == "Grátis" else "#ff4b4b"
-                
+
                 st.markdown(f"""
                 <div style='background: #1e2530; padding: 20px; border-radius: 12px; border: 1px solid #2d3848; height: 180px; margin-bottom: 20px; position: relative;'>
                     <div style='display: flex; justify-content: space-between; align-items: flex-start;'>
@@ -2804,11 +2802,11 @@ elif page == "Guia de Modelos":
 elif page == "Como Funciona":
     st.subheader("📖 Documentação: Magalu AI Suite")
     st.markdown("Entenda a inteligência por trás da ferramenta, as tecnologias que a sustentam e nossa jornada de evolução.")
-    
+
     st.divider()
-    
+
     col_doc1, col_doc2 = st.columns([2, 1])
-    
+
     with col_doc1:
         with st.container(border=True):
             st.markdown("### 🛍️ O que é a Magalu AI Suite?")
@@ -2818,7 +2816,7 @@ elif page == "Como Funciona":
                 criação de roteiros. Ela não apenas gera textos, mas **aprende** continuamente com o estilo humano para 
                 personificar a 'Lu' de forma autêntica e persuasiva.
             """)
-            
+
             st.markdown("### ⚙️ Como o sistema opera?")
             st.markdown("""
                 O ecossistema é baseado em uma **Arquitetura de Três Camadas** (Ingestão, Inteligência e Persistência) projetada para escalabilidade:
@@ -2827,7 +2825,7 @@ elif page == "Como Funciona":
                 2. **Orquestrador de IA (Roteirista Agent)**: Uma camada lógica que seleciona dinamicamente entre modelos como **Grok 4.1 Fast**, **Gemini 2.5 Pro** ou **GPT-4o Mini**. O roteiro é gerado em multi-step: análise técnica -> aplicação de persona -> verificação fonética automática.
                 3. **Loop de Treinamento Autônomo**: Através da **Calibragem**, o sistema realiza um *Diff-Analysis* entre a saída da IA e a edição final do Tiago. As diferenças são convertidas em Regras de Ouro Imperativas (JSON) e salvas no Supabase, alimentando o contexto das próximas gerações (RAG).
             """)
-            
+
             st.markdown("### 🚀 Evolução do Projeto")
             st.info("""
                 **v1.0 - Fundação:** Estabelecimento do core em Python e integração inicial com Supabase para persistência de roteiros.  
@@ -2847,12 +2845,12 @@ elif page == "Como Funciona":
             ("Puter AI", "Redação criativa via Grok 4.1 Fast"),
             ("OpenRouter", "Fallback e raciocínio lógico")
         ]
-        
+
         for t_name, t_desc in tech_list:
             st.markdown(f"**{t_name}**")
             st.caption(t_desc)
             st.write("")
-        
+
         st.divider()
         st.markdown("### 📞 Suporte & Feedback")
         st.markdown("Dúvidas ou sugestões? Entre em contato com o laboratório de IA.")
@@ -2869,7 +2867,7 @@ elif page == "Configurações":
     with col_llm:
         st.markdown("#### 🧠 Chaves de IA (LLMs)")
         st.caption("Adicione suas as chaves de API para desbloquear novos modelos.")
-        
+
         keys_to_manage = [
             ("Gemini", "GEMINI_API_KEY", api_key_env),
             ("Puter (Grok/Llama)", "PUTER_API_KEY", puter_key_env),
@@ -2878,14 +2876,14 @@ elif page == "Configurações":
             ("Z.ai (GLM)", "ZAI_API_KEY", zai_key_env),
             ("Moonshot (Kimi)", "KIMI_API_KEY", kimi_key_env)
         ]
-        
+
         for name, env_var, current_val in keys_to_manage:
             with st.container():
                 st.markdown(f"**{name}**")
                 if env_var in os.environ and os.environ.get(env_var):
                     st.success("✅ Conectado e Ativo")
                 else:
-                    new_key = st.text_input(f"Token/API Key", type="password", key=f"key_in_{env_var}", label_visibility="collapsed", placeholder=f"Cole sua chave {name} aqui")
+                    new_key = st.text_input("Token/API Key", type="password", key=f"key_in_{env_var}", label_visibility="collapsed", placeholder=f"Cole sua chave {name} aqui")
                     if new_key:
                         with open('.env', 'a', encoding='utf-8') as f:
                             f.write(f"\n{env_var}={new_key}")
@@ -2897,23 +2895,23 @@ elif page == "Configurações":
     with col_db:
         st.markdown("#### 🗄️ Banco de Dados (Supabase)")
         st.caption("Conexão com o Supabase para salvar métricas e histórico de roteiros.")
-        
+
         gemini_status = "Ativo" if api_key_env else "Inativo"
         supa_status_p = "Ativo" if supabase_client else "Inativo"
 
         supa_url_env = os.environ.get("SUPABASE_URL", "")
         supa_url_placeholder = supa_url_env[:30] + "..." if supa_url_env and len(supa_url_env) > 30 else ""
-        
+
         st.markdown(f"**URL do Projeto** (Status: {supa_status_p})")
         supa_url_input = st.text_input(
             "URL Supabase",
             placeholder=supa_url_placeholder if supa_url_env else "Ex: https://xyz.supabase.co",
             label_visibility="collapsed"
         )
-        
+
         st.markdown("**Role Key (Service)**")
         supa_key_input = st.text_input("API Key Supabase", type="password", placeholder="Cole sua Role Key (Service)", label_visibility="collapsed")
-        
+
         if st.button("💾 Salvar Conexão Supabase", type="primary", use_container_width=True):
             if supa_url_input.strip() and supa_key_input.strip():
                 with open('.env', 'a', encoding='utf-8') as f:
@@ -2930,7 +2928,7 @@ elif page == "Configurações":
 elif page == "Histórico":
     st.subheader("🕒 Histórico de Roteiros")
     st.markdown("Confira todos os roteiros gerados automaticamente pelo sistema com rastreamento de custo por geração.")
-    
+
     if 'supabase_client' not in st.session_state:
         st.warning("Conecte o Supabase no painel lateral para visualizar o histórico.")
     else:
@@ -2938,30 +2936,30 @@ elif page == "Histórico":
         try:
             with st.spinner("Carregando histórico..."):
                 res_hist = sp_client.table(f"{st.session_state.get('table_prefix', 'nw_')}historico_roteiros").select("*").order('criado_em', desc=True).execute()
-                
+
             if res_hist.data:
                 df_hist = pd.DataFrame(res_hist.data)
-                
+
                 if not df_hist.empty and 'criado_em' in df_hist.columns:
                     df_hist['criado_em'] = df_hist['criado_em'].apply(convert_to_sp_time)
-                
+
                 total_registros = len(df_hist)
-                
+
                 # --- MÉTRICAS DE CUSTO ---
                 custo_total = CUSTO_LEGADO_BRL
                 custo_medio = 0.0
                 modelo_mais_usado = "-"
-                
+
                 if 'custo_estimado_brl' in df_hist.columns:
                     custo_total += df_hist['custo_estimado_brl'].sum() or 0.0
                     custo_medio = custo_total / total_registros if total_registros > 0 else 0.0
-                    
+
                 if 'modelo_llm' in df_hist.columns:
                     try:
                         modelo_mais_usado = df_hist['modelo_llm'].mode().iloc[0] if not df_hist['modelo_llm'].dropna().empty else "-"
                     except Exception:
                         modelo_mais_usado = "-"
-                
+
                 col_m1, col_m2, col_m3, col_m4 = st.columns(4)
                 with col_m1:
                     st.markdown(f'<div class="metric-card-premium"><div class="metric-label">📝 Roteiros Gerados</div><div class="metric-value">{total_registros}</div></div>', unsafe_allow_html=True)
@@ -2973,9 +2971,9 @@ elif page == "Histórico":
                     st.markdown(f'<div class="metric-card-premium"><div class="metric-label">📋 Custo Médio</div><div class="metric-value">{val_med}</div></div>', unsafe_allow_html=True)
                 with col_m4:
                     st.markdown(f'<div class="metric-card-premium"><div class="metric-label">🧠 Modelo Mais Usado</div><div class="metric-value">{modelo_mais_usado}</div></div>', unsafe_allow_html=True)
-                
+
                 st.divider()
-                
+
                 # --- BARRA DE FILTROS ---
                 col_search, col_modo, col_modelo = st.columns([3, 1, 1])
                 with col_search:
@@ -2989,7 +2987,7 @@ elif page == "Histórico":
                     else:
                         modelos_unicos = ["Todos"]
                     modelo_filtro = st.selectbox("Modelo", modelos_unicos, label_visibility="collapsed")
-                
+
                 # Filtro por texto (múltiplos termos com OR)
                 if search:
                     import re
@@ -3002,15 +3000,15 @@ elif page == "Histórico":
                                 df_hist['roteiro_gerado'].str.contains(termo, case=False, na=False)
                             )
                         df_hist = df_hist[mask]
-                
+
                 # Filtro por Modo de Trabalho
                 if modo_filtro != "Todos" and 'modo_trabalho' in df_hist.columns:
                     df_hist = df_hist[df_hist['modo_trabalho'] == modo_filtro]
-                
+
                 # Filtro por Modelo LLM
                 if modelo_filtro != "Todos" and 'modelo_llm' in df_hist.columns:
                     df_hist = df_hist[df_hist['modelo_llm'] == modelo_filtro]
-                
+
                 # Formata custo para exibição
                 if 'custo_estimado_brl' in df_hist.columns:
                     df_hist['custo_brl'] = df_hist['custo_estimado_brl'].apply(
@@ -3018,12 +3016,12 @@ elif page == "Histórico":
                     )
                 else:
                     df_hist['custo_brl'] = "-"
-                
+
                 # Define o index da tabela para usar a lógica inversa (mais recentes com nº maior)
                 df_hist.reset_index(drop=True, inplace=True)
                 total_linhas = len(df_hist)
                 df_hist.index = [f"#{total_linhas - i:03d}" for i in range(total_linhas)]
-                
+
                 # Colunas a exibir
                 cols_display = ['criado_em', 'codigo_produto', 'modo_trabalho']
                 if 'modelo_llm' in df_hist.columns:
@@ -3032,7 +3030,7 @@ elif page == "Histórico":
                 cols_display.append('roteiro_gerado')
 
                 st.dataframe(
-                    df_hist[cols_display], 
+                    df_hist[cols_display],
                     use_container_width=True,
                     height=600
                 )
@@ -3044,12 +3042,12 @@ elif page == "Histórico":
 # --- PÁGINA 3: DASHBOARD ---
 elif page == "Dashboard":
     st.subheader("📊 Painel de Inteligência da IA")
-    
+
     if 'supabase_client' not in st.session_state:
         st.warning("Conecte o Supabase no painel lateral para visualizar os dados.")
     else:
         sp_client = st.session_state['supabase_client']
-        
+
         # Inicialização preventiva para evitar NameError
         df_ouro = df_pers = df_fon = df_est = df_hist_dash = df_nuan = df_img = df_cats = pd.DataFrame()
         cats_dict = {}
@@ -3068,13 +3066,13 @@ elif page == "Dashboard":
         col_view1, col_view2 = st.columns([1, 2])
         with col_view1:
             data_view = st.radio(
-                "🏢 Ambiente de Dados:", 
-                ["NW Padrão", "SOCIAL", "NW 3D"], 
+                "🏢 Ambiente de Dados:",
+                ["NW Padrão", "SOCIAL", "NW 3D"],
                 horizontal=True,
                 index=0 if st.session_state.get('table_prefix', 'nw_') == 'nw_' else 1 if st.session_state.get('table_prefix', 'nw_') == 'social_' else 2,
                 help="Escolha qual banco de dados (prefixo) carregar para análise."
             )
-        
+
         fetch_prefix = "nw_"
         if data_view == "SOCIAL":
             fetch_prefix = "social_"
@@ -3088,7 +3086,7 @@ elif page == "Dashboard":
         nuan_data = safe_fetch(f"{fetch_prefix}treinamento_nuances")
         img_data = safe_fetch(f"{fetch_prefix}treinamento_imagens")
         fon_data = safe_fetch(f"{fetch_prefix}treinamento_fonetica")
-        
+
         # Tabelas fixas (sempre nw_)
         pers_data = safe_fetch("nw_treinamento_persona_lu")
         cats_data = safe_fetch("nw_categorias")
@@ -3096,7 +3094,7 @@ elif page == "Dashboard":
         # Inicialização dos DataFrames (Garante colunas base mesmo se vazio)
         cats_dict = {c['id']: c['nome'] for c in cats_data} if cats_data else {}
         df_cats = pd.DataFrame(cats_data)
-        
+
         def safe_df(data, columns):
             df = pd.DataFrame(data)
             if df.empty:
@@ -3110,7 +3108,7 @@ elif page == "Dashboard":
         df_hist_dash = safe_df(hist_data, ['criado_em', 'codigo_produto', 'modo_trabalho', 'modelo_llm', 'custo_estimado_brl'])
         df_nuan = safe_df(nuan_data, ['criado_em', 'frase_ia', 'analise_critica', 'exemplo_ouro'])
         df_img = safe_df(img_data, ['criado_em', 'codigo_produto', 'descricao_ia', 'descricao_humano', 'aprendizado'])
-        
+
         # Filtro Global para Modo SOCIAL no Histórico
         if active_mode == "SOCIAL":
             if not df_hist_dash.empty:
@@ -3124,7 +3122,7 @@ elif page == "Dashboard":
                 # Primeiro mapeia a categoria em df_ouro
                 if 'categoria_id' in df_ouro.columns:
                     df_ouro['categoria'] = df_ouro['categoria_id'].map(cats_dict).fillna("Genérico")
-                
+
                 if 'roteiro_original_ia' in df_ouro.columns:
                     df_fb = df_ouro[df_ouro['roteiro_original_ia'].notna()].copy()
                     if not df_fb.empty:
@@ -3137,14 +3135,14 @@ elif page == "Dashboard":
                             return "Reescrita Pesada"
                         df_fb['avaliacao_label'] = df_fb['nota_percentual'].apply(map_sentimento)
                         df_fb['estrela'] = df_fb['nota_percentual'].apply(lambda x: f"{(x/20.0):.1f} ⭐" if pd.notna(x) else "-")
-            
+
             if df_fb.empty:
                 df_fb = pd.DataFrame(columns=['criado_em', 'estrela', 'categoria', 'avaliacao_label', 'aprendizado', 'roteiro_original_ia', 'roteiro_perfeito'])
-            
+
             # A coluna 'categoria' já foi mapeada acima na nova lógica
             total_ouro = len(df_ouro)
             total_historico = len(df_hist_dash)
-            
+
             # --- SEÇÃO DE FILTROS GLOBAIS ---
             with st.container():
                 col_f1, col_f2 = st.columns([1, 2])
@@ -3165,7 +3163,7 @@ elif page == "Dashboard":
                 start_date, end_date = pd.to_datetime(periodo[0]), pd.to_datetime(periodo[1])
                 # Ajuste para cobrir o dia inteiro da data final
                 end_date = end_date.replace(hour=23, minute=59, second=59)
-                
+
                 def safe_filter(df, start_d, end_d):
                     if df.empty or 'criado_em' not in df.columns: return df
                     def parse_val(v):
@@ -3174,7 +3172,7 @@ elif page == "Dashboard":
                                 return pd.to_datetime(v, format='%d/%m/%y às %H:%M').tz_localize(None)
                             return pd.to_datetime(v, utc=True).tz_convert('America/Sao_Paulo').tz_localize(None)
                         except: return pd.NaT
-                    
+
                     parsed_dates = df['criado_em'].apply(parse_val)
                     return df[(parsed_dates >= start_d) & (parsed_dates <= end_d)]
 
@@ -3211,15 +3209,15 @@ elif page == "Dashboard":
             else:
                 taxa_aprovacao = 0.0
                 media_estrelas = 0.0
-            
+
             total_ouro = len(df_ouro)
             total_historico = len(df_hist_dash)
-            
+
             # === SEÇÃO 1: MÉTRICAS PREMIUM (HTML/CSS) ===
             custo_total_dash = CUSTO_LEGADO_BRL
             if not df_hist_dash.empty and 'custo_estimado_brl' in df_hist_dash.columns:
                 custo_total_dash += df_hist_dash['custo_estimado_brl'].sum() or 0.0
-            
+
             # Cálculo de Cor Dinâmica para o Score (0=Vermelho, 100=Verde)
             def get_score_color(val):
                 if val >= 90: return "#10b981" # Verde Brilhante
@@ -3227,7 +3225,7 @@ elif page == "Dashboard":
                 if val >= 60: return "#f59e0b" # Amarelo/Laranja
                 if val >= 40: return "#fb923c" # Laranja Escuro
                 return "#ef4444" # Vermelho
-            
+
             score_color = get_score_color(taxa_aprovacao)
 
             st.markdown(f"""
@@ -3259,18 +3257,18 @@ elif page == "Dashboard":
                     </div>
                 </div>
             """, unsafe_allow_html=True)
-            
+
             with st.popover("ℹ️ Entenda a Métrica de Aprovação", use_container_width=False):
                 st.markdown("#### 🎯 Qualidade Medida via Calibragem")
                 st.markdown("A **Taxa de Aprovação** não é mais uma nota subjetiva dada por botões. Ela é a **média do aproveitamento real** dos roteiros gerados.")
                 st.markdown("Toda vez que você edita um roteiro e clica em `🚀 Enviar Calibragem para a IA`, uma **IA especializada** atua como QA (Quality Assurance). Ela compara o rascunho original com a sua edição final e calcula qual o percentual (%) das ideias geradas que foi mantido por você.")
                 st.info("💡 **Exemplo:** Se a IA nota que 90% das ideias do rascunho foram mantidas, a nota de aprovação daquele roteiro é 90%. O Dashboard exibe a média histórica de todas essas calibrações.")
-            
+
             st.divider()
-            
+
             # === SEÇÃO 2: PERFORMANCE E SAÚDE ===
             col_gauge, col_chart_kb = st.columns([1, 2])
-            
+
             with col_gauge:
                 st.markdown("#### 🚀 Velocímetro de Performance")
                 fig_gauge = go.Figure(go.Indicator(
@@ -3284,11 +3282,11 @@ elif page == "Dashboard":
                         'bgcolor': "rgba(0,0,0,0)",
                         'borderwidth': 0,
                         'steps': [
-                            {'range': [0, 20], 'color': 'rgba(239, 68, 68, 0.3)'},   
-                            {'range': [20, 40], 'color': 'rgba(249, 115, 22, 0.3)'},  
-                            {'range': [40, 60], 'color': 'rgba(245, 158, 11, 0.3)'},  
-                            {'range': [60, 80], 'color': 'rgba(132, 204, 22, 0.3)'},  
-                            {'range': [80, 100], 'color': 'rgba(16, 185, 129, 0.3)'}  
+                            {'range': [0, 20], 'color': 'rgba(239, 68, 68, 0.3)'},
+                            {'range': [20, 40], 'color': 'rgba(249, 115, 22, 0.3)'},
+                            {'range': [40, 60], 'color': 'rgba(245, 158, 11, 0.3)'},
+                            {'range': [60, 80], 'color': 'rgba(132, 204, 22, 0.3)'},
+                            {'range': [80, 100], 'color': 'rgba(16, 185, 129, 0.3)'}
                         ],
                         'threshold': {
                             'line': {'color': "white", 'width': 8},
@@ -3297,7 +3295,7 @@ elif page == "Dashboard":
                         }
                     }
                 ))
-                
+
                 # Adicionando um triângulo (Seta direcional) via layout annotation
                 # O gauge em Plotly é polar, então criamos uma agulha via SVG path
                 import math
@@ -3305,7 +3303,7 @@ elif page == "Dashboard":
                 theta = (1 - taxa_aprovacao / 100) * math.pi
                 x_head = 0.5 + r * math.cos(theta)
                 y_head = 0.2 + r * math.sin(theta)
-                
+
                 fig_gauge.update_layout(
                     template="plotly_dark",
                     paper_bgcolor="rgba(0,0,0,0)",
@@ -3330,13 +3328,13 @@ elif page == "Dashboard":
                 # Distinguimos o que é Calibragem (tem rascunho IA) do que é Ouro puro (Manual)
                 num_calib = len(df_fb) if not df_fb.empty else 0
                 num_ouro_puro = total_ouro - num_calib
-                
+
                 kb_data = {
                     "Componente": ["Fonética", "Estrutura", "Calibragem", "Roteiro Ouro", "Persona", "Nuances", "Imagens"],
                     "Registros": [len(df_fon), len(df_est), num_calib, num_ouro_puro, len(df_pers), len(df_nuan), len(df_img)]
                 }
                 df_kb = pd.DataFrame(kb_data)
-                fig_kb = px.bar(df_kb, x='Registros', y='Componente', orientation='h', 
+                fig_kb = px.bar(df_kb, x='Registros', y='Componente', orientation='h',
                                color='Registros', color_continuous_scale='Blues')
                 fig_kb.update_layout(
                     template="plotly_dark",
@@ -3349,12 +3347,12 @@ elif page == "Dashboard":
                     yaxis=dict(showgrid=False)
                 )
                 st.plotly_chart(fig_kb, use_container_width=True)
-            
+
             st.divider()
 
             # === SEÇÃO 3: PRODUÇÃO E ANÁLISE ===
             col_prod, col_modo, col_aval = st.columns(3)
-            
+
             with col_prod:
                 st.markdown("#### 📈 Evolução de Produção & Qualidade")
                 if not df_hist_dash.empty and 'criado_em' in df_hist_dash.columns:
@@ -3369,7 +3367,7 @@ elif page == "Dashboard":
                     df_timeline = df_hist_dash.copy()
                     df_timeline['data'] = df_timeline['criado_em'].apply(parse_date_only)
                     vol_data = df_timeline.groupby('data').size().reset_index(name='Volume')
-                    
+
                     # Preparação de dados de qualidade (se houver ouro)
                     if not df_ouro.empty:
                         df_q = df_ouro.copy()
@@ -3379,17 +3377,17 @@ elif page == "Dashboard":
                     else:
                         chart_merged = vol_data
                         chart_merged['Qualidade'] = 0
-                    
+
                     # Gráfico Combinado
                     fig_evol = go.Figure()
-                    
+
                     # Barras de Volume
                     fig_evol.add_trace(go.Bar(
                         x=chart_merged['data'], y=chart_merged['Volume'],
                         name="Volume", marker_color='rgba(0, 134, 255, 0.3)',
                         yaxis='y'
                     ))
-                    
+
                     # Linha de Qualidade
                     fig_evol.add_trace(go.Scatter(
                         x=chart_merged['data'], y=chart_merged['Qualidade'],
@@ -3398,7 +3396,7 @@ elif page == "Dashboard":
                         marker=dict(size=8, color='#10b981', line=dict(width=2, color='white')),
                         yaxis='y2'
                     ))
-                    
+
                     fig_evol.update_layout(
                         template="plotly_dark",
                         paper_bgcolor="rgba(0,0,0,0)",
@@ -3412,7 +3410,7 @@ elif page == "Dashboard":
                     st.plotly_chart(fig_evol, use_container_width=True)
                 else:
                     st.info("Sem dados de produção ainda.")
-            
+
             with col_modo:
                 st.markdown("#### 🎯 Mix de Modos de Trabalho")
                 if not df_hist_dash.empty and 'modo_trabalho' in df_hist_dash.columns:
@@ -3431,13 +3429,13 @@ elif page == "Dashboard":
                     st.plotly_chart(fig_modo, use_container_width=True)
                 else:
                     st.info("Sem dados de modos.")
-            
+
             with col_aval:
                 st.markdown("#### ⚖️ Sentimento das Calibrações")
                 if not df_fb.empty and 'avaliacao_label' in df_fb.columns:
                     aval_counts = df_fb['avaliacao_label'].value_counts().reset_index()
                     aval_counts.columns = ['Avaliação', 'Quantidade']
-                    
+
                     # Cores específicas para as novas métricas
                     color_map = {
                         "Ajuste Fino": "#10b981",       # Verde
@@ -3445,7 +3443,7 @@ elif page == "Dashboard":
                         "Mudança Estrutural": "#f59e0b", # Âmbar
                         "Reescrita Pesada": "#ef4444"    # Vermelho
                     }
-                    
+
                     fig_aval = px.bar(aval_counts, x='Avaliação', y='Quantidade', color='Avaliação',
                                     color_discrete_map=color_map, category_orders={"Avaliação": ["Ajuste Fino", "Edição Moderada", "Mudança Estrutural", "Reescrita Pesada"]})
                     fig_aval.update_layout(
@@ -3466,7 +3464,7 @@ elif page == "Dashboard":
             if not df_hist_dash.empty and 'modelo_llm' in df_hist_dash.columns and 'custo_estimado_brl' in df_hist_dash.columns:
                 df_cost = df_hist_dash.groupby('modelo_llm')['custo_estimado_brl'].sum().reset_index()
                 df_cost.columns = ['Modelo', 'Custo Total (R$)']
-                
+
                 fig_cost = px.pie(df_cost, values='Custo Total (R$)', names='Modelo', hole=0.6,
                                 color_discrete_sequence=px.colors.sequential.Bluyl)
                 fig_cost.update_traces(textinfo='percent+label')
@@ -3476,7 +3474,7 @@ elif page == "Dashboard":
                     margin=dict(l=20, r=20, t=30, b=20),
                     showlegend=False
                 )
-                
+
                 col_c1, col_c2 = st.columns([2, 1])
                 with col_c1:
                     st.plotly_chart(fig_cost, use_container_width=True)
@@ -3486,13 +3484,13 @@ elif page == "Dashboard":
                         st.write(f"**{row['Modelo']}:** R$ {row['Custo Total (R$)']:.4f}")
             else:
                 st.info("Sem dados de custo para analisar.")
-            
+
             st.divider()
-            
+
             # === SEÇÃO 4: TABELAS DETALHADAS ===
             st.markdown("### 📋 Dados Detalhados")
             tab_hist, tab_ouro, tab_feed, tab_est_dash, tab_nuan, tab_img_dash, tab_pers, tab_fon = st.tabs(["💵 Histórico", "🏆 Roteiros Ouro", "⚖️ Feedbacks", "🏗️ Estruturas", "🧠 Nuances", "📸 Imagens", "💃 Persona", "🗣️ Fonética"])
-            
+
             # Data format safe parser
             def safe_format_date(val):
                 try:
@@ -3503,28 +3501,28 @@ elif page == "Dashboard":
             with tab_hist:
                 if not df_hist_dash.empty:
                     df_show_hist = df_hist_dash.copy()
-                    
+
                     # Formatação de colunas
                     if 'criado_em' in df_show_hist.columns:
                         df_show_hist['criado_em'] = df_show_hist['criado_em'].apply(safe_format_date)
-                        
+
                     if 'custo_estimado_brl' in df_show_hist.columns:
                         df_show_hist['Custo Brl'] = df_show_hist['custo_estimado_brl'].apply(
                             lambda x: f"R$ {x:,.4f}".replace(',', 'X').replace('.', ',').replace('X', '.') if pd.notna(x) and x > 0 else "-"
                         )
-                    
+
                     # Renomeando colunas para o usuário
-                    cols_to_show = {'criado_em': 'Data Geração', 'codigo_produto': 'Cód. Produto', 
+                    cols_to_show = {'criado_em': 'Data Geração', 'codigo_produto': 'Cód. Produto',
                                    'modo_trabalho': 'Modo', 'modelo_llm': 'Modelo', 'Custo Brl': 'Custo (R$)'}
-                    
+
                     df_show_hist = df_show_hist.rename(columns=cols_to_show)
-                    
+
                     # Ordenar e filtrar apenas as colunas mapeadas
                     col_order = [cols_to_show[k] for k in cols_to_show if cols_to_show[k] in df_show_hist.columns]
                     st.dataframe(df_show_hist[col_order].sort_values(by='Data Geração', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhum histórico de produção registrado.")
-            
+
             with tab_est_dash:
                 if not df_est.empty:
                     df_e = df_est.copy()
@@ -3534,7 +3532,7 @@ elif page == "Dashboard":
                     st.dataframe(df_e[available_cols].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhuma estrutura cadastrada.")
-            
+
             with tab_nuan:
                 if not df_nuan.empty:
                     df_n = df_nuan.copy()
@@ -3543,7 +3541,7 @@ elif page == "Dashboard":
                     st.dataframe(df_n[['criado_em', 'frase_ia', 'analise_critica', 'exemplo_ouro']].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhuma nuance de linguagem cadastrada.")
-            
+
             with tab_img_dash:
                 if not df_img.empty:
                     df_i = df_img.copy()
@@ -3552,23 +3550,23 @@ elif page == "Dashboard":
                     st.dataframe(df_i[['criado_em', 'codigo_produto', 'descricao_ia', 'descricao_humano', 'aprendizado']].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhuma calibragem de imagem cadastrada.")
-            
+
             with tab_ouro:
                 if not df_ouro.empty:
                     df_o = df_ouro.copy()
                     if 'categoria_id' in df_o.columns and not df_cats.empty:
                         cat_map_names = dict(zip(df_cats['id'], df_cats['nome']))
                         df_o['Categoria'] = df_o['categoria_id'].map(cat_map_names)
-                    
+
                     if 'criado_em' in df_o.columns:
                         df_o['criado_em'] = df_o['criado_em'].apply(safe_format_date)
-                    
+
                     cols_o = ['criado_em', 'Categoria', 'titulo_produto', 'roteiro_perfeito']
                     available_o = [c for c in cols_o if c in df_o.columns]
                     st.dataframe(df_o[available_o].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhum Roteiro Ouro cadastrado.")
-            
+
             with tab_feed:
                 if not df_fb.empty:
                     df_f = df_fb.copy()
@@ -3579,7 +3577,7 @@ elif page == "Dashboard":
                     st.dataframe(df_f[available_cols].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhuma calibração realizada ainda.")
-            
+
             with tab_pers:
                 if not df_pers.empty:
                     df_p = df_pers.copy()
@@ -3589,7 +3587,7 @@ elif page == "Dashboard":
                     st.dataframe(df_p[['criado_em', 'pilar_persona', 'texto_gerado_ia', 'texto_corrigido_humano', 'lexico_sugerido']].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhum ajuste de persona cadastrado.")
-                    
+
             with tab_fon:
                 if not df_fon.empty:
                     df_fo = df_fon.copy()
@@ -3598,7 +3596,7 @@ elif page == "Dashboard":
                     st.dataframe(df_fo[['criado_em', 'termo_errado', 'termo_corrigido', 'exemplo_no_roteiro']].sort_values(by='criado_em', ascending=False), use_container_width=True)
                 else:
                     st.info("Nenhuma regra de fonética cadastrada.")
-                
+
         except Exception as e:
             st.error(f"Erro ao carregar os dados do dashboard: {e}")
 
@@ -3606,7 +3604,7 @@ elif page == "Dashboard":
 elif page == "Assistente Lu":
     st.subheader("💬 Assistente Lu")
     st.caption("Converse com a Lu sobre os roteiros gerados, métricas da equipe ou dúvidas gerais.")
-    
+
     # Initialize chat history
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = [
@@ -3629,10 +3627,10 @@ elif page == "Assistente Lu":
         # Generate response using the active RoteiristaAgent
         with st.chat_message("Lu"):
             message_placeholder = st.empty()
-            
+
             # Re-instantiate agent to ensure it uses the current model_id
             modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
-            
+
             try:
                 # Compile Supabase context for RAG
                 context_str = ""
@@ -3646,7 +3644,7 @@ elif page == "Assistente Lu":
                             d_recent = sp.table(f"{st.session_state.get('table_prefix', 'nw_')}historico_roteiros").select("criado_em, codigo_produto, custo_estimado_brl, modelo_llm").order('criado_em', desc=True).limit(200).execute()
                             if d_recent.data:
                                 df = pd.DataFrame(d_recent.data)
-                                
+
                                 def parse_date_only(v):
                                     try:
                                         if isinstance(v, str) and "às" in v:
@@ -3669,14 +3667,14 @@ elif page == "Assistente Lu":
                     model_id=modelo_id,
                     table_prefix=st.session_state.get('table_prefix', 'nw_')
                 )
-                
+
                 # Fetch response with delay for loading perception
                 with st.spinner("Lu está digitando..."):
                     resposta_lu = agent.chat_with_context(prompt, st.session_state.chat_history, context_str)
-                
+
                 message_placeholder.markdown(resposta_lu)
                 # Add assistant response to chat history
                 st.session_state.chat_history.append({"role": "Lu", "content": resposta_lu})
-                
+
             except Exception as e:
                 st.error(f"Erro de comunicação com a IA: {e}")

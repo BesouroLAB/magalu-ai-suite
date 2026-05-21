@@ -74,21 +74,21 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None, modo: str =
         os.environ.setdefault("GOOGLE_API_KEY", api_key)
         client = genai.Client(api_key=api_key, http_options={'timeout': 150000})
         result_text = None
-        
+
         config = GenerateContentConfig(
             tools=[Tool(google_search=GoogleSearch())],
             temperature=0.0
         )
-        
+
         response = None
         scraper_max_retries = 3
         scraper_base_wait = 2
-        
+
         def _call_with_retry(model_name, prompt_text, cfg, retries=scraper_max_retries):
             for attempt in range(retries + 1):
                 try:
                     return client.models.generate_content(
-                        model=model_name, 
+                        model=model_name,
                         contents=prompt_text,
                         config=cfg
                     )
@@ -99,7 +99,7 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None, modo: str =
                         time.sleep(scraper_base_wait * (2 ** attempt))
                     else:
                         raise e
-        
+
         try:
             response = _call_with_retry('gemini-2.0-flash', prompt, config)
         except:
@@ -107,7 +107,7 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None, modo: str =
                 response = _call_with_retry('gemini-3.1-pro-preview', prompt, config)
             except:
                 response = None
-        
+
         def get_text_safe(resp):
             try:
                 return resp.text if resp and hasattr(resp, 'text') else None
@@ -115,7 +115,7 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None, modo: str =
                 return None
 
         result_text = get_text_safe(response)
-        
+
         # Parsing de imagens da resposta do Gemini - DESATIVADO PARA VELOCIDADE
         image_urls = []
 
@@ -180,18 +180,18 @@ def parse_grouped_input(raw_input: str) -> list[dict]:
         line = line.strip()
         if not line:
             continue
-        
+
         # Divide por vírgula, espaço, +, | ou ;
         tokens = re.split(r'[,\s+|;]+', line)
         codes = []
         images = []
         video = None
-        
+
         for token in tokens:
             token = token.strip().strip('*').strip('(').strip(')').strip('"').strip("'")
             if not token:
                 continue
-                
+
             if token.startswith('http'):
                 # Heurística para diferenciar Vídeo de Imagem
                 is_img = any(ext in token.lower() for ext in ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif']) or 'static.mlcdn.com.br' in token or 'a-static' in token or 'img' in token.lower() or 'images' in token.lower()
@@ -204,14 +204,14 @@ def parse_grouped_input(raw_input: str) -> list[dict]:
                 clean = re.sub(r'[^0-9a-zA-Z]', '', token)
                 if len(clean) >= 3:
                     codes.append(clean)
-        
+
         if codes:
             groups.append({
-                "codes": codes, 
+                "codes": codes,
                 "video": video,
                 "images": images
             })
-    
+
     return groups
 
 
@@ -222,16 +222,16 @@ def detect_variants(dict_fichas: dict[str, dict]) -> dict:
     """
     if len(dict_fichas) <= 1:
         return {"tipo_variante": None, "resumo": "", "detalhes": {}}
-    
+
     sku_data = {}
     for codigo, data in dict_fichas.items():
         texto = data.get("text", "") if isinstance(data, dict) else str(data)
         info = {"codigo": codigo}
-        
+
         # Extração precisa
         v_match = re.search(r'VOLTAGEM:\s*([^\n]+)', texto, re.IGNORECASE)
         if v_match: info["voltagem"] = v_match.group(1).strip()
-            
+
         c_match = re.search(r'^- (?:Cor|Color)[\s:]+([^\n]+)', texto, re.MULTILINE | re.IGNORECASE)
         if not c_match: c_match = re.search(r'CORES DISPONÍVEIS:\s*(?:Apenas\s+)?([^\n]+)', texto, re.IGNORECASE)
         if c_match:
@@ -242,7 +242,7 @@ def detect_variants(dict_fichas: dict[str, dict]) -> dict:
 
         t_match = re.search(r'^- (?:Tamanho|Dimensões|Medidas|Peso)[\s:]+([^\n]+)', texto, re.MULTILINE | re.IGNORECASE)
         if t_match: info["tamanho"] = t_match.group(1).strip()
-            
+
         sku_data[codigo] = info
 
     # Só é variante se for DIFERENTE
@@ -250,7 +250,7 @@ def detect_variants(dict_fichas: dict[str, dict]) -> dict:
     for info in sku_data.values():
         for k in sets:
             if k in info: sets[k].add(info[k])
-        
+
     tipos = []
     resumos = []
     if len(sets["cor"]) > 1:

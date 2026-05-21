@@ -85,14 +85,14 @@ def insert_roteiros():
             "custo_estimado_brl": 0.0,
             "status": "gerado"
         }
-        
+
         try:
             supabase.table("nw3d_historico_roteiros").insert(record).execute()
             print(f"[OK] Inserido: {r['codigo']} - {r['title']}")
             success_count += 1
         except Exception as e:
             print(f"[ERROR] Falha ao inserir {r['codigo']}: {e}")
-            
+
     print(f"\nConcluído. {success_count} de {len(roteiros)} roteiros inseridos na base NW 3D.")
 
 if __name__ == "__main__":

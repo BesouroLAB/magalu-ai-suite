@@ -42,11 +42,11 @@ categorias_novas = [
     {"nome": "Genérico", "tom_de_voz": "Otimismo Prudente; Padrão Lu do Magalu para diversos itens."}
 ]
 
-print(f"Atualizando nw_categorias com a lista exata do usuário...")
+print("Atualizando nw_categorias com a lista exata do usuário...")
 try:
     # Remove as antigas para manter apenas a lista oficial
-    supabase.table("nw_categorias").delete().neq("id", 0).execute() 
-    
+    supabase.table("nw_categorias").delete().neq("id", 0).execute()
+
     for cat in categorias_novas:
         supabase.table("nw_categorias").insert(cat).execute()
     print(f"Sucesso! {len(categorias_novas)} Categorias atualizadas!")

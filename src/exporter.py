@@ -10,9 +10,6 @@ from datetime import datetime
 import pytz
 from docx import Document
 from docx.shared import Pt
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.oxml.ns import qn
-from docx.oxml import OxmlElement
 
 
 def _add_header_line(doc, text: str):
@@ -94,11 +91,11 @@ def _extract_product_name(roteiro_text: str) -> str:
     lines = roteiro_text.strip().split('\n')[:15]
     for line in lines:
         line = line.strip().strip("*").strip()
-        
+
         # Ignora linhas de cabeçalho conhecidas
         if any(prefix in line.upper() for prefix in ["CLIENTE:", "ROTEIRISTA:", "DATA:"]):
             continue
-            
+
         # Padrão: "Este [Produto], da [Marca]" ou similar
         if line.startswith("- "):
             match2 = re.search(r'Est[ea]\s+(.+?),\s+d[ao]', line, re.IGNORECASE)
@@ -161,7 +158,7 @@ def generate_filename(code: str, product_name: str, selected_month: str = "MAR",
 
     # Detecta prefixo correto — PRIORIZA modo_trabalho explícito, fallback para heurística
     modo_u = str(modo_trabalho).upper()
-    
+
     if "3D" in modo_u:
         prefixo = f"NW 3D LU {selected_month}"
     elif "SOCIAL" in modo_u:
@@ -199,9 +196,9 @@ def _clean_product_name(raw_name: str) -> str:
     """Limpa o nome do produto de forma agressiva para evitar duplicação."""
     if not raw_name:
         return "Produto"
-        
+
     clean = raw_name
-    
+
     # Loop de limpeza: continua enquanto houver mudanças (limpa prefixos em qualquer ordem/quantidade)
     max_iter = 10
     for _ in range(max_iter):
@@ -213,10 +210,10 @@ def _clean_product_name(raw_name: str) -> str:
         # Remove placeholders e lixo de markdown
         clean = re.sub(r'\[?NOME DO PRODUTO\]?', '', clean, flags=re.IGNORECASE).strip()
         clean = re.sub(r'^\**TÍTULO( DO PRODUTO)?:?\**\s*', '', clean, flags=re.IGNORECASE).strip()
-        
+
         if clean == prev:
             break
-            
+
     # Se sobrar nada ou apenas lixo, retorna fallback
     if not clean or len(clean) < 2:
         return "Produto"
@@ -253,7 +250,7 @@ def export_roteiro_docx(roteiro_text: str, code: str = "", product_name: str = "
 
     # Gera o filename PRIMEIRO — ele é a fonte de verdade para a nomenclatura
     filename = generate_filename(code, product_name, selected_month, model_id, com_lu=com_lu, modo_trabalho=modo_trabalho)
-    
+
     # O nome do cabeçalho deve ser EXATAMENTE o mesmo do filename (sem .docx e sem model tag)
     header_product_line = filename.replace(".docx", "")
     # Remove model tag do cabeçalho (ex: " [GEMINI-3-FLASH-PREVIEW]")
@@ -364,10 +361,10 @@ def export_all_roteiros_zip(roteiros: list, selected_month: str = "MAR", selecte
             # Pula roteiros que são avisos de erro de extração
             if roteiro_text.startswith("⚠️"):
                 continue
-            
+
             # Prioriza o mês que está no registro do roteiro, caso contrário usa o selecionado no lote
             mes_roteiro = item.get('mes', selected_month)
-                
+
             doc_bytes, filename = export_roteiro_docx(
                 roteiro_text,
                 code=item.get('codigo', ''),
@@ -380,9 +377,9 @@ def export_all_roteiros_zip(roteiros: list, selected_month: str = "MAR", selecte
             )
             # Garante que o nome do arquivo seja único dentro do ZIP se houver duplicatas
             zip_file.writestr(filename, doc_bytes)
-            
+
     zip_buffer.seek(0)
     now = datetime.now(pytz.timezone('America/Sao_Paulo'))
     zip_filename = f"ROTEIROS_MAGALU_{now.strftime('%d_%m_%Y_%H%M')}.zip"
-    
+
     return zip_buffer.getvalue(), zip_filename

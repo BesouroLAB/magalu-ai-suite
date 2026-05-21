@@ -18,7 +18,7 @@ def test_e2e(code):
         pass
 
     print(f"--- Iniciando teste E2E para o codigo: {code} ---")
-    
+
     # 1. Scraper
     print("\n1. Executando Scraper...")
     scraped_data = scrape_with_gemini(code)
@@ -32,13 +32,13 @@ def test_e2e(code):
     try:
         agent = RoteiristaAgent(model_id="gemini-3-flash-preview")
         result = agent.gerar_roteiro(
-            scraped_data, 
-            modo_trabalho="NW (NewWeb)", 
-            mes="MAR", 
+            scraped_data,
+            modo_trabalho="NW (NewWeb)",
+            mes="MAR",
             codigo=code,
             com_lu=True
         )
-        
+
         roteiro_text = result['roteiro']
         print("Roteiro gerado com sucesso.")
     except Exception as e:
@@ -49,15 +49,15 @@ def test_e2e(code):
     print("\n3. Exportando para DOCX e Verificando Nome do Arquivo...")
     try:
         docx_bytes, filename = export_roteiro_docx(
-            roteiro_text, 
-            code=code, 
+            roteiro_text,
+            code=code,
             selected_month="MAR",
             model_id="gemini-3-flash-preview",
             com_lu=True
         )
-        
+
         print(f"Nome do arquivo gerado: {filename}")
-        
+
         # Validacao do nome do arquivo
         if filename.startswith("NW LU MAR") and code in filename:
             print("[OK] Nome do arquivo segue o padrao correto.")
@@ -71,13 +71,13 @@ def test_e2e(code):
         with open(output_path, "wb") as f:
             f.write(docx_bytes)
         print(f"Arquivo salvo em: {output_path}")
-        
+
         # Verifica se o arquivo existe
         if os.path.exists(output_path):
-            print(f"[OK] Arquivo salvo fisicamente com sucesso.")
+            print("[OK] Arquivo salvo fisicamente com sucesso.")
         else:
-            print(f"[ERRO] Arquivo nao encontrado apos salvamento.")
-            
+            print("[ERRO] Arquivo nao encontrado apos salvamento.")
+
     except Exception as e:
         print(f"Erro na exportacao: {e}")
         import traceback

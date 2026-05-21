@@ -1,6 +1,5 @@
 
 import os
-import json
 from supabase import create_client
 from dotenv import load_dotenv
 

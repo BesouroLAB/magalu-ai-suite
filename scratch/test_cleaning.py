@@ -1,6 +1,5 @@
 import sys
 import os
-import re
 
 # Adiciona o diretório src ao path para importar os módulos
 sys.path.append(os.path.join(os.getcwd(), 'src'))
@@ -15,7 +14,7 @@ def test_cleaning():
         "230410600 Notebook Compaq",
         "NW LU MAR [NOME DO PRODUTO]",
     ]
-    
+
     print("--- Testando _clean_product_name ---")
     for tc in test_cases:
         res = _clean_product_name(tc)

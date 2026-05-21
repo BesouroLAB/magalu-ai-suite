@@ -34,10 +34,10 @@ for fp in files_to_update:
     filepath = os.path.join(PROJECT_ROOT, fp)
     with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
-    
+
     for k, v in replacements.items():
         content = content.replace(k, v)
-        
+
     with open(filepath, 'w', encoding='utf-8') as f:
         f.write(content)
 

@@ -31,7 +31,7 @@ try:
             volume = int(row.get('Volume', 0))
             difficulty = int(row.get('Keyword Difficulty', 100))
             intent = row.get('Intent', '')
-            
+
             # Filters:
             # 1. Volume > 50 (ignoring tiny long tails for top 100)
             # 2. Difficulty < 60 (realistic targets)
@@ -41,7 +41,7 @@ try:
                     if topic in keyword: # Simple match
                         is_covered = True
                         break
-                
+
                 # Check for "geladeira para caminhão" generic terms which we already rank for or cover in home
                 if keyword in ['geladeira para caminhão', 'geladeira de caminhão']:
                     is_covered = True

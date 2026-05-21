@@ -3,7 +3,6 @@ Gerador de JSON-LD para Roteiros Ouro.
 Transforma registros do Supabase em payloads Schema.org (Product/CreativeWork).
 """
 import json
-from datetime import datetime
 
 
 def generate_product_jsonld(roteiro: dict, categoria_nome: str = "Genérico") -> dict:
@@ -116,7 +115,7 @@ def export_jsonld_string(roteiro: dict, categoria_nome: str = "Genérico", schem
         payload = generate_creative_work_jsonld(roteiro, categoria_nome)
     else:
         payload = generate_product_jsonld(roteiro, categoria_nome)
-    
+
     return json.dumps(payload, indent=2, ensure_ascii=False)
 
 

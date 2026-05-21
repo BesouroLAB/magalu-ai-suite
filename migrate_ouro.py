@@ -35,7 +35,7 @@ def migrate_few_shot_to_supabase():
         # Mapeia os campos do JSON para o banco
         # No JSON os campos eram 'produto' e 'output_depois_breno_aprovado'
         # No Banco são 'titulo_produto' e 'roteiro_perfeito'
-        
+
         data = {
             "categoria_id": 1, # Default para migração
             "titulo_produto": ex.get("produto", "Sem Título"),

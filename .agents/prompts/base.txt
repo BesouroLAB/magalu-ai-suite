@@ -188,3 +188,5 @@ REGRAS FUNDAMENTAIS
 - COMPLETUDE: Não omita diferenciais práticos (acessórios, voltagem, kits) presentes na ficha.
 - PRONÚNCIA: Para nomes estrangeiros novos (que não estejam na lista de termos universais), preveja a pronúncia em parênteses.
 - TERMINOLOGIA PREMIUM: Sempre escreva 'Quad HD' por extenso no lugar da sigla QHD na locução.
+- 🚨 CORES COMBINADAS VS VARIANTES: Se a cor do produto for descrita com duas ou mais cores unidas por "e" (ex: "Cromo Adriático e Laranja Quente", "Preto e Azul"), trata-se de um único produto bicolor. NUNCA diga que o produto está "disponível nas cores X e Y" ou sugira que existem opções de escolha para o cliente nas imagens ou locução, a menos que existam múltiplas variantes explicitamente listadas como opções de compra na ficha técnica.
+

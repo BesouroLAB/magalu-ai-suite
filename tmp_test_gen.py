@@ -11,7 +11,7 @@ from agent import RoteiristaAgent
 
 def test_generation():
     agent = RoteiristaAgent(model_id='gemini-3-flash-preview')
-    
+
     scraped_data = {
         'text': """TÍTULO: Liquidificador Oster 1400 Full OLIQ610 Preto 15 Velocidades + Pulsar 1400W
 MARCA: Oster
@@ -29,17 +29,17 @@ CORES DISPONÍVEIS: Apenas Preto
 FEATURES PRÁTICAS: As lâminas de inox são resistentes, possuem alto poder de corte e mistura, e não enferrujam.""",
         'images': []
     }
-    
+
     result = agent.gerar_roteiro(
-        scraped_data, 
-        modo_trabalho='NW LU', 
-        mes='MAR', 
-        data_roteiro='07/03/26', 
-        codigo='021798900', 
+        scraped_data,
+        modo_trabalho='NW LU',
+        mes='MAR',
+        data_roteiro='07/03/26',
+        codigo='021798900',
         nome_produto='Liquidificador Oster 1400 Full',
         com_lu=True
     )
-    
+
     print(result['roteiro'])
 
 if __name__ == "__main__":

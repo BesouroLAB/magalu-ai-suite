@@ -1,6 +1,5 @@
 import os
 import re
-import uuid
 import datetime
 import docx
 from supabase import create_client, Client
@@ -29,21 +28,21 @@ def get_docx_text(path):
 def parse_filename(filename):
     # SOCIAL JAN 231203400 231203300 Ventilador de Mesa Mondial Super Power VSP-30-W.docx
     # SOCIAL LU JAN 108515500 108515400 Secador de Cabelo Taiff Style Red Vermelho 2000W.docx
-    
+
     name = filename.replace(".docx", "")
-    
+
     modo = "SOCIAL"
     is_lu = "LU" in name
-    
+
     # Regex para pegar o mês (palavra em maiúsculo após SOCIAL/LU)
     # Supondo meses como JAN, FEV, MAR, etc.
     res_mes = re.search(r"(?:SOCIAL|LU)\s+([A-Z]{3})", name)
     mes = res_mes.group(1) if res_mes else ""
-    
+
     # Regex para pegar os códigos (sequência de 9 dígitos)
     codigos = re.findall(r"\d{9}", name)
     primary_code = codigos[0] if codigos else "000000000"
-    
+
     # Produto: o que sobra depois dos códigos
     # Encontra a posição do último código e pega o resto
     if codigos:
@@ -52,7 +51,7 @@ def parse_filename(filename):
         produto = name[idx:].strip()
     else:
         produto = name
-        
+
     return {
         "modo": modo,
         "is_lu": is_lu,
@@ -65,14 +64,14 @@ def parse_filename(filename):
 def migrate():
     files = [f for f in os.listdir(ASSETS_DIR) if f.endswith(".docx") and f.startswith("SOCIAL")]
     print(f"Total de arquivos SOCIAL encontrados: {len(files)}")
-    
+
     for f in files:
         path = os.path.join(ASSETS_DIR, f)
         info = parse_filename(f)
         content = get_docx_text(path)
-        
+
         print(f"Processando: {f} -> Código: {info['codigo']}, Produto: {info['produto']}")
-        
+
         try:
             # Insere no histórico
             # Campos: criado_em, codigo_produto, modo_trabalho, roteiro_gerado, modelo_llm, categoria_id (usaremos 77 Genérico por enquanto)
@@ -88,9 +87,9 @@ def migrate():
                 "categoria_id": 77, # Genérico como fallback
                 "criado_em": datetime.datetime.now().isoformat()
             }
-            
+
             res = sp.table("social_historico_roteiros").insert(data).execute()
-            print(f"✅ Salvo com sucesso")
+            print("✅ Salvo com sucesso")
         except Exception as e:
             print(f"❌ Erro ao salvar {f}: {e}")
 

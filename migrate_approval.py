@@ -25,7 +25,7 @@ ALTER TABLE feedback_roteiros DROP COLUMN IF EXISTS comentarios CASCADE;
 
 try:
     # Supabase Python client doesn't expose a direct raw SQL execution method by default,
-    # except via RPC or the pgtap extension. 
+    # except via RPC or the pgtap extension.
     # However, we can use the REST API through `.rpc()` if we have a function,
     # OR we can just instruct the user to run it via the Supabase dashboard if this fails.
     # We will try to execute it by sending a query using PostgREST indirectly, though Alter Table won't work in standard PostgREST.

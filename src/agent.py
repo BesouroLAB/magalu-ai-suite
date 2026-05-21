@@ -1,7 +1,6 @@
 import os
 import json
 import time
-import glob
 from google import genai
 from google.genai import types
 from openai import OpenAI
@@ -12,6 +11,7 @@ load_dotenv()
 PROJECT_ROOT = os.path.join(os.path.dirname(__file__), '..')
 # Tabela de preços por 1M tokens (USD)
 PRICING_USD_PER_1M = {
+    "gemini-3.5-flash":         {"input": 1.50, "output": 9.00},
     "gemini-3.1-pro-preview":   {"input": 3.50, "output": 10.50},
     "gemini-3-flash-preview":   {"input": 0.70, "output": 2.10},
     "gemini-2.0-flash":         {"input": 0.10, "output": 0.40},
@@ -34,7 +34,8 @@ PRICING_USD_PER_1M = {
 USD_TO_BRL = 5.80
 
 MODELOS_DISPONIVEIS = {
-    "⚡ Gemini 3 Flash Preview [PADRÃO] — ~R$0,02/roteiro": "gemini-3-flash-preview",
+    "⚡ Gemini 3.5 Flash [NOVO/IO-2026] — ~R$0,08/roteiro": "gemini-3.5-flash",
+    "⚡ Gemini 3 Flash Preview [ESTÁVEL] — ~R$0,02/roteiro": "gemini-3-flash-preview",
     "🧠 o1 Reasoning [MAXIMUS] — ~R$1,20/roteiro": "openai/o1",
     "🧠 o1-mini Reasoning — ~R$0,25/roteiro": "openai/o1-mini",
     "🧪 o3-mini Reasoning — ~R$0,15/roteiro": "openai/o3-mini",
@@ -48,13 +49,14 @@ MODELOS_DISPONIVEIS = {
 }
 
 MODELOS_DESCRICAO = {
+    "gemini-3.5-flash": "[PONTUAL E VELOZ] (Maio/2026) Último lançamento do Google I/O. Inteligência superior com velocidade ultra-rápida. Custo: ~R$ 0,08.",
     "o1": "[O PENSADOR] (2025) Modelo de raciocínio avançado da OpenAI. Perfeito para calibragem e lógica complexa.",
     "o1-mini": "[O PENSADOR MINI] (2025) Raciocínio rápido e eficiente. Ótimo custo-benefício.",
     "o3-mini": "[RACIOCÍNIO VELOZ] (2025) Versão otimizada de raciocínio, ideal para estruturação técnica.",
     "gpt-5.5": "[O FRONTEIRA] (Abril/2026) O modelo mais avançado do mundo. Raciocínio agentico puro. Custo: ~R$ 0,45.",
     "gpt-5.5-instant": "[O RELÂMPAGO] (Maio/2026) Velocidade absurda com inteligência superior. Custo: ~R$ 0,09.",
     "gemini-3.1-pro-preview": "[O SOBERANO GOOGLE] (Fev/2026) Inteligência de ponta absoluta. Custo: ~R$ 0,19.",
-    "gemini-3-flash-preview": "[EQUILÍBRIO TOTAL] (Dez/2025) Versão calibrada para roteiros curtos. Custo: ~R$ 0,02.",
+    "gemini-3-flash-preview": "[EQUILÍBRIO TOTAL] (Dez/2025) Versão anterior calibrada para roteiros curtos. Custo: ~R$ 0,02.",
     "gpt-4o": "[O OMNI] (2024) Versão clássica de alta performance para visão e texto.",
     "puter/gpt-4o-mini": "[ESTEPE GRÁTIS] Versão mini da OpenAI via Puter. Útil para fallbacks rápidos."
 }
@@ -69,12 +71,12 @@ PROVIDER_KEY_MAP = {
 
 def calcular_custo_brl(model_id, tokens_in, tokens_out):
     """Calcula o custo estimado em BRL com base nos tokens consumidos."""
-    pricing = PRICING_USD_PER_1M.get(model_id, PRICING_USD_PER_1M["gemini-3-flash-preview"])
+    pricing = PRICING_USD_PER_1M.get(model_id, PRICING_USD_PER_1M["gemini-3.5-flash"])
     custo_usd = (tokens_in / 1_000_000 * pricing["input"]) + (tokens_out / 1_000_000 * pricing["output"])
     return round(custo_usd * USD_TO_BRL, 6)
 
 class RoteiristaAgent:
-    def __init__(self, supabase_client=None, model_id="gemini-3-flash-preview", table_prefix="nw_"):
+    def __init__(self, supabase_client=None, model_id="gemini-3.5-flash", table_prefix="nw_"):
         self.model_id = model_id
         self.table_prefix = table_prefix
         self.supabase = supabase_client
@@ -159,7 +161,7 @@ class RoteiristaAgent:
         }
         self.phonetics = {}
         # Ouro e Calibragem agora são 100% dinâmicos via Supabase
-        self.few_shot_examples = [] 
+        self.few_shot_examples = []
 
     def _load_file(self, filepath, fallback):
         try:
@@ -181,7 +183,7 @@ class RoteiristaAgent:
         sb_parts = []
         if not self.supabase:
             return ""
-            
+
         # Determina o prefixo da tabela baseado no modo selecionado
         modo_u = str(modo_trabalho).upper()
         if "REVIEW" in modo_u:
@@ -192,7 +194,7 @@ class RoteiristaAgent:
             prefix = "3d_"
         else:
             prefix = "nw_"
-        
+
         # 1. Roteiros Ouro (O "Norte" da Redação - Exemplos de Elite)
         try:
             res_ouro = self.supabase.table(f"{prefix}roteiros_ouro").select("*").order('criado_em', desc=True).limit(10).execute()
@@ -227,7 +229,7 @@ class RoteiristaAgent:
                     sb_parts.append(f"- {f['termo_errado']} -> ({f['termo_corrigido']})")
         except Exception as e:
             print(f"[Supabase] Erro ao buscar fonetica: {e}")
-                    
+
         # 4. Estruturas Aprovadas (Aberturas e Fechamentos/CTAs)
         try:
             res_est = self.supabase.table(f"{prefix}treinamento_estruturas").select("*").order('criado_em', desc=True).limit(30).execute()
@@ -237,7 +239,7 @@ class RoteiristaAgent:
                     sb_parts.append(f"- [{est['tipo_estrutura']}] {est['texto_ouro']}")
         except Exception as e:
             print(f"[Supabase] Erro ao buscar estruturas: {e}")
-                    
+
         # 5. Nuances de Linguagem (O que evitar e como melhorar)
         try:
             res_nuan = self.supabase.table(f"{prefix}treinamento_nuances").select("*").limit(20).order('criado_em', desc=True).execute()
@@ -272,7 +274,7 @@ class RoteiristaAgent:
                     sb_parts.append(f"- EVITE: '{img['descricao_ia']}'\n  USE PREFERENCIALMENTE: '{img['descricao_humano']}'\n  MOTIVO: {img['aprendizado']}")
         except Exception as e:
             print(f"[Supabase] Erro ao buscar imagens: {e}")
-            
+
         return "\n".join(sb_parts)
 
     def _build_context(self, modo_trabalho: str = ""):
@@ -281,7 +283,7 @@ class RoteiristaAgent:
 
         # 1. System Prompt Base
         parts.append(self.prompts.get("base", ""))
-        
+
         # 2. System Prompt Específico do Modo
         modo_u = str(modo_trabalho).upper()
         if "SOCIAL" in modo_u:
@@ -390,16 +392,16 @@ class RoteiristaAgent:
         else:
             text_data = str(scraped_data)
             images_list = []
-            
+
         # Preparação de Metadados Dinâmicos
         data_str = data_roteiro if data_roteiro else "07/03/2026"
         cod_str = str(codigo).strip() if codigo else "[CÓDIGO_AQUI]"
         if cod_str.isdigit() and len(cod_str) < 9:
             cod_str = cod_str.ljust(9, '0')
-        
+
         sub_skus_str = f" {sub_skus}" if (sub_skus and str(sub_skus).lower() != 'nan' and str(sub_skus).strip()) else ""
         video_ref_str = f"\n   {video_url}" if (video_url and str(video_url).lower() != 'nan' and str(video_url).strip()) else ""
-        
+
         # Determinação da Taxonomia - PADRÃO: NW [LU] [MÊS] [CÓDIGO]
         modo_u = str(modo_trabalho).upper()
         if "REVIEW" in modo_u:
@@ -421,7 +423,7 @@ class RoteiristaAgent:
         )
 
         diretriz_modo = f"VOCÊ DEVE COPIAR O CABEÇALHO ABAIXO EXATAMENTE NO INÍCIO DO ARQUIVO (Substitua apenas o [NOME DO PRODUTO]):\n{cabecalho}\n\n"
-        
+
         if "REVIEW" in modo_u:
             comentarios = kwargs.get('comentarios', '')
             if comentarios:
@@ -503,7 +505,7 @@ class RoteiristaAgent:
                     if img_bytes and img_mime:
                         # Formato explícito do SDK v2 para Parts binárias
                         contents.append(types.Part.from_bytes(data=img_bytes, mime_type=img_mime))
-            
+
             if image_urls_for_prompt:
                 contents[0] += "\n\n🔗 **LINKS DE IMAGENS ADICIONAIS:**\n" + "\n".join([f"- {url}" for url in image_urls_for_prompt])
 
@@ -511,7 +513,7 @@ class RoteiristaAgent:
             max_retries = 4
             base_wait = 15  # segundos
             response = None
-            
+
             for attempt in range(max_retries + 1):
                 try:
                     print(f"[DEBUG] Chamando Models.generate_content para SKU {codigo} com modelo {self.model_id} (tentativa {attempt + 1}/{max_retries + 1})")
@@ -538,7 +540,7 @@ class RoteiristaAgent:
                 except Exception as api_err:
                     err_str = str(api_err)
                     is_retryable = any(code in err_str for code in ["503", "429", "UNAVAILABLE", "RESOURCE_EXHAUSTED", "high demand", "overloaded"])
-                    
+
                     if is_retryable and attempt < max_retries:
                         wait_time = base_wait * (2 ** attempt)  # 15s, 30s, 60s, 120s
                         print(f"[RETRY] Erro retentável ({err_str[:80]}...). Aguardando {wait_time}s antes da tentativa {attempt + 2}...")
@@ -547,7 +549,7 @@ class RoteiristaAgent:
                         # Erro não-retentável ou esgotou tentativas
                         print(f"[FATAL] Erro definitivo após {attempt + 1} tentativa(s): {err_str[:200]}")
                         raise api_err
-            
+
             # Resiliência na obtenção do texto (evita exceções se a resposta for bloqueada ou vazia)
             try:
                 roteiro = response.text
@@ -555,7 +557,7 @@ class RoteiristaAgent:
                     # Tenta extrair manualmente se .text estiver vazio mas houver parte
                     if response.candidates and response.candidates[0].content.parts:
                         roteiro = "".join([p.text for p in response.candidates[0].content.parts])
-                
+
                 if not roteiro or len(roteiro.strip()) < 20:
                     print(f"[WARN] Gemini retornou resposta vazia ou muito curta para SKU {codigo}")
                     roteiro = f"ERRO: O modelo {self.model_id} retornou uma resposta vazia. Isso pode ser um problema temporário na API do Google ou filtro de segurança restritivo."
@@ -566,10 +568,10 @@ class RoteiristaAgent:
                     c = response.candidates[0]
                     if hasattr(c, 'finish_reason'):
                         block_reason = f"Bloqueado por: {c.finish_reason}"
-                
+
                 roteiro = f"ERRO NA GERAÇÃO ({self.model_id}): {block_reason}. Tente outro modelo ou ajuste o texto de entrada."
                 print(f"[RECOVERED ERROR] Gemini Blocked/Error: {e} | Reason: {block_reason}")
-            
+
             # Métricas via v2 metadata
             if hasattr(response, 'usage_metadata'):
                 tokens_in = response.usage_metadata.prompt_token_count
@@ -577,12 +579,12 @@ class RoteiristaAgent:
             else:
                 tokens_in = len(final_prompt) // 4
                 tokens_out = len(roteiro) // 4
-        
+
         elif self.client_openai:
-            # Modelos de raciocínio (o1, o3) preferem instruções via 'developer' ou apenas 'user' 
+            # Modelos de raciocínio (o1, o3) preferem instruções via 'developer' ou apenas 'user'
             # e não suportam parâmetros como temperature/top_p.
             is_reasoning = any(m in self.model_id.lower() for m in ["o1", "o3"])
-            
+
             messages = []
             if is_reasoning:
                 # Para o1/o3, enviamos o contexto como parte do prompt do usuário ou developer
@@ -594,29 +596,29 @@ class RoteiristaAgent:
 
             try:
                 print(f"[DEBUG] Chamando OpenAI ({self.model_id}) para SKU {codigo}...")
-                
+
                 params = {
                     "model": self.model_id,
                     "messages": messages
                 }
-                
+
                 # Só adiciona temperature se não for modelo de raciocínio
                 if not is_reasoning:
                     params["temperature"] = 0.7
-                
+
                 response = self.client_openai.chat.completions.create(**params)
                 roteiro = response.choices[0].message.content
-                
+
                 tokens_in = response.usage.prompt_tokens if hasattr(response, 'usage') else 0
                 tokens_out = response.usage.completion_tokens if hasattr(response, 'usage') else 0
                 print(f"[OK] OpenAI gerou roteiro para {codigo} ({tokens_in + tokens_out} tokens)")
-                
+
             except Exception as e:
                 err_msg = f"ERRO OPENAI ({self.model_id}): {str(e)}"
                 print(f"[CRITICAL] {err_msg}")
                 roteiro = f"{err_msg}\n\nPor favor, tente usar o modelo Gemini 3 Flash ou GPT-4o se o erro persistir."
                 tokens_in, tokens_out = 0, 0
-        
+
         else:
             raise Exception("Nenhum cliente LLM configurado válido.")
 
@@ -634,7 +636,7 @@ class RoteiristaAgent:
                         # Encontrou o início do cabeçalho
                         if i + 2 < len(linhas):
                             prod_line = linhas[i+2].replace('**', '').replace('Produto:', '').strip()
-                            
+
                             # Regex aprimorado para extrair apenas o nome do produto
                             # Remove: NW, NW LU, NW 3D, Meses (JAN-DEZ), e sequências de números (códigos)
                             nome_purificado = prod_line
@@ -643,10 +645,10 @@ class RoteiristaAgent:
                                 nome_purificado = re.sub(r'^(NW|SOCIAL|REVIEW|3D|LU|JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ|DE)(\s+|$)', '', nome_purificado, flags=re.IGNORECASE).strip()
                                 nome_purificado = re.sub(r'^\d{6,}\s*', '', nome_purificado).strip()
                                 if nome_purificado == prev: break
-                            
+
                             # Remove URLs que a IA possa ter incluído inline no nome
                             nome_purificado = re.sub(r'https?://\S+', '', nome_purificado).strip()
-                            
+
                             # Remove código duplicado que possa ter restado no meio/fim do nome
                             if cod_str and cod_str != "[CÓDIGO_AQUI]":
                                 nome_purificado = nome_purificado.replace(cod_str, '').strip()
@@ -659,7 +661,7 @@ class RoteiristaAgent:
                             linhas[i] = "Cliente: Magalu"
                             linhas[i+1] = f"Roteirista: Tiago Fernandes - Data: {data_str}"
                             linhas[i+2] = f"Produto: {prefixo_taxonomia} {cod_str}{sub_skus_str} {nome_purificado}"
-                            
+
                             # Limpa linhas de URLs soltas/duplicadas que a IA possa ter gerado logo após o cabeçalho
                             j = i + 3
                             while j < min(i + 7, len(linhas)):
@@ -667,14 +669,14 @@ class RoteiristaAgent:
                                 if stripped.startswith('http://') or stripped.startswith('https://'):
                                     linhas[j] = ''
                                 j += 1
-                            
+
                             # Adiciona link do vídeo UMA ÚNICA VEZ, indentado abaixo da linha Produto
                             if video_ref_str:
                                 linhas[i+2] += video_ref_str
-                            
+
                             header_fixed = True
                         break
-                
+
                 if header_fixed:
                     roteiro = "\n".join(linhas)
                     # Colapsa 3+ quebras de linha consecutivas em no máximo 2 (preserva parágrafos)
@@ -798,7 +800,7 @@ class RoteiristaAgent:
             try:
                 from openai import OpenAI as OpenAIClient
                 client = OpenAIClient(api_key=api_key_openai)
-                
+
                 # Tenta o1 Primeiro (O Pensador)
                 try:
                     print("[TRY] Tentando calibragem via OpenAI (o1)...")
@@ -837,12 +839,12 @@ class RoteiristaAgent:
         if api_key_gemini:
             try:
                 client_v2 = genai.Client(api_key=api_key_gemini)
-                
+
                 # Tenta 3.1 Pro primeiro
                 try:
                     print("[TRY] Tentando calibragem via Gemini 3.1 Pro...")
                     response_gem = client_v2.models.generate_content(
-                        model="gemini-3.1-pro-preview", 
+                        model="gemini-3.1-pro-preview",
                         contents=user_prompt,
                         config=types.GenerateContentConfig(
                             system_instruction=sys_prompt,
@@ -854,7 +856,7 @@ class RoteiristaAgent:
                 except Exception as e_pro:
                     print(f"[WARN] Gemini 3.1 Pro falhou ({e_pro}), tentando 2.0 Flash...")
                     response_gem = client_v2.models.generate_content(
-                        model="gemini-2.0-flash", 
+                        model="gemini-2.0-flash",
                         contents=user_prompt,
                         config=types.GenerateContentConfig(
                             system_instruction=sys_prompt,
@@ -863,7 +865,7 @@ class RoteiristaAgent:
                         )
                     )
                     model_str = "Gemini 2.0 Flash"
-                
+
                 try:
                     res_text = response_gem.text
                 except Exception as e:
@@ -874,7 +876,7 @@ class RoteiristaAgent:
                 if res:
                     print(f"[OK] Calibragem realizada via {model_str}")
                     return self._process_calib_res(res, fallback_id, categories_list, codigo_original, model_str)
-                
+
                 raise Exception("Falha na extração JSON")
             except Exception as e:
                 print(f"[ERROR] Erro Gemini Calibragem: {e}")
@@ -906,14 +908,14 @@ class RoteiristaAgent:
 
         print("[CRITICAL ERROR] FALHA TOTAL: Nenhum provedor de IA conseguiu realizar a calibragem.")
         return {
-            "percentual": 50, 
-            "aprendizado": "Erro: Nenhum provedor de IA disponível para calibragem ou falha técnica no processamento.", 
-            "categoria_id": fallback_id, 
-            "codigo_produto": codigo_original, 
-            "modelo_calibragem": "N/A", 
-            "fonetica_regras": [], 
-            "estrutura_regras": [], 
-            "persona_regras": [], 
+            "percentual": 50,
+            "aprendizado": "Erro: Nenhum provedor de IA disponível para calibragem ou falha técnica no processamento.",
+            "categoria_id": fallback_id,
+            "codigo_produto": codigo_original,
+            "modelo_calibragem": "N/A",
+            "fonetica_regras": [],
+            "estrutura_regras": [],
+            "persona_regras": [],
             "imagens_regras": [],
             "resumo_estrategico": "Falha na análise automática."
         }
@@ -923,14 +925,14 @@ class RoteiristaAgent:
         # Validação rigorosa do ID de categoria
         returned_id = int(res.get("categoria_id", fallback_id)) if str(res.get("categoria_id")).isdigit() else fallback_id
         valid_ids = [c['id'] for c in categories_list] if categories_list else []
-        
+
         # Se for 1 (antigo default errado) força pra Genérico (77) ou o primeiro válido
         if returned_id == 1 and 1 not in valid_ids:
             final_cat_id = 77 if 77 in valid_ids else (valid_ids[0] if valid_ids else fallback_id)
         else:
             final_cat_id = returned_id if returned_id in valid_ids else fallback_id
 
-        
+
         import re
         sku_raw = str(res.get("codigo_produto", codigo_original))
         # SKUs Magalu tem EXATAMENTE 9 dígitos. Priorizamos encontrar esses blocos.
@@ -938,9 +940,9 @@ class RoteiristaAgent:
         # Se não achar blocos isolados, tenta achar qualquer sequência de 9 dígitos
         if not skus_found:
             skus_found = re.findall(r'\d{9}', sku_raw)
-            
+
         sku_clean = " ".join(skus_found) if skus_found else re.sub(r'\D', '', sku_raw)
-        
+
         return {
             "percentual": int(res.get("percentual", 50)),
             "aprendizado": res.get("aprendizado", "Análise realizada."),
@@ -965,46 +967,46 @@ class RoteiristaAgent:
             "REGRA DE OURO MÁXIMA: É PROIBIDO responder perguntas fora do contexto da Magalu, tecnologia em varejo, redação ou sobre o sistema de roteiros. Se o assunto sair disso, responda educadamente que você só pode ajudar com demandas de conteúdo da Magalu. "
             "Tenha um tom acolhedor ('estilo magalu'), direto ao ponto, e use emojis ocasionalmente.\n\n"
         )
-        
+
         if supabase_context:
             system_base += f"--- CONTEXTO ATUAL DO BANCO DE DADOS ---\n{supabase_context}\n---------------------------------------\n"
 
         try:
             if self.provider == "gemini":
-                # Para o Gemini (SDK v1), montaremos a interface como um string prompt 
+                # Para o Gemini (SDK v1), montaremos a interface como um string prompt
                 # contendo o system prompt + histórico + pergunta
                 full_prompt = system_base + "\n\n--- HISTÓRICO RECENTE ---\n"
-                for msg in chat_history[-6:]: 
+                for msg in chat_history[-6:]:
                     r = msg.get('role', 'user').upper()
                     c = msg.get('content', '')
                     full_prompt += f"{r}: {c}\n"
                 full_prompt += f"\nUSUÁRIO: {user_query}\nLU:"
-                
+
                 response = self.client_gemini.models.generate_content(
                     model=self.model_id,
                     contents=full_prompt,
                     config=types.GenerateContentConfig(temperature=0.5)
                 )
                 return response.text
-                
+
             elif self.provider in ["openai", "puter", "openrouter", "zai", "kimi"]:
                 messages = [{"role": "system", "content": system_base}]
                 for msg in chat_history[-6:]:
                     r = "assistant" if msg.get("role") == "Lu" else "user"
                     messages.append({"role": r, "content": msg["content"]})
-                    
+
                 messages.append({"role": "user", "content": user_query})
-                
+
                 response = self.client_openai.chat.completions.create(
                     model=self.model_id,
                     messages=messages,
                     temperature=0.7
                 )
                 return response.choices[0].message.content
-                
+
             else:
                 return "Provedor LLM não reconhecido para Chat."
-                
+
         except Exception as e:
             return f"Desculpe, tive um problema técnico ao conectar com a IA ({self.model_id}): {e}"
 
@@ -1017,7 +1019,7 @@ class RoteiristaAgent:
         roteiros_formatados = ""
         for i, roteiro in enumerate(roteiros_textos):
             roteiros_formatados += f"--- VERSÃO {i + 1} ---\n{roteiro}\n\n"
-            
+
         sys_prompt = (
             "Você é o Diretor de Criação Sênior da Magalu. Especialista em juntar boas ideias.\n"
             "Eu vou te apresentar algumas versões de roteiros gerados por diferentes IAs para o mesmo produto.\n"

@@ -25,7 +25,7 @@ for s in scripts[:20]:
 # Procura dados embutidos em scripts inline
 for s in scripts:
     if s.string and ('product' in s.string.lower()[:200] or 'titulo' in s.string.lower()[:200]):
-        print(f"\n=== SCRIPT COM PRODUCT DATA (primeiros 600 chars) ===")
+        print("\n=== SCRIPT COM PRODUCT DATA (primeiros 600 chars) ===")
         print(s.string[:600])
         print("===")
         break
