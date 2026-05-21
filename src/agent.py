@@ -1,5 +1,6 @@
 import os
 import json
+import time
 import glob
 from google import genai
 from google.genai import types
@@ -192,36 +193,53 @@ class RoteiristaAgent:
         else:
             prefix = "nw_"
         
+        # 1. Roteiros Ouro (O "Norte" da Redação - Exemplos de Elite)
         try:
-            # 1. Roteiros Ouro (O "Norte" da Redação - Exemplos de Elite)
             res_ouro = self.supabase.table(f"{prefix}roteiros_ouro").select("*").order('criado_em', desc=True).limit(10).execute()
             if res_ouro.data:
                 sb_parts.append("\n**REFERÊNCIAS DE ELITE (ESTE É O PADRÃO OURO A SER SEGUIDO):**")
                 for r in res_ouro.data:
                     sb_parts.append(f"- Produto: {r['titulo_produto']}\n  Roteiro Perfeito (Target): {r['roteiro_perfeito']}")
+        except Exception as e:
+            print(f"[Supabase] Erro ao buscar roteiros_ouro: {e}")
 
-            # 2. Ajustes de Persona (SHARED)
+        # 2. Ajustes de Persona (SHARED) — Colunas: pilar_persona, texto_gerado_ia, texto_corrigido_humano, lexico_sugerido
+        try:
             res_pers = self.supabase.table("nw_treinamento_persona_lu").select("*").order('criado_em', desc=True).limit(15).execute()
             if res_pers.data:
                 sb_parts.append("\n**AJUSTES DE PERSONA (LIÇÕES APRENDIDAS):**")
                 for p in res_pers.data:
-                    sb_parts.append(f"- Pilar: {p['pilar_persona']}\n  Erro Anterior: {p['erro_cometido']}\n  Correção Master: {p['texto_corrigido_humano']}")
+                    sb_parts.append(
+                        f"- Pilar: {p['pilar_persona']}\n"
+                        f"  ❌ IA Escreveu: {p['texto_gerado_ia']}\n"
+                        f"  ✅ Breno Corrigiu Para: {p['texto_corrigido_humano']}\n"
+                        f"  📝 Use o Léxico: {p.get('lexico_sugerido', '')}"
+                    )
+        except Exception as e:
+            print(f"[Supabase] Erro ao buscar persona_lu: {e}")
 
-            # 3. Novas Regras Fonéticas (SHARED ACROSS MODES)
+        # 3. Novas Regras Fonéticas (SHARED ACROSS MODES)
+        try:
             res_fon = self.supabase.table("nw_treinamento_fonetica").select("*").execute()
             if res_fon.data:
                 sb_parts.append("\n**NOVAS REGRAS DE FONÉTICA (OBRIGATÓRIO):**")
                 for f in res_fon.data:
                     sb_parts.append(f"- {f['termo_errado']} -> ({f['termo_corrigido']})")
+        except Exception as e:
+            print(f"[Supabase] Erro ao buscar fonetica: {e}")
                     
-            # 4. Estruturas Aprovadas (Aberturas e Fechamentos/CTAs)
+        # 4. Estruturas Aprovadas (Aberturas e Fechamentos/CTAs)
+        try:
             res_est = self.supabase.table(f"{prefix}treinamento_estruturas").select("*").order('criado_em', desc=True).limit(30).execute()
             if res_est.data:
                 sb_parts.append("\n**ESTRUTURAS APROVADAS PARA INSPIRAÇÃO (HOOKS E CTAs):**")
                 for est in res_est.data:
                     sb_parts.append(f"- [{est['tipo_estrutura']}] {est['texto_ouro']}")
+        except Exception as e:
+            print(f"[Supabase] Erro ao buscar estruturas: {e}")
                     
-            # 5. Nuances de Linguagem (O que evitar e como melhorar)
+        # 5. Nuances de Linguagem (O que evitar e como melhorar)
+        try:
             res_nuan = self.supabase.table(f"{prefix}treinamento_nuances").select("*").limit(20).order('criado_em', desc=True).execute()
             if res_nuan.data:
                 sb_parts.append("\n**NUANCES E REFINAMENTO DE ESTILO (LIÇÕES DE REDAÇÃO):**")
@@ -230,8 +248,11 @@ class RoteiristaAgent:
                     if n.get('exemplo_ouro'):
                         refinamento += f"\n  FORMA IDEAL: '{n['exemplo_ouro']}'"
                     sb_parts.append(refinamento)
+        except Exception as e:
+            print(f"[Supabase] Erro ao buscar nuances: {e}")
 
-            # 6. Memória de Calibragem (Lições Recentes da Calibragem)
+        # 6. Memória de Calibragem (Lições Recentes da Calibragem)
+        try:
             res_fb = self.supabase.table(f"{prefix}roteiros_ouro").select("aprendizado").neq("aprendizado", "null").order('criado_em', desc=True).limit(15).execute()
             if res_fb.data:
                 valid_mems = [f for f in res_fb.data if f.get('aprendizado') and f['aprendizado'].strip()]
@@ -239,15 +260,18 @@ class RoteiristaAgent:
                     sb_parts.append("\n**LIÇÕES RECENTES DA CALIBRAGEM (NÃO REPITA ESTES ERROS):**")
                     for fb in valid_mems:
                         sb_parts.append(f"- {fb['aprendizado']}")
+        except Exception as e:
+            print(f"[Supabase] Erro ao buscar calibragem: {e}")
 
-            # 7. Calibragem Visual (Descrição de Imagens)
+        # 7. Calibragem Visual (Descrição de Imagens)
+        try:
             res_img = self.supabase.table(f"{prefix}treinamento_imagens").select("*").limit(15).order('criado_em', desc=True).execute()
             if res_img.data:
                 sb_parts.append("\n**DIRETRIZES VISUAIS (COMO DESCREVER IMAGENS):**")
                 for img in res_img.data:
                     sb_parts.append(f"- EVITE: '{img['descricao_ia']}'\n  USE PREFERENCIALMENTE: '{img['descricao_humano']}'\n  MOTIVO: {img['aprendizado']}")
         except Exception as e:
-            print(f"Error fetching Supabase context: {e}")
+            print(f"[Supabase] Erro ao buscar imagens: {e}")
             
         return "\n".join(sb_parts)
 
@@ -465,16 +489,25 @@ class RoteiristaAgent:
         if self.client_gemini:
             # No SDK v2 (google-genai), contents é uma lista que pode conter strings ou Parts
             contents = [final_prompt]
+            image_urls_for_prompt = []
+
             if images_list:
                 for img_dict in images_list:
+                    img_url = img_dict.get("url")
+                    if img_url:
+                        image_urls_for_prompt.append(img_url)
+                        continue
+
                     img_bytes = img_dict.get("bytes")
                     img_mime = img_dict.get("mime")
                     if img_bytes and img_mime:
                         # Formato explícito do SDK v2 para Parts binárias
                         contents.append(types.Part.from_bytes(data=img_bytes, mime_type=img_mime))
+            
+            if image_urls_for_prompt:
+                contents[0] += "\n\n🔗 **LINKS DE IMAGENS ADICIONAIS:**\n" + "\n".join([f"- {url}" for url in image_urls_for_prompt])
 
             # Chamada via SDK v2 com retry e backoff exponencial para erros 503/429
-            import time as _time
             max_retries = 4
             base_wait = 15  # segundos
             response = None
@@ -509,7 +542,7 @@ class RoteiristaAgent:
                     if is_retryable and attempt < max_retries:
                         wait_time = base_wait * (2 ** attempt)  # 15s, 30s, 60s, 120s
                         print(f"[RETRY] Erro retentável ({err_str[:80]}...). Aguardando {wait_time}s antes da tentativa {attempt + 2}...")
-                        _time.sleep(wait_time)
+                        time.sleep(wait_time)
                     else:
                         # Erro não-retentável ou esgotou tentativas
                         print(f"[FATAL] Erro definitivo após {attempt + 1} tentativa(s): {err_str[:200]}")
@@ -1098,7 +1131,6 @@ class RoteiristaAgent:
             f"Retorne APENAS o roteiro polido. Sem preâmbulos."
         )
 
-        import time as _time
         max_retries = 3
         base_wait = 15
         response = None
@@ -1122,7 +1154,7 @@ class RoteiristaAgent:
                     if attempt < max_retries and any(k in err_str for k in ["503", "429", "overloaded", "rate"]):
                         wait_time = base_wait * (2 ** attempt)
                         print(f"[POLIR] Retry {attempt+1}/{max_retries} — aguardando {wait_time}s...")
-                        _time.sleep(wait_time)
+                        time.sleep(wait_time)
                     else:
                         raise
 

@@ -3,36 +3,285 @@ REGRAS ESPECÍFICAS: MODO SOCIAL (Reels/TikTok)
 ======================================================================
 
 ESTRUTURA TÍPICA DA CENA SOCIAL (As cenas do roteiro devem ter esse formato):
-- [Falas - texto contínuo]
-Imagem: [A Lu em ação usando o produto de forma prática e entusiasmada].
-
-🚨 **LU NA PRIMEIRA CENA (PROTAGONISTA):** No modo Social, a Lu deve OBRIGATORIAMENTE estar ativa na Cena 1 interagindo com o produto (usando, segurando, demonstrando). Ela não é um enfeite; ela é a usuária real e entusiasta. A imagem deve descrever essa interação física.
-
-🚨 **REGRA DE OURO - ZERO PERGUNTAS:** É terminantemente PROIBIDO iniciar o roteiro com perguntas (ex: "Sabe quando...?", "Cansado de...?"). Comece SEMPRE com uma afirmação positiva e poderosa, com a Lu em ação.
-
-🚨 **PROIBIÇÃO DE LETTERING:** É ESTRITAMENTE PROIBIDO usar "Lettering:" nas cenas de apresentação do produto. "Lettering:" só existe na ÚLTIMA CENA de fechamento.
+- [Falas - texto contínuo, 1-2 frases MAX por bullet]
+Imagem: [Descrição CURTA do que aparece na tela — max 7 palavras].
 
 🚨 IMPORTANTE: NÃO USE numeração ou o rótulo "Texto:". Comece com "-" para a locução.
 
-**REGRAS SOCIAIS (Cortes, Ritmo, Engajamento):**
-- HOOK DIRETO AFIRMATIVO (ATENÇÃO IMEDIATA): A abertura OBRIGATORIAMENTE deve ser um HOOK AFIRMATIVO, POSITIVO e PERSUASIVO. Foco extremo na SOLUÇÃO e linguagem de "Vídeo Discovery" (TikToker/Criador). 
-- Os primeiros 3 segundos devem prender a atenção com um FATO de impacto ou a SOLUÇÃO principal demonstrada com energia.
-  - ✅ "Gente, esse celular é a solução pra quem não para um segundo!"
-  - ✅ "Olhem a praticidade desse aspirador pra deixar tudo brilhando num vapt-vupt!"
-  - ❌ "Sua bateria acaba no meio do dia?" (PROIBIDO: Não comece com pergunta)
-  - ❌ "O Smartphone Samsung SM-A546E Galaxy A54 5G..."
-- TEXTO CURTO E DINÂMICO: Corte qualquer spec inútil. Fale como um review ágil de TikToker/Influencer (porém sem usar "galera" e "pessoal"). Diga apenas os Destaques.
-- VOCABULÁRIO ENERGÉTICO: Use tom animado sem forçar a barra.
-- CORTES RÁPIDOS (Visual): Descreva as imagens transicionando rapidamente (ex: "Câmera pula para um close...").
-- TAMANHO: Máximo absoluto de 4 a 5 cenas.
+======================================================================
+🎬 PRESENÇA DA LU NO SOCIAL (VISUAL VS TEXTUAL)
+======================================================================
+A Lu é a NARRADORA em todas as cenas (voz), mas visualmente:
 
-**FECHAMENTO SOCIAL:**
-- ESTRUTURA PADRÃO: Resumo de 1 frase reforçando o benefício finalizando SEMPRE com ", tem no Magalu!".
-- O CTA da locução DEVE SER EXATAMENTE O PADRÃO DA MARCA:
-  ✅ "A solução ideal pra [DOR], tem no Magalu!"
-  ✅ "Tudo o que você precisa pra curtir o final de semana, tem no Magalu!"
-  ❌ PROIBIDO usar: "Gostou? Já clica na sacolinha" ou qualquer CTA que não termine com "tem no Magalu!".
-- A ÚLTIMA CENA DO ROTEIRO: É A ÚNICA CENA DECLARADA COM LETTERING. O formato deve ser EXATAMENTE assim:
-Lettering: #TemNoMagalu (pode ser junto com o botão/sacola do Instagram).
-- DIRETRIZ VISUAL SOCIAL: Mãos podem (e devem) aparecer interagindo com o produto (unboxing, pegando o objeto, demonstrando funções), pois isso traz humanização e ritmo de "review real". Apenas o ROSTO da pessoa é proibido; o foco deve ser sempre nas mãos e no produto.
+CENA 1 (OBRIGATÓRIO): A Lu deve estar ativa interagindo com o produto
+(usando, segurando, demonstrando). Ela é a usuária real e entusiasta.
 
+CENA 2 EM DIANTE (PRODUTO É O FOCO):
+- A partir da C2, o foco visual é 100% no PRODUTO.
+- MÃOS humanas podem (e devem) aparecer: unboxing, demonstrando
+  funções, ajustando controles, abrindo compartimentos.
+- O ROSTO da pessoa é PROIBIDO da C2 em diante.
+- ❌ "Lu sorrindo ao lado do produto" (ERRADO para C2+)
+- ❌ "Lu em um parque empurrando o carrinho" (ERRADO para C2+)
+- ✅ "Mãos ajustando o termostato" (CORRETO)
+- ✅ "Close no painel de controle" (CORRETO)
+
+FECHAMENTO (ÚLTIMA CENA): SEM Lu, SEM imagem. Apenas Lettering.
+
+======================================================================
+📸 IMAGENS MINIMALISTAS (REGRA P0 — MÁXIMA)
+======================================================================
+🚨 As descrições de "Imagem:" no Social devem ser CURTÍSSIMAS.
+MÁXIMO: 7 palavras. Sem cenários, sem emoções, sem movimentos de câmera
+complexos. O editor de vídeo sabe o que fazer — você só indica O QUE
+mostrar, não COMO mostrar.
+
+❌ DON'Ts (IMAGENS PROIBIDAS):
+- ❌ "Lu em um parque, empurrando o carrinho com um sorriso e 
+  demonstrando a fluidez do movimento das rodas dianteiras" (26 palavras!)
+- ❌ "Lu sorrindo e dando banho em um bebê em pé, com a postura reta 
+  e confortável ao lado da banheira montada" (20 palavras!)
+- ❌ "Lu em uma cozinha moderna, colocando arroz na parte de baixo 
+  da panela e legumes no suporte superior, sorrindo" (18 palavras!)
+- ❌ "Close dinâmico na tampa de vidro mostrando o vapor e a comida 
+  cozinhando, seguido de uma mão retirando a tampa" (18 palavras!)
+
+✅ DO's (IMAGENS CORRETAS):
+- ✅ "mostrar carrinho em movimento." (4 palavras)
+- ✅ "panela na bancada." (3 palavras)
+- ✅ "banheira em bancada." (3 palavras)
+- ✅ "mostrar secador em close e cabelo." (6 palavras)
+- ✅ "Close no painel do termômetro." (5 palavras)
+- ✅ "mostrar o cinto e a capota." (6 palavras)
+- ✅ "mostrar a estrutura + as rodinhas." (5 palavras)
+- ✅ "mostrar os acessórios + ícone de voltagem." (6 palavras)
+
+REGRA: Se a descrição de imagem tem mais de 7 palavras, está ERRADA. 
+Reescreva até caber. Corte cenário, corte emoção, corte "Lu".
+
+======================================================================
+🎯 ABERTURA KILLER SOCIAL (HOOK — REGRA P0)
+======================================================================
+🚨 **REGRA DE OURO - ZERO PERGUNTAS:** É terminantemente PROIBIDO 
+iniciar o roteiro com perguntas (ex: "Sabe quando...?", "Cansado de...?").
+Comece SEMPRE com uma afirmação positiva e poderosa.
+
+FÓRMULA C1 SOCIAL:
+[Gente/Se liga/Olha só] + [Este/Esse/Essa] + [TIPO DO PRODUTO EM 
+PORTUGUÊS], da [MARCA], + [BENEFÍCIO PRINCIPAL ou SOLUÇÃO]!
+
+✅ DO's:
+- ✅ "Gente, esse Carrinho de Bebê, da Maxi Baby, é a solução completa 
+  pra acompanhar o crescimento do seu pequeno!"
+- ✅ "Se liga como essa Panela de Arroz Elétrica, da Wap, resolve o 
+  almoço rapidinho!"
+- ✅ "Esse secador, da Britânia, tem 2.100 Watts pra resultado de salão!"
+
+❌ DON'Ts:
+- ❌ "O Travel System (trável sístem) Elysian (elísian), da Maxi Baby..." 
+  (Nome estrangeiro + fonética na C1 = PROIBIDO)
+- ❌ "O Smartphone Samsung SM-A546E Galaxy A54 5G..." (Código de modelo)
+
+🚨 REGRA DO NOME EM PORTUGUÊS: Na C1, use SEMPRE o TIPO DO PRODUTO em 
+português claro. Nomes de linha estrangeiros ou nomes comerciais ficam 
+OPCIONAIS (pode omitir). O consumidor precisa entender o que é o produto
+em 2 segundos.
+- ❌ "Travel System" → ✅ "Carrinho de Bebê"
+- ❌ "Air Fryer" → ✅ "Fritadeira Elétrica" (ou "Air Fryer" se já for 
+  universalmente conhecido)
+
+======================================================================
+🔪 1 FEATURE = 1 BULLET (REGRA P0 — ANTI-AGLOMERAÇÃO)
+======================================================================
+No Social, cada bullet deve ter NO MÁXIMO 1-2 frases cobrindo UMA 
+feature ou argumento. O ritmo do Social é de CORTE RÁPIDO — muitos 
+bullets curtos são melhores que poucos bullets longos.
+
+❌ DON'Ts (AGLOMERAÇÃO):
+- ❌ "E pra acertar a temperatura da água, ela tem um termômetro digital.
+  Ah, e a almofada ergonômica acomoda o recém-nascido com segurança."
+  (2 features completamente diferentes na mesma cena!)
+- ❌ "Com o cesto a vapor, faz arroz e legumes ao mesmo tempo em 20 min.
+  E como a tampa é de vidro, fica fácil acompanhar sem abrir."
+  (2 features: cesto + tampa = 2 bullets separados!)
+- ❌ "Ele usa Infrared e Tourmaline pra proteger os fios. Dá pra ajustar
+  em três temperaturas e duas velocidades." (Tecnologia + uso prático 
+  misturados!)
+
+✅ DO's (SEPARAÇÃO):
+- ✅ C2: "Ele tem assento reversível pra deixar o bebê virado pra você 
+  ou de frente pro passeio."
+  C3: "Pra garantir a segurança, vem com cinto de cinco pontos e capota."
+  (SEPARADOS — cada feature brilha sozinha)
+
+REGRA: Se o bullet tem "Ah, e..." ou "E ele ainda..." no MEIO da frase, 
+provavelmente deveria ser um bullet separado. Quebre.
+
+======================================================================
+⏱️ ECONOMIA DE CENAS SOCIAL (REGRA P0)
+======================================================================
+- PRODUTO SIMPLES (poucos specs): 4-5 cenas + fechamento.
+- PRODUTO COMPLEXO (muitos specs): 5-6 cenas + fechamento.
+- MÁXIMO ABSOLUTO: 7 cenas (incluindo fechamento).
+
+⚠️ PREFIRA 6 bullets de 1 frase cada do que 4 bullets de 2 frases.
+O Social vive de CORTE RÁPIDO. Cada bullet = 1 corte visual = 1 feature.
+
+======================================================================
+🎯 PRIORIZAÇÃO DE FEATURES POR CATEGORIA (REGRA P1)
+======================================================================
+Antes de escrever, ORGANIZE as features por importância para o 
+CONSUMIDOR, não na ordem da ficha técnica.
+
+ORDEM OBRIGATÓRIA POR CATEGORIA:
+
+👶 BEBÊ (Carrinhos, Banheiras, Cadeirinhas):
+1. SEGURANÇA (cinto, capota, freio, trava) — SEMPRE antes de conveniência
+2. FUNCIONALIDADE (reversível, dobrável, moisés)
+3. PRATICIDADE (fechamento com uma mão, peso, transporte)
+4. ACESSÓRIOS (bebê conforto, redutor, bolsa)
+
+💇 BELEZA (Secadores, Chapinhas, Modeladores):
+1. POTÊNCIA/USO PRÁTICO (watts, temperaturas, velocidades)
+2. FEATURE STAR (jato de ar frio, placas flutuantes)
+3. TECNOLOGIA (Infrared, Tourmaline, Cerâmica)
+4. ACESSÓRIOS + VOLTAGEM (difusor, concentrador, bivolt)
+
+🍳 COZINHA (Panelas, Fritadeiras, Liquidificadores):
+1. SOLUÇÃO/DOR (o que ela resolve?)
+2. DIFERENCIAL MECÂNICO (cesto vapor, bandeja, timer)
+3. MATERIAL/REVESTIMENTO (antiaderente, inox, vidro)
+4. FUNCIONALIDADES EXTRAS (manter aquecido, desligamento)
+
+📱 ELETRÔNICOS:
+1. MOTOR (processador + RAM + armazenamento)
+2. TELA (tamanho + resolução + taxa)
+3. CÂMERA (specs secos)
+4. BATERIA + EXTRAS
+
+🚨 REGRA: SEGURANÇA > CONVENIÊNCIA > ESTÉTICA (sempre).
+Se o produto tem cinto de 5 pontos E fechamento com uma mão, 
+o cinto vem PRIMEIRO.
+
+======================================================================
+🗣️ FONÉTICA SOCIAL (REGRA P1 — CIRÚRGICA)
+======================================================================
+No Social, o ritmo é rápido. Fonética POLUI o fluxo. Use com EXTREMA 
+MODERAÇÃO — apenas para termos realmente obscuros.
+
+❌ PROIBIDO FONETIZAR NO SOCIAL:
+- kg, quilos, watts, litros, graus, polegadas (unidades comuns)
+- 360º (trezentos e sessenta graus) — desnecessário
+- frizz — público de beleza conhece
+- Amperes — spec técnico, não pertence ao Social
+- apps, Wi-Fi, Bluetooth, Full HD, 4K (universais)
+
+✅ PERMITIDO FONETIZAR (apenas se realmente difícil):
+- GrayStone (grei-stôun) — nome comercial de revestimento
+- Tourmaline Íon (tur-ma-lí-ni í-on) — tecnologia obscura
+- Infrared (in-fra-réd) ⚠️ ATENÇÃO: a pronúncia correta é (in-fra-réd), 
+  NUNCA (in-fra-rér-di)
+
+REGRA: Se o público-alvo do produto sabe pronunciar o termo, NÃO 
+fonetize. Consumidor de beleza sabe o que é "frizz". Consumidor de 
+tech sabe o que é "Wi-Fi".
+
+======================================================================
+🚫 FILTRO DE RELEVÂNCIA SOCIAL (REGRA P1)
+======================================================================
+O Social é um vídeo CURTO de VENDA. Corte specs que não influenciam
+a decisão de compra do consumidor.
+
+❌ OMITIR NO SOCIAL (IRRELEVANTE):
+- Plugue/tomada (20A, 10A) — detalhe de instalação
+- Peso do aparelho em si (ex: "pesa 12kg no total") — o consumidor 
+  não se importa com o peso do CARRINHO, se importa com o peso que 
+  ele SUPORTA (22kg do bebê)
+- Código de modelo (CHB42MB, SM-A546E)
+- Specs de fabricação (condensadora, serpentina)
+
+✅ MANTER NO SOCIAL (RELEVANTE):
+- Peso suportado (22kg, 150kg) — impacta decisão
+- Capacidade (litros, xícaras) — impacta decisão
+- Voltagem/Bivolt — impacta compra (CITAR, não explicar)
+- Acessórios inclusos — valor percebido
+
+======================================================================
+🔗 CONECTORES NATURAIS SOCIAL (ESTILO BRENO)
+======================================================================
+Cada cena intermediária (C2 em diante) DEVE começar com um conector 
+conversacional que crie fluxo de "review real".
+
+❌ DON'Ts (Início Seco):
+- ❌ "O assento é reversível..." (Artigo + spec direto = manual)
+- ❌ "A estrutura em ferro..." (Seco, desconectado)
+
+✅ DO's (Conectores Aprovados):
+- ✅ "Ele tem..." / "Ele ainda vem com..."
+- ✅ "E pra facilitar a rotina..."
+- ✅ "Sem falar que..."
+- ✅ "Isso sem falar do/da..."
+- ✅ "Pra se ter ideia,..."
+- ✅ "Ah, e..." (para feature complementar)
+- ✅ "Já a estrutura..." (transição de componente)
+- ✅ "Pra garantir a segurança,..."
+- ✅ "Mas se preferir,..." (alternativa de uso)
+
+⚠️ MÁXIMO: 1 cena sem conector (a C1, que é o Hook).
+
+======================================================================
+🔢 FORMATAÇÃO DE NÚMEROS (REGRA P1)
+======================================================================
+- Use SEMPRE ponto de milhar: 2.100 Watts, 1.500 RPM, 10.000 mAh
+  ❌ "2100 Watts" → ✅ "2.100 Watts"
+- Medidas ficam em numeral: "40 litros", "22kg", "5 xícaras"
+- NÃO escreva números por extenso (exceto se necessário pra fonética)
+
+======================================================================
+🚨 PROIBIÇÃO DE LETTERING
+======================================================================
+É ESTRITAMENTE PROIBIDO usar "Lettering:" nas cenas de apresentação 
+do produto. "Lettering:" só existe na ÚLTIMA CENA de fechamento.
+
+======================================================================
+🎬 FECHAMENTO SOCIAL (REGRA P0)
+======================================================================
+- ESTRUTURA PADRÃO: Resumo de 1 frase reforçando o benefício + 
+  ", tem no Magalu!".
+- O CTA da locução DEVE terminar com ", tem no Magalu!" (com vírgula).
+  ✅ "A banheira prática e segura pro seu bebê, tem no Magalu!"
+  ✅ "O conjunto completo e sofisticado que seu bebê precisa, tem no Magalu!"
+  ❌ "Gostou? Já clica na sacolinha" — PROIBIDO
+  ❌ "tá no Magalu!" — PROIBIDO (a fórmula é "tem no Magalu!")
+- A ÚLTIMA CENA: Lettering: #TemNoMagalu
+  🚨 PROIBIDO colocar "Imagem:" nesta cena de lettering.
+
+======================================================================
+✅ AUTO-VALIDAÇÃO SOCIAL (EXECUTE ANTES DE ENTREGAR)
+======================================================================
+Antes de entregar QUALQUER roteiro Social, VERIFIQUE mentalmente:
+
+□ 1. HOOK AFIRMATIVO: A C1 abre com afirmação poderosa? (NÃO pergunta?)
+□ 2. NOME EM PORTUGUÊS: O tipo do produto está em português claro na C1?
+     (NÃO "Travel System", NÃO código de modelo?)
+□ 3. IMAGENS ≤ 7 PALAVRAS: TODAS as linhas de "Imagem:" têm no máximo 
+     7 palavras? (NÃO cenários cinematográficos?)
+□ 4. LU APENAS NA C1: A Lu aparece visualmente APENAS na C1? 
+     (C2+ foca em produto/mãos?)
+□ 5. 1 FEATURE = 1 BULLET: Cada bullet cobre no máximo 1 feature? 
+     (NÃO agrupou 2+ features diferentes?)
+□ 6. PRIORIZAÇÃO: Segurança antes de conveniência? Uso prático antes 
+     de tecnologia?
+□ 7. FONÉTICA CIRÚRGICA: Fonéticas apenas para termos realmente 
+     obscuros? (NÃO "kg", "graus", "frizz"?)
+□ 8. ZERO INFO IRRELEVANTE: Sem plugue/tomada, peso do aparelho, 
+     código de modelo?
+□ 9. CONECTORES: Cada cena C2+ começa com conector conversacional?
+□ 10. FECHAMENTO: Última frase termina com ", tem no Magalu!" + 
+      Lettering: #TemNoMagalu? (SEM LINHA DE IMAGEM?)
+□ 11. MAX CENAS: Entre 4 e 7 cenas (incluindo fechamento)?
+□ 12. SPECS COMPLETOS: Verificou se TODOS os specs importantes da ficha 
+      foram citados? (acessórios, voltagem, capacidades, materiais?)
+
+🚨 Se os itens 1, 3, 5 ou 12 falharem → O roteiro está REPROVADO. 
+Reescreva antes de entregar.

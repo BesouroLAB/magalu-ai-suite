@@ -144,6 +144,22 @@ DARK_MODE_CSS = """
         box-shadow: 0 2px 8px rgba(0, 134, 255, 0.2) !important;
     }
     
+    /* Badge de Produto */
+    .product-badge {
+        background-color: var(--mglu-blue);
+        color: white !important;
+        padding: 4px 14px !important;
+        border-radius: 20px !important;
+        font-weight: 800 !important;
+        font-size: 0.7rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        display: inline-block !important;
+        margin-bottom: 15px !important;
+        box-shadow: 0 4px 10px rgba(0, 134, 255, 0.4) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    }
+    
     /* Download buttons - Gradiente Verde */
     .stDownloadButton > button {
         background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important;
@@ -306,6 +322,14 @@ if 'batch_queue' not in st.session_state:
     st.session_state['batch_queue'] = []
 if 'roteiros' not in st.session_state:
     st.session_state['roteiros'] = []
+if 'manual_entries' not in st.session_state:
+    st.session_state['manual_entries'] = [0]  # lista de IDs
+if 'manual_next_id' not in st.session_state:
+    st.session_state['manual_next_id'] = 1
+if 'man_qty_input' not in st.session_state:
+    st.session_state['man_qty_input'] = 1
+if 'last_errors' not in st.session_state:
+    st.session_state['last_errors'] = []
 
 # --- FUNÇÕES SUPABASE E AUXILIARES ---
 def init_supabase():
@@ -660,38 +684,19 @@ def process_images_input(uploaded_files=None, urls_input=None):
 
     if urls:
         for url in urls:
-            try:
-                # Limpa URL de possíveis caracteres de formatação (ex: **, (, ), ", ')
-                import re
-                match = re.search(r'(https?://[^\s)\]">]+)', url)
-                if match:
-                    url = match.group(1)
-                else:
-                    continue
+            # Limpa URL de possíveis caracteres de formatação (ex: **, (, ), ", ')
+            import re
+            match = re.search(r'(https?://[^\s)\]">]+)', url)
+            if match:
+                url = match.group(1)
+            else:
+                continue
 
-                # Headers mais robustos para evitar 403
-                headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-                    'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
-                    'Referer': 'https://www.magazineluiza.com.br/',
-                    'Cache-Control': 'no-cache',
-                    'Pragma': 'no-cache'
-                }
-                resp = requests.get(url, timeout=20, headers=headers)
-                if resp.status_code == 200:
-                    mime = resp.headers.get('Content-Type')
-                    if not mime or 'image' not in mime:
-                        mime, _ = mimetypes.guess_type(url)
-                    
-                    images.append({
-                        "bytes": resp.content,
-                        "mime": mime or "image/jpeg"
-                    })
-                else:
-                    st.error(f"Erro ao baixar imagem da URL {url}: Status {resp.status_code}")
-            except Exception as e:
-                st.error(f"Falha na URL {url}: {e}")
+            # Conforme pedido do usuário: NÃO BAIXAR. Apenas passar a URL para a IA.
+            images.append({
+                "url": url,
+                "mime": "image/url" # Metadata para controle interno
+            })
                 
     return images
 
@@ -1177,10 +1182,14 @@ if page == "Criar Roteiros":
                 del st.session_state['last_errors']
                 st.rerun()
 
+    # --- 🛸 MESA DE TRABALHO MIGRADA PARA ABAIXO DOS INPUTS ---
+
     # --- COMMAND CENTER (INPUTS) ---
-    # Colapsa automaticamente após geração, mas o usuário sempre pode reabrir
-    _has_roteiros = 'roteiros' in st.session_state and st.session_state['roteiros']
-    expander_input = st.expander("✍️ Inserir Códigos e Gerar", expanded=not _has_roteiros)
+    # Auto-recolher se houver roteiros na mesa para dar foco ao trabalho
+    # Mas manter aberto se estivermos gerando novos
+    is_generating = st.session_state.get('is_generating', False)
+    should_expand = (len(st.session_state['roteiros']) == 0) or is_generating
+    expander_input = st.expander("✍️ Inserir Códigos e Gerar", expanded=should_expand)
     
     with expander_input:
         cat_selecionada_id = 77
@@ -1226,32 +1235,37 @@ if page == "Criar Roteiros":
         st.markdown("<br>", unsafe_allow_html=True)
 
         # Modo de entrada via Tabs
-        tab_auto, tab_manual = st.tabs(["⚡ Automático (SKUs da Magalu)", "✍️ Manual (Colar Fichas)"])
+        # --- CONFIGURAÇÕES BASE (COMUM) ---
+        st.markdown("### 2. Configurações base")
+        col_m_g, col_d_g, col_lu_g = st.columns([2, 2, 1])
+        with col_m_g:
+            st.markdown("**Mês de Lançamento**")
+            mes_selecionado = st.selectbox(
+                "Mês de Lançamento",
+                ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"],
+                index=get_now_sp().month - 1, 
+                key="mes_global",
+                label_visibility="collapsed"
+            )
+        with col_d_g:
+            now_sp = get_now_sp()
+            st.markdown("**Data do Roteiro**")
+            data_roteiro = st.date_input("Data", value=now_sp, format="DD/MM/YYYY", key="data_global", label_visibility="collapsed")
+            data_roteiro_str = data_roteiro.strftime('%d/%m/%Y')
+        with col_lu_g:
+            st.markdown("**Personagem**")
+            com_lu_global = st.selectbox("Cena 1", ["Com LU", "Sem LU"], key="com_lu_global_opt", label_visibility="collapsed")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        tab_manual, tab_auto, tab_repescagem = st.tabs([
+            "✍️ Manual (Colar Fichas)", 
+            "⚡ Automático (SKUs da Magalu)", 
+            "♻️ Repescagem"
+        ])
 
         with tab_auto:
             # --- MODO AUTOMÁTICO (MAGALU) ---
-            st.markdown("### 2. Configurações base")
-
-            col_m_auto, col_d_auto, col_lu_auto = st.columns([2, 2, 1])
-            with col_m_auto:
-                st.markdown("**Mês de Lançamento**")
-                mes_selecionado = st.selectbox(
-                    "Mês de Lançamento",
-                    ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"],
-                    index=datetime.now().month - 1, 
-                    key="mes_auto",
-                    label_visibility="collapsed"
-                )
-            with col_d_auto:
-                st.markdown("**Data do Roteiro**")
-                now_sp = get_now_sp()
-                data_roteiro = st.date_input("Data", value=now_sp, format="DD/MM/YYYY", key="data_auto", label_visibility="collapsed")
-                data_roteiro_str = data_roteiro.strftime('%d/%m/%Y')
-            with col_lu_auto:
-                st.markdown("**Personagem**")
-                com_lu_auto = st.selectbox("Cena 1", ["Com LU", "Sem LU"], key="com_lu_auto_opt", label_visibility="collapsed")
-
-            st.markdown("<br>", unsafe_allow_html=True)
             st.markdown("### 3. Códigos dos Produtos")
 
             st.markdown("<p style='font-size: 14px; color: #8b92a5'>Digite os códigos Magalu, um por linha. Mínimo 3 dígitos. Máximo 15 por vez.</p>", unsafe_allow_html=True)
@@ -1294,9 +1308,26 @@ if page == "Criar Roteiros":
                     erros_lote = []
                     tempos_por_roteiro = []
                     gemini_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
+                    st.session_state['is_generating'] = True
 
                     for i, grupo in enumerate(grupos):
                         grupo["original_index"] = i # Preservar índice original para repescagem
+                    
+                    # Preparação da Mesa (Placeholders para Live Update)
+                    uids_lote = []
+                    for grupo in grupos:
+                        uid_p = str(uuid.uuid4())
+                        uids_lote.append(uid_p)
+                        placeholder = {
+                            "_uid": uid_p,
+                            "codigo": grupo["codes"][0],
+                            "status": "⏳",
+                            "roteiro_original": "Aguarde a geração...",
+                            "is_placeholder": True
+                        }
+                        st.session_state['roteiros'].insert(0, placeholder)
+                    
+                    st.session_state['roteiro_ativo_idx'] = 0
                     
                     fila_repescagem = []
                     for i, grupo in enumerate(grupos):
@@ -1331,7 +1362,7 @@ if page == "Criar Roteiros":
                                         
                                         # a) Injeta imagens específicas da LINHA (ex: SKU, Link_Foto.jpg)
                                         if grupo_images_urls:
-                                            status_box.write(f"📸 **Extra:** {len(grupo_images_urls)} imagens encontradas na linha. Baixando...")
+                                            status_box.write(f"📸 **Extra:** {len(grupo_images_urls)} imagens encontradas na linha. Injetando URLs...")
                                             grupo_images = process_images_input(None, grupo_images_urls)
                                             if grupo_images:
                                                 if not isinstance(ficha_principal, dict):
@@ -1355,7 +1386,7 @@ if page == "Criar Roteiros":
                                         # c) Injeta imagens descobertas pelo SCRAPER
                                         auto_images_urls = f.get("image_urls", [])
                                         if auto_images_urls:
-                                            status_box.write(f"📸 **Extra:** {len(auto_images_urls)} imagens encontradas no site. Baixando...")
+                                            status_box.write(f"📸 **Extra:** {len(auto_images_urls)} imagens encontradas no site. Injetando URLs...")
                                             auto_images = process_images_input(None, auto_images_urls)
                                             if auto_images:
                                                 if not isinstance(ficha_principal, dict):
@@ -1377,9 +1408,9 @@ if page == "Criar Roteiros":
                                     tempos_por_roteiro.append(time.time() - roteiro_start_time)
                                     continue
                                 
-                                if len(ficha_text.strip()) < 100:
+                                if len(ficha_text.strip()) < 50:
                                     status_box.update(label=f"⚠️ Roteiro {i+1} — Ficha muito curta para SKU {main_code}", state="error")
-                                    erros_lote.append(f"SKU {main_code}: Ficha extraída muito curta ({len(ficha_text.strip())} chars). Dados insuficientes para gerar roteiro de qualidade.")
+                                    erros_lote.append(f"SKU {main_code}: Ficha extraída muito curta ({len(ficha_text.strip())} chars). Tente o modo manual se os dados não aparecerem.")
                                     tempos_por_roteiro.append(time.time() - roteiro_start_time)
                                     continue
                                 
@@ -1412,7 +1443,7 @@ if page == "Criar Roteiros":
                                     video_url=video_url or "",
                                     data_roteiro=data_roteiro_str,
                                     mes=mes_selecionado,
-                                    com_lu=(com_lu_auto == "Com LU"),
+                                    com_lu=(com_lu_global == "Com LU"),
                                     variantes_info=info_variantes
                                 )
                                 
@@ -1431,7 +1462,7 @@ if page == "Criar Roteiros":
                                     "global_num": global_num,
                                     "mes": mes_selecionado,
                                     "modo_trabalho": modo_selecionado,
-                                    "com_lu": "REVIEW" if "Review" in modo_selecionado else (com_lu_auto == "Com LU")
+                                    "com_lu": "REVIEW" if "Review" in modo_selecionado else (com_lu_global == "Com LU")
                                 }
                                 
                                 if sp_cli:
@@ -1456,14 +1487,30 @@ if page == "Criar Roteiros":
                                 r_min = int(roteiro_elapsed // 60)
                                 r_sec = int(roteiro_elapsed % 60)
                                 status_box.update(label=f"✅ Roteiro {i+1} Finalizado! ({r_min}min {r_sec}s)", state="complete")
-                                st.session_state['roteiros'].insert(0, novo_roteiro)
+                                
+                                # Atualiza o placeholder na mesa
+                                for idx_r, r_item in enumerate(st.session_state['roteiros']):
+                                    if r_item.get('_uid') == uids_lote[i]:
+                                        st.session_state['roteiros'][idx_r] = novo_roteiro
+                                        break
 
                                 # Detecção de erro interno (mesmo se a chamada não levantou exceção)
                                 if "ERRO" in res_gen["roteiro"][:100].upper():
                                     erros_lote.append(f"SKU {main_code}: {res_gen['roteiro'][:100]}...")
+                                    # Atualiza o placeholder com erro
+                                    for idx_r, r_item in enumerate(st.session_state['roteiros']):
+                                        if r_item.get('_uid') == uids_lote[i]:
+                                            st.session_state['roteiros'][idx_r]['status'] = "❌"
+                                            break
 
                         except Exception as e:
                             err_msg = str(e)
+                            # Atualiza o placeholder com erro
+                            for idx_r, r_item in enumerate(st.session_state['roteiros']):
+                                if r_item.get('_uid') == uids_lote[i]:
+                                    st.session_state['roteiros'][idx_r]['status'] = "❌"
+                                    break
+                            
                             full_err_msg = f"❌ Erro no Roteiro {i+1} (SKU {main_code}): {err_msg}"
                             st.error(full_err_msg)
                             
@@ -1532,7 +1579,7 @@ if page == "Criar Roteiros":
                                         video_url=video_url or "",
                                         data_roteiro=data_roteiro_str,
                                         mes=mes_selecionado,
-                                        com_lu=(com_lu_auto == "Com LU"),
+                                        com_lu=(com_lu_global == "Com LU"),
                                         variantes_info=info_variantes
                                     )
 
@@ -1550,7 +1597,7 @@ if page == "Criar Roteiros":
                                         "global_num": global_num,
                                         "mes": mes_selecionado,
                                         "modo_trabalho": modo_selecionado,
-                                        "com_lu": "REVIEW" if "Review" in modo_selecionado else (com_lu_auto == "Com LU")
+                                        "com_lu": "REVIEW" if "Review" in modo_selecionado else (com_lu_global == "Com LU")
                                     }
                                     
                                     if sp_cli:
@@ -1591,6 +1638,7 @@ if page == "Criar Roteiros":
                     if erros_lote:
                         st.session_state['last_errors'] = erros_lote
                     
+                    st.session_state['is_generating'] = False
                     roteiros_ok = total_roteiros - len(erros_lote)
                     if not erros_lote:
                         st.success(f"🎯 {total_roteiros} roteiros gerados em {total_min}min {total_sec}s!")
@@ -1603,32 +1651,386 @@ if page == "Criar Roteiros":
                         if st.button("🔄 Atualizar Visualização"):
                             st.rerun()
 
+        with tab_repescagem:
+            st.markdown("### ♻️ Fila de Repescagem")
+            st.markdown("<p style='font-size: 14px; color: #8b92a5'>Os códigos que falharam durante a geração automática por instabilidade da API podem ser tentados novamente aqui.</p>", unsafe_allow_html=True)
+            
+            repescagem_raw = st.text_area(
+                "SKUs para nova tentativa",
+                height=150,
+                placeholder="Ex: 232878800",
+                key="repescagem_input_manual"
+            )
+            
+            if st.button("🔄 Reiniciar Repescagem", use_container_width=True):
+                st.info("Funcionalidade em desenvolvimento. Por enquanto, cole os códigos novamente no tab 'Automático'.")
 
+        with tab_manual:
+            st.markdown("### 📝 Entrada Manual de Dados")
+            st.markdown("<p style='font-size: 14px; color: #8b92a5'>Cole a ficha técnica de cada produto. Use <b>➕ Adicionar</b> para incluir mais produtos e <b>🗑️</b> para remover.</p>", unsafe_allow_html=True)
 
-    # --- CANVA DO ROTEIRO ATIVO (AGORA OCUPANDO TODA A LARGURA) ---
-    if 'roteiros' in st.session_state and st.session_state['roteiros']:
-        # Botão para baixar todos os roteiros em um ZIP (Full Width)
-        zip_bytes, zip_filename = export_all_roteiros_zip(
-            st.session_state['roteiros'], 
-            selected_month=st.session_state.get('mes_auto', 'MAR'),
-            selected_date=st.session_state.get('data_auto')
-        )
-        num_roteiros_sessao = len(st.session_state['roteiros'])
-        st.download_button(
-            label=f"📦 BAIXAR TODOS ({num_roteiros_sessao}) SESSÃO ATUAL (ZIP)",
-            data=zip_bytes,
-            file_name=zip_filename,
-            mime="application/zip",
-            use_container_width=True,
-            type="primary",
-            help="Baixa todos os roteiros recém gerados da sessão em um arquivo zipado."
-        )
+            # --- Funções de Callback para gerenciar estado sem erros ---
+            def cb_man_add():
+                st.session_state['manual_entries'].append(st.session_state['manual_next_id'])
+                st.session_state['manual_next_id'] += 1
+                # Atualiza a quantidade no input numérico
+                st.session_state['man_qty_input'] = len(st.session_state['manual_entries'])
+
+            def cb_man_rem():
+                if len(st.session_state['manual_entries']) > 1:
+                    st.session_state['manual_entries'].pop()
+                    # Atualiza a quantidade no input numérico
+                    st.session_state['man_qty_input'] = len(st.session_state['manual_entries'])
+
+            def cb_man_qty_change():
+                # Sincroniza a lista de IDs com a quantidade digitada
+                novo_num = st.session_state.get('man_qty_input', 1)
+                num_atual = len(st.session_state['manual_entries'])
+                if novo_num > num_atual:
+                    for _ in range(novo_num - num_atual):
+                        st.session_state['manual_entries'].append(st.session_state['manual_next_id'])
+                        st.session_state['manual_next_id'] += 1
+                elif novo_num < num_atual:
+                    st.session_state['manual_entries'] = st.session_state['manual_entries'][:novo_num]
+
+            # Seletor de Quantidade e Botões Adicionar / Remover
+            col_qty, col_add, col_rem = st.columns([2, 1, 1])
+            
+            with col_qty:
+                # Se não existir no estado, inicializa com o tamanho atual das entradas
+                if "man_qty_input" not in st.session_state:
+                    st.session_state["man_qty_input"] = len(st.session_state['manual_entries'])
+                
+                st.number_input(
+                    "Quantidade total de produtos:", 
+                    min_value=1, 
+                    max_value=50, 
+                    key="man_qty_input", 
+                    on_change=cb_man_qty_change,
+                    help="Digite a quantidade total de produtos que deseja cadastrar de uma vez."
+                )
+
+            with col_add:
+                st.markdown("<br>", unsafe_allow_html=True)
+                st.button("➕ Adicionar", use_container_width=True, key="btn_manual_add", on_click=cb_man_add)
+
+            with col_rem:
+                st.markdown("<br>", unsafe_allow_html=True)
+                st.button("🗑️ Remover", use_container_width=True, key="btn_manual_rem", on_click=cb_man_rem)
+
+            st.markdown("---")
+
+            # Renderiza cada entrada
+            for idx, entry_id in enumerate(st.session_state['manual_entries']):
+                with st.container(border=True):
+                    # Badge Visível
+                    st.markdown(f"<div class='product-badge'>PRODUTO {idx + 1}</div>", unsafe_allow_html=True)
+                    
+                    c1, c2 = st.columns([1, 1])
+                    with c1:
+                        st.text_input("SKU / Código", placeholder="Ex: 232878800", key=f"man_sku_{entry_id}")
+                    with c2:
+                        st.text_input("Link YouTube (opcional)", placeholder="https://youtube.com/watch?v=...", key=f"man_video_{entry_id}")
+                    st.text_input("Link da Imagem (opcional)", placeholder="https://static.mlcdn.com.br/...", key=f"man_img_{entry_id}")
+                    st.text_area("Ficha Técnica / Dados do Produto", height=180, placeholder="Cole aqui a descrição ou ficha técnica...", key=f"man_ficha_{entry_id}")
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            if st.button("🚀 Gerar Roteiros Manuais", use_container_width=True, type="primary", key="btn_manual_gen"):
+                # Coleta dados de todas as entradas
+                entradas_validas = []
+                for entry_id in st.session_state['manual_entries']:
+                    sku = st.session_state.get(f"man_sku_{entry_id}", "").strip()
+                    ficha = st.session_state.get(f"man_ficha_{entry_id}", "").strip()
+                    video = st.session_state.get(f"man_video_{entry_id}", "").strip()
+                    img = st.session_state.get(f"man_img_{entry_id}", "").strip()
+                    if sku and ficha:
+                        entradas_validas.append({"sku": sku, "ficha": ficha, "video": video, "img": img})
+
+                if not entradas_validas:
+                    st.warning("⚠️ Preencha pelo menos o Código e a Ficha Técnica de um produto.")
+                else:
+                    sp_cli = st.session_state.get('supabase_client')
+                    modelo_id = st.session_state.get('modelo_llm', 'gemini-2.5-flash')
+                    table_prefix = st.session_state.get('table_prefix', 'nw_')
+                    agent = RoteiristaAgent(supabase_client=sp_cli, model_id=modelo_id, table_prefix=table_prefix)
+                    total = len(entradas_validas)
+                    erros_lote = []
+                    st.session_state['is_generating'] = True
+                    
+                    # Dashboard de Progresso (UI Melhorada)
+                    status_container = st.container(border=True)
+                    with status_container:
+                        st.markdown(f"### ⚙️ Processando {total} Roteiros")
+                        progress_bar = st.progress(0)
+                        status_text = st.empty()
+                        batch_status_table = st.empty()
+                    
+                    # Estado local para a tabela de status
+                    batch_data = []
+                    for i, entrada in enumerate(entradas_validas):
+                        batch_data.append({"Produto": i+1, "SKU": entrada['sku'], "Status": "⏳ Pendente"})
+                    
+                    # Preparação da Mesa (Placeholders para Live Update)
+                    uids_lote_man = []
+                    for entrada in entradas_validas:
+                        uid_p = str(uuid.uuid4())
+                        uids_lote_man.append(uid_p)
+                        placeholder = {
+                            "_uid": uid_p,
+                            "codigo": entrada['sku'],
+                            "status": "⏳",
+                            "roteiro_original": "Aguarde a geração...",
+                            "is_placeholder": True
+                        }
+                        st.session_state['roteiros'].insert(0, placeholder)
+                    
+                    st.session_state['roteiro_ativo_idx'] = 0
+
+                    for i, entrada in enumerate(entradas_validas):
+                        main_sku = entrada['sku']
+                        try:
+                            with st.status(f"🚀 Roteiro {i+1} (SKU: {main_sku})", expanded=True) as sbox:
+                                # 1. Processamento de Imagens
+                                sbox.write("🖼️ **Etapa 1:** Processando imagens...")
+                                manual_images = []
+                                if entrada['img']:
+                                    manual_images = process_images_input(None, [entrada['img']])
+
+                                # 2. Preparação
+                                sbox.write("📋 **Etapa 2:** Preparando ficha técnica...")
+                                ficha_fake = {"text": entrada['ficha'], "images": manual_images}
+
+                                # 3. Geração
+                                sbox.write("🧠 **Etapa 3:** Gerando roteiro com IA... (Aguarde)")
+                                res_gen = agent.gerar_roteiro(
+                                    scraped_data=ficha_fake,
+                                    modo_trabalho=modo_selecionado,
+                                    codigo=entrada['sku'],
+                                    video_url=entrada['video'] or "",
+                                    data_roteiro=data_roteiro_str,
+                                    mes=mes_selecionado,
+                                    com_lu=(com_lu_global == "Com LU")
+                                )
+
+                                # 4. Registro
+                                sbox.write("💾 **Etapa 4:** Registrando no histórico...")
+                                global_num = get_total_script_count(sp_cli) + 1
+                                novo_roteiro = {
+                                    "_uid": str(uuid.uuid4()),
+                                    "ficha": ficha_fake,
+                                    "roteiro_original": res_gen["roteiro"],
+                                    "codigo": entrada['sku'],
+                                    "model_id": res_gen["model_id"],
+                                    "tokens_in": res_gen["tokens_in"],
+                                    "tokens_out": res_gen["tokens_out"],
+                                    "custo_brl": res_gen["custo_brl"],
+                                    "data": data_roteiro_str,
+                                    "num_sequencial": global_num,
+                                    "video_url": entrada['video'] or "",
+                                    "status": "✅",
+                                    "modo_trabalho": modo_selecionado,
+                                    "com_lu": "REVIEW" if "Review" in modo_selecionado else (com_lu_global == "Com LU")
+                                }
+                                
+                                # Salva no Supabase
+                                if sp_cli:
+                                    try:
+                                        sp_cli.table(f"{table_prefix}historico_roteiros").insert({
+                                            "codigo_produto": entrada['sku'],
+                                            "modo_trabalho": modo_selecionado,
+                                            "roteiro_gerado": res_gen["roteiro"],
+                                            "ficha_extraida": str(entrada['ficha'])[:5000],
+                                            "modelo_llm": res_gen["model_id"],
+                                            "tokens_entrada": res_gen["tokens_in"],
+                                            "tokens_saida": res_gen["tokens_out"],
+                                            "custo_estimado_brl": res_gen["custo_brl"],
+                                            "categoria_id": cat_selecionada_id,
+                                            "criado_em": get_now_sp().isoformat()
+                                        }).execute()
+                                    except Exception as e:
+                                        print(f"❌ Erro Supabase Manual: {e}")
+
+                                # Atualiza o placeholder na mesa
+                                for idx_r, r_item in enumerate(st.session_state['roteiros']):
+                                    if r_item.get('_uid') == uids_lote_man[i]:
+                                        st.session_state['roteiros'][idx_r] = novo_roteiro
+                                        break
+                                
+                                batch_data[i]["Status"] = "✅ Concluído"
+                                sbox.update(label=f"✅ Roteiro {i+1} Finalizado!", state="complete")
+
+                        except Exception as e:
+                            err_msg = str(e)
+                            erros_lote.append(f"Produto {i+1} ({entrada['sku']}): {err_msg}")
+                            batch_data[i]["Status"] = "❌ Erro"
+                            # Atualiza placeholder com erro
+                            for idx_r, r_item in enumerate(st.session_state['roteiros']):
+                                if r_item.get('_uid') == uids_lote_man[i]:
+                                    st.session_state['roteiros'][idx_r]['status'] = "❌"
+                                    break
+                            st.error(f"❌ Erro no Roteiro {i+1}: {err_msg}")
+                        
+                        # Atualiza tabela de progresso visual
+                        batch_status_table.table(pd.DataFrame(batch_data))
+                        progress_bar.progress((i + 1) / total)
+                        if i < total - 1:
+                            time.sleep(0.5)
+
+                    progress_bar.progress(1.0)
+                    status_text.markdown(f"✨ **Processamento concluído!** {total - len(erros_lote)}/{total} roteiros gerados.")
+                    st.session_state['roteiro_ativo_idx'] = 0
+                    st.session_state['is_generating'] = False
+                    
+                    if erros_lote:
+                        st.session_state['last_errors'] = erros_lote
+                        st.warning(f"⚠️ {total - len(erros_lote)}/{total} OK. Ver detalhes nos erros persistentes no topo.")
+                    else:
+                        st.success(f"🎯 {total} roteiro(s) gerado(s) com sucesso!")
+                    
+                    time.sleep(1)
+                    st.rerun()
+
+    # --- 🛸 MESA DE TRABALHO (NAVEGAÇÃO) ---
+    if st.session_state['roteiros']:
+        col_mesa, col_mesa_actions = st.columns([1, 1.5])
+        with col_mesa:
+            st.markdown("#### 🛸 Mesa de Trabalho")
+        with col_mesa_actions:
+            c_zip, c_clear = st.columns([2.5, 1])
+            with c_zip:
+                try:
+                    # Preparar o ZIP com todos os roteiros que possuem conteúdo
+                    roteiros_prontos = [r for r in st.session_state['roteiros'] if r.get('roteiro') or r.get('roteiro_original')]
+                    if roteiros_prontos:
+                        zip_data, zip_name = export_all_roteiros_zip(
+                            roteiros_prontos,
+                            selected_month=st.session_state.get('mes_global', 'MAR'),
+                            selected_date=st.session_state.get('data_global', get_now_sp()).strftime('%d/%m/%y') if hasattr(st.session_state.get('data_global'), 'strftime') else None
+                        )
+                        st.download_button(
+                            "📥 Baixar Todos os Roteiros da Mesa",
+                            data=zip_data,
+                            file_name=zip_name,
+                            mime="application/zip",
+                            use_container_width=True,
+                            help="Baixa todos os roteiros concluídos em um único arquivo ZIP (DOCX)",
+                            type="primary"
+                        )
+                    else:
+                        st.button("📥 Baixar Todos os Roteiros", disabled=True, use_container_width=True, help="Aguarde a conclusão dos roteiros para baixar o ZIP")
+                except Exception as e:
+                    st.button("📥 Erro ao gerar ZIP", disabled=True, use_container_width=True, help=f"Erro: {str(e)}")
+            
+            with c_clear:
+                if st.button("🗑️ Limpar Mesa", use_container_width=True, help="Remove todos os roteiros da mesa atual"):
+                    st.session_state['roteiros'] = []
+                    st.session_state['roteiro_ativo_idx'] = 0
+                    st.rerun()
         
+        # Grid horizontal de cards de navegação
+        n_roteiros = len(st.session_state['roteiros'])
+        cols_per_row = 4 # 4 por linha para dar espaço aos botões
+        for i in range(0, n_roteiros, cols_per_row):
+            batch_cols = st.columns(cols_per_row)
+            for j in range(cols_per_row):
+                idx_card = i + j
+                if idx_card < n_roteiros:
+                    item_card = st.session_state['roteiros'][idx_card]
+                    with batch_cols[j]:
+                        is_active = (st.session_state['roteiro_ativo_idx'] == idx_card)
+                        
+                        cod_display = str(item_card.get('codigo', ''))[:12]
+                        if not cod_display: cod_display = f"Prod {idx_card+1}"
+                        
+                        # Extrair o nome do produto (Pula cabeçalhos de código)
+                        ficha_raw = item_card.get('ficha', '')
+                        ficha_str = ficha_raw.get('text', str(ficha_raw)) if isinstance(ficha_raw, dict) else str(ficha_raw)
+                        linhas_ficha = [l.strip() for l in ficha_str.split('\n') if l.strip()]
+                        
+                        titulo_curto = f"Produto {idx_card+1}"
+                        for linha in linhas_ficha:
+                            linha_up = linha.upper()
+                            # Pula se a linha for um aviso de código ou apenas números
+                            if "CÓDIGO" in linha_up or "COD:" in linha_up or linha.replace('.','').isdigit():
+                                continue
+                            if len(linha) > 3:
+                                titulo_curto = linha[:35]
+                                break
+                        
+                        status_item = item_card.get('status', '✅')
+                        
+                        with st.container(border=True):
+                            # Identificação de Status (Rascunho vs Polido)
+                            is_polished = item_card.get('tag') == "V1"
+                            status_label = "✨ Polido" if is_polished else "📝 Rascunho"
+                            status_color = "#10b981" if is_polished else "#64748b"
+                            
+                            # Badge adicional se for a melhor versão
+                            best_badge = " ⭐" if item_card.get('is_best_version') else ""
+                            
+                            # 1. Cabeçalho Clicável (Seleção)
+                            if st.button(f"{status_item} {cod_display}{best_badge}", key=f"sel_{idx_card}", use_container_width=True, type="primary" if is_active else "secondary"):
+                                st.session_state['roteiro_ativo_idx'] = idx_card
+                                st.rerun()
+
+                            # 2. Informações do Produto (Sanitização Rigorosa)
+                            import html
+                            import re
+                            # Remove markdown (** ou __) que possa vir da ficha técnica
+                            titulo_limpo = re.sub(r'[\*_]{1,}', '', titulo_curto).strip()
+                            titulo_safe = html.escape(titulo_limpo)
+                            
+                            # HTML em linha única para evitar quebra de renderização no Streamlit
+                            card_info_html = (
+                                f'<div style="padding: 4px; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 8px; margin-bottom: 8px;">'
+                                f'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">'
+                                f'<span style="font-size: 9px; background: {status_color}; color: white; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">{status_label}</span>'
+                                f'{"<span style=\'font-size: 9px; color: #fbbf24; font-weight: 800;\'>ATIVO</span>" if is_active else ""}'
+                                f'</div>'
+                                f'<div style="font-size: 10px; color: #94a3b8; margin-bottom: 2px;">Cód: {cod_display}</div>'
+                                f'<div style="font-size: 11px; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; font-weight: 600;">{titulo_safe}</div>'
+                                f'</div>'
+                            )
+                            st.markdown(card_info_html, unsafe_allow_html=True)
+                            
+                            # Botões de Controle (Download e Excluir)
+                            c_dl, c_del = st.columns([1, 1], gap="small")
+                            with c_dl:
+                                try:
+                                    roteiro_txt = item_card.get('roteiro_original', item_card.get('roteiro', ''))
+                                    doc_data, doc_name = export_roteiro_docx(
+                                        roteiro_txt,
+                                        code=item_card.get('codigo', ''),
+                                        product_name=titulo_curto,
+                                        selected_month=st.session_state.get('mes_global', 'MAR'),
+                                        selected_date=st.session_state.get('data_global', get_now_sp()).strftime('%d/%m/%y') if hasattr(st.session_state.get('data_global'), 'strftime') else None,
+                                        model_id=st.session_state.get('model_name', ''),
+                                        com_lu=True, 
+                                        modo_trabalho=st.session_state.get('active_mode', '')
+                                    )
+                                    st.download_button("📥", data=doc_data, file_name=doc_name, mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", key=f"dl_{idx_card}", use_container_width=True, help="Baixar DOCX")
+                                except Exception:
+                                    roteiro_txt = item_card.get('roteiro_original', item_card.get('roteiro', ''))
+                                    st.download_button("📥", data=roteiro_txt, file_name=f"roteiro_{cod_display}.txt", mime="text/plain", key=f"dl_{idx_card}", use_container_width=True)
+                            
+                            with c_del:
+                                if st.button("🗑️", key=f"del_card_{idx_card}", use_container_width=True, help="Excluir da mesa"):
+                                    st.session_state['roteiros'].pop(idx_card)
+                                    if st.session_state['roteiro_ativo_idx'] >= len(st.session_state['roteiros']):
+                                        st.session_state['roteiro_ativo_idx'] = max(0, len(st.session_state['roteiros']) - 1)
+                                    st.rerun()
         st.divider()
 
-        # Pega o índice ativo setado pelos botões na coluna esquerda
-        idx = st.session_state.get('roteiro_ativo_idx', 0)
+    # --- RENDERIZAÇÃO DO ROTEIRO ATIVO ---
+    if st.session_state['roteiros']:
+        idx = st.session_state['roteiro_ativo_idx']
         
+        # Garante que idx está nos limites (pode acontecer após deleções ou limpezas)
+        if idx >= len(st.session_state['roteiros']):
+            st.session_state['roteiro_ativo_idx'] = 0
+            idx = 0
+
         if idx < len(st.session_state['roteiros']):
             item = st.session_state['roteiros'][idx]
             ficha_raw = item.get('ficha', '')
@@ -1684,10 +2086,19 @@ if page == "Criar Roteiros":
                             <span style='font-size: 18px; font-weight: 700; color: #60a5fa;'>✨ Revisando Polimento (v{iteracao_num})</span>
                             <span style='font-size: 13px; color: #8b92a5; margin-left: 10px;'>🧠 {polir_resultado.get('model_id', '')} | 💲 Custo: R$ {polir_resultado.get('custo_brl', 0):.4f}</span>
                         </div>
-                        <span style='font-size: 13px; color: #fbbf24; font-weight: 600;'>Ação Necessária: Compare e decida abaixo 👇</span>
+                        <div style='display: flex; gap: 10px; align-items: center;'>
+                            <span style='font-size: 13px; color: #fbbf24; font-weight: 600;'>Ação Necessária: Compare e decida abaixo 👇</span>
+                        </div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
+                
+                if st.button("🔍 Comparação Visual (Ver Diff)", key=f"btn_diff_polir_{polir_uid}"):
+                    st.session_state[f"show_diff_polir_{polir_uid}"] = not st.session_state.get(f"show_diff_polir_{polir_uid}", False)
+                
+                if st.session_state.get(f"show_diff_polir_{polir_uid}", False):
+                    render_visual_diff(polir_original, polir_resultado["roteiro"])
+                    st.divider()
                 
                 col_antes, col_depois = st.columns(2)
                 
@@ -1908,11 +2319,13 @@ if page == "Criar Roteiros":
                     )
                 
                 with col_actions_4:
-                    if st.button("🗑️ Remover", key=f"btn_del_{polir_uid}", use_container_width=True):
+                    if st.button("🗑️ Remover", key=f"btn_del_{polir_uid}", use_container_width=True, help="Remove este roteiro da mesa permanentemente."):
                         st.session_state['roteiros'].pop(idx)
                         if st.session_state.get('roteiro_ativo_idx', 0) >= len(st.session_state['roteiros']):
                             st.session_state['roteiro_ativo_idx'] = max(0, len(st.session_state['roteiros']) - 1)
                         st.rerun()
+        # Fim do col_canvas
+        st.markdown("---")
 
         if st.session_state.get('roteiro_ativo_idx', 0) >= len(st.session_state['roteiros']):
              st.session_state['roteiro_ativo_idx'] = 0

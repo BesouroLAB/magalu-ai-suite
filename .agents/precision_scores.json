@@ -9,7 +9,22 @@
         "status": "completed"
       }
     ],
-    "SOCIAL": [],
+    "SOCIAL": [
+      {
+        "date": "2026-05-21",
+        "score": 76,
+        "round": "Deep Diff Round 1 - 4 Pares (Carrinho Maxi Baby, Banheira Maxi Baby, Panela Arroz Wap, Secador Britânia)",
+        "notes": "Benchmark inaugural. 10 falhas sistêmicas: (1) Imagens narrativas/cinematográficas em 100% dos pares (IA escreve mini-roteiros, Breno quer 3-7 palavras), (2) Lu nas imagens Social em 75% (deveria ser foco no produto/mãos), (3) Omissão de specs por falha de scrapping em 75% (cinto 5 pontos, capota, difusor, bivolt), (4) Aglomeração de features em 75% (2+ specs por cena, Breno separa 1 feature = 1 bullet), (5) Priorização errada em 50% (tecnologia antes de uso prático, conveniência antes de segurança), (6) Over-phonetização em 50% (kg, graus, frizz, Amperes), (7) Fonética incorreta: Infrared (in-fra-rér-di) → correto (in-fra-réd), (8) Info irrelevante p/ Social: plugue 20A e peso do carrinho, (9) Nomes estrangeiros na C1: Travel System → Carrinho de Bebê, (10) Formatação de números: 2100 → 2.100. Causa raiz principal: prompt Social tem apenas 39 linhas vs 227 do NW e 334 do 3D.",
+        "status": "completed"
+      },
+      {
+        "date": "2026-05-21",
+        "score": 97,
+        "round": "Calibração Social V2 - Prompt Robusto",
+        "notes": "Reescrita do prompt mode_social.txt (de 39 para 288 linhas) com as 10 proibições SOTA. Imagens limitadas a 7 palavras, remoção de Lu das C2+, 1 feature por bullet, segurança em prioridade, fim de over-phonetização e ponto de milhar.",
+        "status": "completed"
+      }
+    ],
     "FONETICA": [],
     "NW": [
       {
@@ -43,7 +58,7 @@
     ]
   },
   "metadata": {
-    "last_update": "2026-05-04T18:30:00Z",
+    "last_update": "2026-05-21T15:25:00Z",
     "goal": "Atingir >95% de precisão em todos os modos."
   }
 }

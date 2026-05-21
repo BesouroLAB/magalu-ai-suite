@@ -4,6 +4,7 @@ Foca na pesquisa do Código do Produto Magalu no Google para evitar bloqueios de
 """
 import os
 import re
+import time
 from google import genai
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
 from dotenv import load_dotenv
@@ -21,7 +22,7 @@ SUA TAREFA:
 🚨 CONTEXTO DO ROTEIRO: {modo}
 - Se for NW (NewWeb): Foco total em ficha técnica, precisão de medidas e materiais.
 - Se for 3D (NewWeb 3D): Foco em detalhes físicos, texturas, partes móveis, e ângulos visuais (essencial para animação).
-- Se for SOCIAL: Foco no "lifestyle", diferenciais visuais e "uau" do produto.
+- Se for SOCIAL: Foco no "lifestyle" e diferenciais práticos, mas NUNCA omita itens de segurança (ex: cinto de 5 pontos), acessórios inclusos (ex: difusor, concentrador), capacidades (kg suportados, litros) e voltagem.
 - Se for REVIEW: Foco em pontos fortes que os clientes costumam elogiar.
 
 🚨 REGRA ANTI-TROCA DE PRODUTO (CRÍTICO):
@@ -42,7 +43,6 @@ CÓDIGO CONFIRMADO: {code}
 TIPO_PRODUTO: [SIMPLES | COMBO | COMBO_PARCIAL]
 TÍTULO: [Nome completo do produto]
 MARCA: [Fabricante]
-URLS_IMAGENS: [Liste até 5 URLs diretas de imagens do produto separadas por vírgula. Busque URLs que contenham 'static.mlcdn.com.br'.]
 LINHA/NOME COMERCIAL: [Ex: "UltraGear", "Galaxy M53"]
 FRANQUIA/UNIVERSO: [Ex: Star Wars, Marvel. Se não houver, N/A]
 DESCRIÇÃO: [Resumo factual e sem marketing]
@@ -80,10 +80,9 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None, modo: str =
             temperature=0.0
         )
         
-        import time as _time
         response = None
         scraper_max_retries = 3
-        scraper_base_wait = 10
+        scraper_base_wait = 2
         
         def _call_with_retry(model_name, prompt_text, cfg, retries=scraper_max_retries):
             for attempt in range(retries + 1):
@@ -97,7 +96,7 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None, modo: str =
                     err_str = str(e)
                     is_retryable = any(code in err_str for code in ["503", "429", "UNAVAILABLE", "RESOURCE_EXHAUSTED"])
                     if is_retryable and attempt < retries:
-                        _time.sleep(scraper_base_wait * (2 ** attempt))
+                        time.sleep(scraper_base_wait * (2 ** attempt))
                     else:
                         raise e
         
@@ -117,25 +116,15 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None, modo: str =
 
         result_text = get_text_safe(response)
         
-        # Parsing de imagens da resposta do Gemini
+        # Parsing de imagens da resposta do Gemini - DESATIVADO PARA VELOCIDADE
         image_urls = []
-        if result_text:
-            img_match = re.search(r'URLS_IMAGENS:\s*([^\n]+)', result_text, re.IGNORECASE)
-            if img_match:
-                urls_raw = img_match.group(1).split(',')
-                image_urls = [u.strip() for u in urls_raw if 'http' in u]
 
-        if not result_text or len(result_text.strip()) < 50 or "ERRO:" in result_text:
-            # Fallback 1: Prompt Direto
-            fallback_prompt = f"Extraia a ficha técnica e 3 URLs de imagens (static.mlcdn.com.br) do produto Magalu código: {code}. Comece com CÓDIGO CONFIRMADO: {code}"
+        if not result_text or len(result_text.strip()) < 20 or "ERRO:" in result_text:
+            # Fallback 1: Prompt Direto (Sem Imagens)
+            fallback_prompt = f"Extraia a ficha técnica detalhada do produto Magalu código: {code}. Comece com CÓDIGO CONFIRMADO: {code}"
             try:
                 response_fallback = _call_with_retry('gemini-2.0-flash', fallback_prompt, GenerateContentConfig(temperature=0.0), retries=2)
                 result_text = get_text_safe(response_fallback)
-                if result_text:
-                    img_match = re.search(r'(?:URLS_IMAGENS:|Imagens:)\s*([^\n]+)', result_text, re.IGNORECASE)
-                    if img_match:
-                        urls_raw = img_match.group(1).split(',')
-                        image_urls.extend([u.strip() for u in urls_raw if 'http' in u])
             except:
                 pass
 
@@ -149,10 +138,10 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None, modo: str =
                 if resp.status_code == 200:
                     soup = BeautifulSoup(resp.text, 'html.parser')
                     text_content = soup.get_text(separator='\n')
-                    # Tenta capturar imagens da Magalu no HTML
+                    # Tenta capturar imagens da Magalu no HTML (Opcional, apenas via URL)
                     if not image_urls:
                         imgs = soup.find_all('img', src=re.compile(r'static\.mlcdn\.com\.br'))
-                        image_urls = [img['src'] for img in imgs if 'src' in img.attrs][:5]
+                        image_urls = [img['src'] for img in imgs if 'src' in img.attrs][:3]
 
                     res_url = client.models.generate_content(
                         model='gemini-2.0-flash',
@@ -162,7 +151,7 @@ def scrape_with_gemini(code_or_url: str, api_key: str | None = None, modo: str =
             except:
                 pass
 
-        if not result_text or len(result_text.strip()) < 50:
+        if not result_text or len(result_text.strip()) < 20:
              result_text = f"⚠️ EXTRAÇÃO AUTOMÁTICA FALHOU: SKU {code}. Cole a ficha manualmente."
 
         # Limpeza de duplicatas nas URLs
@@ -205,7 +194,7 @@ def parse_grouped_input(raw_input: str) -> list[dict]:
                 
             if token.startswith('http'):
                 # Heurística para diferenciar Vídeo de Imagem
-                is_img = any(ext in token.lower() for ext in ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif']) or 'static.mlcdn.com.br' in token or 'a-static' in token or 'img' in token.lower()
+                is_img = any(ext in token.lower() for ext in ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif']) or 'static.mlcdn.com.br' in token or 'a-static' in token or 'img' in token.lower() or 'images' in token.lower()
                 if is_img:
                     images.append(token)
                 else:

@@ -62,6 +62,44 @@ Não fale como um manual, mas também NÃO invente adjetivos vazios. A ficha té
 - "Pra fechar," / "Pra finalizar," / "Por último," (A Lu está conversando, não dando aula com slides).
 
 ======================================================================
+🔗 CONECTORES NATURAIS (ESTILO BRENO — REGRA P0)
+======================================================================
+A Lu está CONVERSANDO, não lendo uma lista. Cada cena intermediária (C2 em diante)
+DEVE começar com um conector conversacional que crie fluxo narrativo.
+
+❌ DON'Ts (Início Seco e Robótico):
+- ❌ "A tela AMOLED de 12,6 polegadas tem..." (Artigo definido + spec direto = manual técnico)
+- ❌ "São 8 giga de RAM..." (Começo abrupto sem transição)
+- ❌ "Ele tem acabamento em alumínio..." (Seco, desconectado da cena anterior)
+
+✅ DO's (Conectores Aprovados pelo Breno):
+- ✅ "E são 8GB de memória RAM..." (Conector aditivo simples)
+- ✅ "Ah, e dá pra ajustar a temperatura..." (Conector casual)
+- ✅ "Sem falar do acabamento em alumínio..." (Conector de destaque)
+- ✅ "Inclusive, dá pra fazer carnes, legumes..." (Conector inclusivo)
+- ✅ "E como eu disse, ele já vem com..." (Conector de referência)
+- ✅ "E pra melhorar, ainda tem..." (Conector de reforço)
+
+⚠️ MÁXIMO: 1 cena sem conector (a C1, que é o Killer Hook). Todas as demais DEVEM ter transição.
+
+======================================================================
+🎯 FECHAMENTO PESSOAL (ESTILO BRENO — REGRA P0)
+======================================================================
+A última frase do roteiro (antes de "tem no Magalu!") DEVE conectar o
+produto ao USUÁRIO com benefício pessoal ou pronome de posse.
+
+❌ DON'Ts (Fechamento Genérico com Lista de Adjetivos):
+- ❌ "A Air Fryer potente e fácil de limpar, tem no Magalu!"
+- ❌ "O monitor ultrawide potente e com imagem realista, tem no Magalu!"
+- ❌ "O tablet completo e com tela incrível, tem no Magalu!"
+
+✅ DO's (Fechamento Pessoal que Conecta ao Usuário):
+- ✅ "A Air Fryer que vai mudar sua rotina na cozinha, tem no Magalu!"
+- ✅ "O monitor ultrawide certo pro seu setup (setáp), tem no Magalu!"
+- ✅ "A geladeira espaçosa e econômica que você precisa, tem no Magalu!"
+- ✅ "O tablet potente e completo da VAIO, tem no Magalu!" (Marca como âncora)
+
+======================================================================
 🔢 NÚMEROS E FONÉTICAS (A REGRA SECA E DIRETA)
 ======================================================================
 A fonética ajuda o locutor a não errar. Mas fonetizar termos básicos ou escrever números por extenso POLUI o roteiro!
@@ -77,6 +115,27 @@ A fonética ajuda o locutor a não errar. Mas fonetizar termos básicos ou escre
 - ✅ Abreviação Seca: "340 Watts" ou "340W" e "64GB". O locutor sabe ler o básico.
 - ✅ Fonetizar APENAS o Difícil: GA.MA Italy (gâ-ma í-ta-li), NVMe (êne-vê-ême), AMOLED (a-mô-led), pOLED (pi-ôled).
 - ✅ Fonetizar SÓ a parte não óbvia: "Galaxy AI (ei ái)".
+- ✅ Gemini = (djê-mi-nai), NUNCA (djê-mi-ni).
+- ✅ Unidades angulares COMPLETAS: 360º (trezentos e sessenta graus), nunca só "(trezentos e sessenta)".
+
+======================================================================
+🧩 SPECS INTELIGÍVEIS E POSSE PESSOAL (ESTILO BRENO)
+======================================================================
+Nem todo spec é relevante para o público. Traduza ou OMITA jargões que
+o consumidor médio não entende.
+
+❌ SPECS QUE O PÚBLICO NÃO ENTENDE (Remover ou Traduzir):
+- ❌ Curvatura de monitor (1500R, 1800R): Substituir por "tela curva".
+- ❌ FreeSync / G-Sync: OMITIR (a menos que o produto seja gamer hardcore).
+- ❌ Resolução em tablets intermediários (WQHD, QHD): Substituir por "ótima resolução".
+- ❌ Specs industriais (condensadora redonda, serpentina de cobre): Traduzir para benefício ("mais eficiente", "dura mais").
+
+✅ POSSE PESSOAL (REGRA DE PROXIMIDADE):
+Inclua pronomes de posse em PELO MENOS 2 cenas para criar proximidade:
+- ✅ "pra guardar todos os seus arquivos"
+- ✅ "certo pro seu setup"
+- ✅ "que vai mudar sua rotina na cozinha"
+- ✅ "pra você trabalhar ou criar em qualquer lugar"
 
 ======================================================================
 🧠 AGRUPAMENTO INTELIGENTE DE SPECS (ESTILO BRENO)
@@ -157,8 +216,11 @@ Antes de entregar QUALQUER roteiro NW, VERIFIQUE mentalmente cada item:
 □ 2. ZERO NÚMEROS EXTENSOS: Apagou todos os números decimais por extenso e "(uátis/rértz)" desnecessários nos parênteses?
 □ 3. FONÉTICA CIRÚRGICA: Fonetizou apenas termos difíceis (AMOLED, NVMe) e poupou os populares (Wi-Fi, 4K, GHz)?
 □ 4. HARD SPECS > ADJETIVOS: Citou componentes reais (grades duplas, painel touch, Safira) no lugar de dizer apenas "bonito", "prático" ou "fácil de limpar"?
-□ 5. SEM FILLER DE CATÁLOGO: Baniu totalmente frases engessadas como "ideal pra sua rotina", "pra fechar", "sem retrabalho"?
+□ 5. SEM FILLER DE CATÁLOGO: Baniu totalmente frases engessadas como "ideal pra sua rotina", "pra fechar", "sem retrabalho", "é a escolha certa"?
 □ 6. MÁXIMO 5 BULLETS: O roteiro tem no máximo 5 cenas de conteúdo ANTES da cena de cores e fechamento?
 □ 7. IMAGEM MINIMALISTA: As descrições de "Imagem:" têm no máximo ~10 palavras e são diretas ao ponto?
+□ 8. CONECTORES NATURAIS: Cada cena (exceto C1) começa com conector conversacional? ("E são...", "Ah, e...", "Sem falar...")?
+□ 9. FECHAMENTO PESSOAL: A última frase conecta ao USUÁRIO ("que você precisa", "pro seu setup") ao invés de listar adjetivos?
+□ 10. POSSE PESSOAL: Pelo menos 2 cenas usam pronomes de proximidade ("você", "seu", "sua")?
 
 🚨 Se os itens 1, 2, 4 ou 6 falharem → O roteiro está REPROVADO. Reescreva antes de mostrar ao usuário.
